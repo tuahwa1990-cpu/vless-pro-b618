@@ -21,7 +21,7 @@ cd "$ROOT"
 : "${RELEASE_SEED:?Tetapkan RELEASE_SEED ke fail seed penjual}"
 : "${RELEASE_PUB:?Tetapkan RELEASE_PUB ke kunci awam (base64)}"
 # Kunci awam lesen (sama seperti sebelum ini)
-PUB="${VP_PUBKEY:-RWRp62b6XpBvZps8xQpP/ZNrpruxOM6u/pVMLFACu1srkHmaEXtTofO7}"
+PUB="${VP_PUBKEY:-RWQEaRIHBlats0krniS/twQsiXX+YrMtCgz4NYkS7Ia+Bwm4YotZYHwk}"
 
 VER=$(sed -n 's/^const version = "\(.*\)"/\1/p' src/main.go)
 [ -n "$VER" ] || { echo "GAGAL: versi tidak dijumpai dalam src/main.go"; exit 1; }

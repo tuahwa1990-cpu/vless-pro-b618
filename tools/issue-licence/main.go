@@ -5,7 +5,7 @@
 //
 // Contoh:
 //
-//	go run . -seed ~/keys/vpro.seed -pub "RWRp62b6XpBvZps8xQpP/ZNrpruxOM6u/pVMLFACu1srkHmaEXtTofO7" \
+//	go run . -seed ~/keys/vpro.seed -pub "RWQEaRIHBlats0krniS/twQsiXX+YrMtCgz4NYkS7Ia+Bwm4YotZYHwk" \
 //	  -id 1A2B-3C4D-5E6F-7A8B-9C0D -name "Pelanggan Ali" -exp 20271231
 //
 // -exp 0 bermaksud tiada tarikh tamat. Output ialah satu baris kunci untuk ditampal di UI.
@@ -13,6 +13,7 @@ package main
 
 import (
 	"crypto/ed25519"
+	"crypto/rand"
 	"encoding/base64"
 	"flag"
 	"fmt"
@@ -37,7 +38,28 @@ func main() {
 	name := flag.String("name", "", "nama pelanggan (huruf, nombor, - atau _, maks 24)")
 	exp := flag.String("exp", "0", "tarikh tamat YYYYMMDD, atau 0 untuk tiada tamat")
 	issued := flag.String("issued", "", "tarikh keluar YYYYMMDD (lalai hari ini)")
+	gen := flag.String("gen", "", "jana pasangan kunci lesen baharu; tulis seed ke fail ini (tidak menimpa)")
 	flag.Parse()
+
+	if *gen != "" {
+		if _, err := os.Stat(*gen); err == nil {
+			die("%s sudah wujud; tidak ditimpa", *gen)
+		}
+		seed := make([]byte, ed25519.SeedSize)
+		kid := make([]byte, 8)
+		if _, err := rand.Read(seed); err != nil {
+			die("rawak gagal: %v", err)
+		}
+		rand.Read(kid)
+		pk := ed25519.NewKeyFromSeed(seed).Public().(ed25519.PublicKey)
+		if err := os.WriteFile(*gen, []byte(base64.StdEncoding.EncodeToString(seed)+"\n"), 0600); err != nil {
+			die("tidak dapat tulis seed: %v", err)
+		}
+		blob := append([]byte{'E', 'd'}, kid...)
+		blob = append(blob, pk...)
+		fmt.Println("LICENCE_PUB=" + base64.StdEncoding.EncodeToString(blob))
+		return
+	}
 
 	if *seedPath == "" || *pubB64 == "" || *id == "" || *name == "" {
 		flag.Usage()
