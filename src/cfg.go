@@ -151,6 +151,7 @@ func proxyOut(p *Parsed, tag string) map[string]any {
 }
 
 func buildConfig(ps []*Parsed, direct []string) map[string]any {
+	o := loadOpts()
 	outs := []any{}
 	multi := len(ps) > 1
 	for i, p := range ps {
@@ -191,19 +192,22 @@ func buildConfig(ps []*Parsed, direct []string) map[string]any {
 	rules = append(rules, rule(map[string]any{"network": "tcp,udp"}))
 	routing := map[string]any{"domainStrategy": "AsIs", "rules": rules}
 	cfg := map[string]any{
-		"log": map[string]any{"loglevel": "warning"},
+		"log": map[string]any{"loglevel": o.LogLevel},
 		"inbounds": []any{
 			map[string]any{"tag": "redir", "port": 12346, "listen": "0.0.0.0", "protocol": "dokodemo-door",
 				"settings":       map[string]any{"network": "tcp", "followRedirect": true},
 				"sniffing":       map[string]any{"enabled": true, "destOverride": []any{"http", "tls"}},
 				"streamSettings": map[string]any{"sockopt": map[string]any{"tproxy": "redirect"}}},
 			map[string]any{"tag": "dns-in", "port": 10854, "listen": "0.0.0.0", "protocol": "dokodemo-door",
-				"settings": map[string]any{"address": "8.8.8.8", "port": 53, "network": "tcp,udp"}},
+				"settings": map[string]any{"address": orStr(o.DNS, "8.8.8.8"), "port": 53, "network": "tcp,udp"}},
 			map[string]any{"tag": "probe", "port": 10855, "listen": "127.0.0.1", "protocol": "http",
 				"settings": map[string]any{}},
 		},
 		"outbounds": outs,
 		"routing":   routing,
+	}
+	if o.DNS != "" {
+		cfg["dns"] = map[string]any{"servers": []any{o.DNS}, "queryStrategy": o.QS}
 	}
 	if multi {
 		st := curStrat()
@@ -211,7 +215,7 @@ func buildConfig(ps []*Parsed, direct []string) map[string]any {
 			"strategy": map[string]any{"type": st}}}
 		if st == "leastPing" {
 			cfg["observatory"] = map[string]any{"subjectSelector": []any{"px-"},
-				"probeUrl": "http://www.gstatic.com/generate_204", "probeInterval": "60s"}
+				"probeUrl": o.PingURL, "probeInterval": "60s"}
 		}
 	}
 	return cfg

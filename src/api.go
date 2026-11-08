@@ -111,6 +111,8 @@ func serve() {
 	listen := readStr(home+"/etc/listen", "192.168.8.1:8990")
 	go sampler()
 	go prober()
+	go watchdog()
+	go rebootSched()
 	mux := http.NewServeMux()
 	ui, _ := uiFS.ReadFile("ui.html")
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -385,7 +387,7 @@ func serve() {
 		jr(w, map[string]any{"text": strings.Join(directList(), "\n")})
 	})
 	mux.HandleFunc("/api/settings", func(w http.ResponseWriter, r *http.Request) {
-		jr(w, map[string]any{"hook": hookOn(), "version": version, "id": hyph(devID20())})
+		jr(w, map[string]any{"hook": hookOn(), "version": version, "arch": runtime.GOARCH, "mac": macAddr(), "xrayhave": true, "id": hyph(devID20())})
 	})
 	act("/api/hook", func(r *http.Request) (string, bool) {
 		if strings.TrimSpace(string(body(r, 16))) == "on" {
@@ -517,10 +519,7 @@ func serve() {
 		go doUpdate(strings.TrimSpace(string(body(r, 16))) == "force")
 		return "Kemas kini dimulakan", true
 	})
-	mux.HandleFunc("/api/log", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		_, _ = io.WriteString(w, tail(home+"/run/vp.log", 4000)+"\n--- xray ---\n"+tail(home+"/run/xray.out", 4000))
-	})
+	regOpts(mux, act, body)
 	act("/api/mode", func(r *http.Request) (string, bool) {
 		switch strings.TrimSpace(string(body(r, 16))) {
 		case "vless":
