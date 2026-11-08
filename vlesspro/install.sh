@@ -8,12 +8,9 @@ chmod 755 $H/vp $H/install.sh $H/bin/vpro 2>/dev/null
 mkdir -p $H/etc $H/run $H/backup
 [ -f $H/etc/mode ] || echo xlite > $H/etc/mode
 if [ ! -s $H/etc/pass ]; then
-  u=; read u < /proc/sys/kernel/random/uuid
-  u=${u%%-*}
-  [ -n "$u" ] || u=$(date +%s)
-  echo "$u" > $H/etc/pass; chmod 600 $H/etc/pass
+  echo "admin" > $H/etc/pass; chmod 600 $H/etc/pass
   : > $H/etc/pass_initial
-  echo "Kata laluan UI baharu: $u"
+  echo "Kata laluan UI awal: admin (akan diminta tukar pada log masuk pertama)"
 else
   echo "Kata laluan UI sedia ada dikekalkan."
 fi
@@ -26,11 +23,11 @@ else
   echo "Belum ada lesen aktif (status: $L). Tampal kunci lesen di UI: Tetapan > Lesen."
 fi
 if [ ! -s $H/etc/listen ]; then
-  A=$(ifconfig br0 2>/dev/null | sed -n 's/.*inet addr:\([0-9.]*\).*/\1/p' | head -1)
+  A=$(ifconfig br0 2>/dev/null | awk '/inet addr:/{sub(/addr:/,"",$2);print $2;exit}')
   [ -n "$A" ] && echo "$A:8990" > $H/etc/listen
 fi
 LS=$(cat $H/etc/listen 2>/dev/null); LS=${LS:-192.168.8.1:8990}
 $H/vp ui-start
 sleep 2
-echo "Buka di telefon: http://$LS  (kata laluan di atas)"
+echo "Buka di telefon: http://$LS  (kata laluan awal: admin)"
 echo "XLITE tidak diubah. Mod semasa: $($H/vp status | awk -F= '$1=="mod"{print $2}')"

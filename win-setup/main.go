@@ -200,7 +200,7 @@ type modemState struct {
 }
 
 func checkModem() modemState {
-	out, _ := ssh("echo A=$(sed -n 's/^CPU architecture[^0-9]*\\([0-9]*\\).*/\\1/p' /proc/cpuinfo | head -1); [ -f /online/xlite/bin/xray ] && echo xl; [ -f /online/vlesspro/bin/xray ] && echo vx; [ -d /online/vlesspro/etc ] && echo lama; true")
+	out, _ := ssh("echo A=$(awk -F: '/^CPU architecture/{print $2+0;exit}' /proc/cpuinfo); [ -f /online/xlite/bin/xray ] && echo xl; [ -f /online/vlesspro/bin/xray ] && echo vx; [ -d /online/vlesspro/etc ] && echo lama; true")
 	f := strings.Fields(out)
 	var s modemState
 	tok := map[string]bool{}
@@ -258,7 +258,7 @@ func main() {
 	if st.lama {
 		fmt.Println("\nPemasangan VLESS Pro sedia ada dijumpai.")
 		fmt.Println("  1. Baiki / naik taraf (disyorkan): kemas kini fail, kekalkan tetapan, lesen dan nod.")
-		fmt.Println("  2. Pasang bersih: alih tetapan lama ke folder backup, pasang semula dengan kata laluan UI baharu.")
+		fmt.Println("  2. Pasang bersih: alih tetapan lama ke folder backup, pasang semula dengan kata laluan awal admin.")
 		if ask("Pilihan [1]: ") == "2" {
 			mode = "bersih"
 		} else {
@@ -348,7 +348,7 @@ func main() {
 	fmt.Println("\n[4/4] Siap.")
 	fmt.Println("Buka di pelayar: http://" + ip + ":8990")
 	if mode != "baiki" {
-		fmt.Println("Kata laluan UI baharu ditunjukkan di atas. Tukar selepas log masuk pertama.")
+		fmt.Println("Log masuk dengan kata laluan awal: admin. Anda akan diminta menukarnya.")
 	}
 	fmt.Println("Lesen: jika belum ada, hantar ID Peranti (di atas) kepada penjual.")
 	fmt.Println("Simpan kunci lesen anda. Jika modem direset, pasang semula dan tampal kunci yang sama.")
