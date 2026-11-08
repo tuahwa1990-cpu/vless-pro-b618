@@ -36,8 +36,7 @@ type device struct{ name, ip string }
 
 // Hanya peranti ARMv7 yang disokong oleh pakej ini.
 var devices = []device{
-	{"Huawei B618 (dan B-series/E-series Huawei ARMv7 lain)", "192.168.8.1"},
-	{"Gteniq MiFi iQ02X55 / iQ03X55", "192.168.100.1"},
+	{"Huawei B618", "192.168.8.1"},
 }
 
 func ask(prompt string) string {
@@ -181,6 +180,7 @@ func pickDevice() string {
 		}
 		if err == nil && n == lain {
 			for {
+				fmt.Println("AMARAN: pemasang ini hanya diuji pada Huawei B618. Modem lain mungkin tidak berfungsi.")
 				s := ask("Masukkan IP modem: ")
 				if net.ParseIP(s) != nil {
 					return s
@@ -232,7 +232,7 @@ func main() {
 	} else {
 		ip = pickDevice()
 	}
-	fmt.Println("\nPemasang VLESS Pro (B618 / Gteniq ARMv7)")
+	fmt.Println("\nPemasang VLESS Pro (Huawei B618)")
 	fmt.Println("Modem:", ip)
 
 	if _, err := exec.LookPath("ssh"); err != nil {

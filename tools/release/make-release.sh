@@ -1,5 +1,5 @@
 #!/bin/sh
-# Jana fail keluaran VLESS Pro (ARMv7: Huawei B618 dan Gteniq MiFi).
+# Jana fail keluaran VLESS Pro (ARMv7: Huawei B618).
 #
 # Keperluan: RELEASE_SEED (fail seed penjual) dan RELEASE_PUB (kunci awam, base64).
 #   Jana kunci sekali sahaja:  (cd tools/release-sign && go run . -gen ~/keys/vpro-release.seed)
@@ -76,7 +76,6 @@ VLESS Manager Pro $VER (ARMv7)
 
 Peranti yang disokong:
 - Huawei B618
-- Gteniq MiFi (iQ02X55 / iQ03X55)
 
 Kemas kini: buka UI > Kemas kini > Pasang dari fail, pilih fail .tgz ini.
 Pemasangan baharu: lihat panduan pemasangan.
