@@ -110,15 +110,23 @@ func readPid(f string) int {
 	return n
 }
 
+// xliteDir ialah folder XLITE; B618 /online/xlite, AW1000 /opt/xlite.
+var xliteDir = func() string {
+	if d := os.Getenv("VP_XLITE"); d != "" {
+		return d
+	}
+	return "/online/xlite"
+}()
+
 func xliteInstalled() bool {
-	_, err := os.Stat("/online/xlite/bin/xlite-core")
+	_, err := os.Stat(xliteDir + "/bin/xlite-core")
 	return err == nil
 }
 
 func xliteRunning() bool {
 	ms, _ := filepath.Glob("/proc/[0-9]*/exe")
 	for _, m := range ms {
-		if t, err := os.Readlink(m); err == nil && strings.HasPrefix(t, "/online/xlite/bin/xlite-core") {
+		if t, err := os.Readlink(m); err == nil && strings.HasPrefix(t, xliteDir+"/bin/xlite-core") {
 			return true
 		}
 	}

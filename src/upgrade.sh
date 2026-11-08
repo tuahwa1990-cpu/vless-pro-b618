@@ -1,6 +1,6 @@
 #!/bin/sh
 # Naik taraf VLESS Pro (B618). Tetapan, lesen, nod dan XLITE tidak diubah.
-H=/online/vlesspro
+H=${VP_HOME:-/online/vlesspro}
 N=$H/new
 [ -f $N/vpro ] || { echo "Fail baharu tiada di $N"; exit 1; }
 mount -o remount,rw /online 2>/dev/null

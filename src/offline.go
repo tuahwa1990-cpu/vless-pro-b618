@@ -151,6 +151,7 @@ func launchUpgrade() error { return launchScript(home + "/upgrade.sh") }
 func launchScript(path string) error {
 	lf, _ := os.OpenFile(home+"/run/vp.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	cmd := exec.Command("/bin/sh", path)
+	cmd.Env = append(os.Environ(), "VP_HOME="+home)
 	if lf != nil {
 		cmd.Stdout, cmd.Stderr = lf, lf
 	}
@@ -177,7 +178,7 @@ func doUploadUpdate(ver string, vp, vpro []byte) {
 
 // rollbackSh memulihkan vpro dan vp dari backup yang dibuat oleh upgrade.sh.
 const rollbackSh = `#!/bin/sh
-H=/online/vlesspro
+H=${VP_HOME:-/online/vlesspro}
 B=$H/backup
 [ -f $B/vpro.prev ] || { echo "Tiada versi sebelum untuk dipulihkan"; exit 1; }
 mount -o remount,rw /online 2>/dev/null

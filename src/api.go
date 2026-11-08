@@ -87,7 +87,11 @@ func ifaceIP(n string) string {
 }
 
 func hookOn() bool {
-	b, _ := os.ReadFile("/system/etc/autorun.sh")
+	f := os.Getenv("VP_AUTORUN")
+	if f == "" {
+		f = "/system/etc/autorun.sh"
+	}
+	b, _ := os.ReadFile(f)
 	return strings.Contains(string(b), "vlesspro-hook")
 }
 
@@ -419,7 +423,7 @@ func serve() {
 		tot, free := meminfo()
 		var st syscall.Statfs_t
 		var dtot, dfree uint64
-		if syscall.Statfs("/online", &st) == nil {
+		if syscall.Statfs(home, &st) == nil {
 			dtot, dfree = st.Blocks*uint64(st.Bsize), st.Bavail*uint64(st.Bsize)
 		}
 		up := ""

@@ -26,7 +26,7 @@ func macAddr() string {
 	if m := os.Getenv("VP_MAC"); m != "" {
 		return strings.ToLower(m)
 	}
-	for _, n := range []string{"br0", "eth0", "wl0"} {
+	for _, n := range []string{"br0", "br-lan", "eth0", "wl0"} {
 		b, err := os.ReadFile("/sys/class/net/" + n + "/address")
 		if err == nil {
 			s := strings.ToLower(strings.TrimSpace(string(b)))
