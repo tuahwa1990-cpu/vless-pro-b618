@@ -7,7 +7,7 @@ SSH="ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=8 root@$IP"
 SCP="scp -O -o StrictHostKeyChecking=accept-new -o ConnectTimeout=8"
 command -v ssh >/dev/null && command -v scp >/dev/null || { echo "ssh/scp tiada. Jalankan dahulu:  pkg install openssh"; exit 1; }
 echo "[1/4] Menyemak modem $IP ..."
-X=$($SSH '[ -f /online/xlite/bin/xray ] && echo ada; [ -d /online/vlesspro/etc ] && echo lama; [ -f /online/vlesspro/bin/xray ] && echo vx' 2>/dev/null) || { echo "GAGAL: tidak dapat sambung SSH ke $IP. Pastikan telefon disambung ke WiFi modem dan SSH modem dihidupkan."; exit 1; }
+X=$($SSH '[ -f /online/xlite/bin/xray ] && echo ada; [ -d /online/vlesspro/etc ] && echo lama; [ -f /online/vlesspro/bin/xray ] && echo vx; true' 2>/dev/null) || { echo "GAGAL: tidak dapat sambung SSH ke $IP. Pastikan telefon disambung ke WiFi modem dan SSH modem dihidupkan."; exit 1; }
 NOX=0
 case "$X" in *ada*|*vx*) ;; *) NOX=1; echo "XLITE tidak dijumpai: Xray akan dimuat turun dan dipasang bersama VLESS Pro.";; esac
 getx() {
