@@ -340,7 +340,8 @@ func main() {
 	if mode != "baiki" {
 		fmt.Println("Kata laluan UI baharu ditunjukkan di atas. Tukar selepas log masuk pertama.")
 	}
-	fmt.Println("Hantar ID Peranti (di atas) kepada penjual untuk mendapatkan kunci lesen.")
+	fmt.Println("Lesen: jika belum ada, hantar ID Peranti (di atas) kepada penjual.")
+	fmt.Println("Simpan kunci lesen anda. Jika modem direset, pasang semula dan tampal kunci yang sama.")
 	if !noX {
 		fmt.Println("XLITE tidak diubah dan boleh ditukar semula bila-bila masa.")
 	}
