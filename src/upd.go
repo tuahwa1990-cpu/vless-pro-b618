@@ -1,0 +1,178 @@
+package main
+
+import (
+	"crypto/sha256"
+	"crypto/tls"
+	"crypto/x509"
+	_ "embed"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"os/exec"
+	"strings"
+	"sync"
+	"syscall"
+	"time"
+)
+
+//go:embed cacert.pem
+var caPEM []byte
+
+//go:embed upgrade.sh
+var upgradeSh []byte
+
+const defUpd = "https://raw.githubusercontent.com/tuahwa1990-cpu/vless-pro-b618/main/b618-latest.txt"
+
+func updURL() string { return readStr(home+"/etc/update_url", defUpd) }
+
+func updBase() string {
+	u := updURL()
+	if i := strings.LastIndex(u, "/"); i >= 0 {
+		return u[:i+1]
+	}
+	return u
+}
+
+func httpc(t time.Duration) *http.Client {
+	pool, _ := x509.SystemCertPool()
+	if pool == nil {
+		pool = x509.NewCertPool()
+	}
+	pool.AppendCertsFromPEM(caPEM)
+	return &http.Client{Timeout: t, Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool}}}
+}
+
+func fetch(u string, max int64, t time.Duration) ([]byte, error) {
+	resp, err := httpc(t).Get(u)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+	b, err := io.ReadAll(io.LimitReader(resp.Body, max+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(b)) > max {
+		return nil, errors.New("fail terlalu besar")
+	}
+	return b, nil
+}
+
+func shortErr(err error) string {
+	s := err.Error()
+	if i := strings.LastIndex(s, ": "); i >= 0 && len(s) > 80 {
+		s = s[i+2:]
+	}
+	if len(s) > 90 {
+		s = s[:90]
+	}
+	return s
+}
+
+func latestVer() (string, error) {
+	b, err := fetch(updURL(), 256, 15*time.Second)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(b)), nil
+}
+
+var (
+	upMu  sync.Mutex
+	upSt  = map[string]any{"state": "idle", "msg": ""}
+	upRun bool
+)
+
+func upSet(state, msg string) {
+	upMu.Lock()
+	upSt = map[string]any{"state": state, "msg": msg}
+	upMu.Unlock()
+}
+
+func upGet() map[string]any {
+	upMu.Lock()
+	defer upMu.Unlock()
+	m := map[string]any{}
+	for k, v := range upSt {
+		m[k] = v
+	}
+	return m
+}
+
+func sums(b []byte) map[string]string {
+	m := map[string]string{}
+	for _, ln := range strings.Split(string(b), "\n") {
+		f := strings.Fields(ln)
+		if len(f) == 2 {
+			m[f[1]] = strings.ToLower(f[0])
+		}
+	}
+	return m
+}
+
+func doUpdate(force bool) {
+	defer func() { upMu.Lock(); upRun = false; upMu.Unlock() }()
+	lv, err := latestVer()
+	if err != nil {
+		upSet("err", "Tidak dapat semak: "+shortErr(err))
+		return
+	}
+	if lv == "" || (lv == version && !force) {
+		upSet("ok", "Sudah versi terkini")
+		return
+	}
+	base := updBase()
+	upSet("run", "Memuat turun senarai semak...")
+	sb, err := fetch(base+"b618-sha256.txt", 4096, 20*time.Second)
+	if err != nil {
+		upSet("err", "Senarai semak gagal: "+shortErr(err))
+		return
+	}
+	sm := sums(sb)
+	files := []struct {
+		n   string
+		max int64
+		min int
+	}{{"vp", 262144, 1000}, {"vpro", 16 << 20, 1 << 20}}
+	_ = os.MkdirAll(home+"/new", 0755)
+	for _, f := range files {
+		upSet("run", "Memuat turun "+f.n+"...")
+		b, err := fetch(base+"new/"+f.n, f.max, 5*time.Minute)
+		if err != nil {
+			upSet("err", "Muat turun "+f.n+" gagal: "+shortErr(err))
+			return
+		}
+		h := sha256.Sum256(b)
+		if len(b) < f.min || hex.EncodeToString(h[:]) != sm[f.n] {
+			upSet("err", "Semakan "+f.n+" gagal, kemas kini dibatalkan")
+			return
+		}
+		if err := os.WriteFile(home+"/new/"+f.n+".tmp", b, 0755); err != nil {
+			upSet("err", "Tidak dapat simpan "+f.n)
+			return
+		}
+	}
+	for _, f := range files {
+		_ = os.Rename(home+"/new/"+f.n+".tmp", home+"/new/"+f.n)
+	}
+	_ = os.WriteFile(home+"/upgrade.sh", upgradeSh, 0755)
+	upSet("run", "Memasang versi "+lv+"...")
+	lf, _ := os.OpenFile(home+"/run/vp.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	cmd := exec.Command("/bin/sh", home+"/upgrade.sh")
+	if lf != nil {
+		cmd.Stdout, cmd.Stderr = lf, lf
+	}
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	if err := cmd.Start(); err != nil {
+		upSet("err", "Gagal memulakan pemasangan")
+		return
+	}
+	upSet("done", "Dipasang, memulakan semula UI...")
+	time.Sleep(60 * time.Second)
+}

@@ -2,3 +2,6 @@
 # Kunci persendirian penjual (JANGAN commit)
 *.seed
 *.key.priv
+
+# Keluaran tempatan (jana semula dengan tools/release/make-release.sh)
+dist/
