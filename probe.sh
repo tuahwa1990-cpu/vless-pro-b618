@@ -19,11 +19,11 @@ for p in /online /overlay /opt /etc /usr /data /mnt /tmp; do
   echo "$p  tulis=$w  | $d"
 done 2>/dev/null
 echo "-- Alat --"
-for c in sh awk sed grep nohup setsid ps kill wget curl tar unzip iptables ip ss netstat opkg; do printf '%s:%s ' $c "$(has $c)"; done; echo
+o=; for c in sh awk sed grep nohup setsid ps kill wget curl tar unzip iptables ip ss netstat opkg; do o="$o $c:$(has $c)"; done; echo "$o"
 echo "-- iptables / kernel --"
-for k in nf_tproxy_ipv4 xt_TPROXY xt_REDIRECT nf_nat iptable_nat tun; do
-  if grep -q "$k" /proc/modules 2>/dev/null || [ -e /sys/module/$k ] || grep -q "$k" /proc/net/ip_tables_targets 2>/dev/null; then printf '%s:ya ' $k; else printf '%s:? ' $k; fi
-done; echo
+o=; for k in nf_tproxy_ipv4 xt_TPROXY xt_REDIRECT nf_nat iptable_nat tun; do
+  if grep -q "$k" /proc/modules 2>/dev/null || [ -e /sys/module/$k ] || grep -q "$k" /proc/net/ip_tables_targets 2>/dev/null; then o="$o $k:ya"; else o="$o $k:?"; fi
+done; echo "$o"
 [ -e /dev/net/tun ] && echo "/dev/net/tun: ada" || echo "/dev/net/tun: tiada"
 echo "-- Proses mengawal (init) --"
 [ -d /etc/init.d ] && echo "init.d: ada" ; [ -d /etc/rc.d ] && echo "rc.d: ada"
