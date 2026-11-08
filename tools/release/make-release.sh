@@ -6,6 +6,7 @@
 #   vlesspro-<versi>-armv7.tgz  -> pakej yang sama dengan payload vless-pro-setup.exe
 #   b618-sha256.txt             -> untuk dikemas kini ke repo (kemas kini dalam UI)
 #   CAPTION.txt                 -> teks untuk siaran ke pelanggan
+#   Juga menyegerakkan vlesspro/bin/vpro, new/vpro dan new/vp dalam repo.
 #   Tidak push apa-apa. Push ke GitHub dibuat secara manual selepas semakan.
 set -eu
 
@@ -30,6 +31,11 @@ trap 'rm -rf "$B"' EXIT
 echo "[2/5] Bina vpro ARMv7 ($VER) ..."
 (cd src && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 \
   go build -trimpath -ldflags "-s -w -X main.pubkey=$PUB" -o "$B/vpro" .)
+
+# Segerakkan fail repo supaya pemasang .exe dan kemas kini GitHub guna binari yang sama.
+cp "$B/vpro" vlesspro/bin/vpro
+cp "$B/vpro" new/vpro
+cp vlesspro/vp new/vp
 
 echo "[3/5] Susun pakej (struktur sama seperti payload pemasang) ..."
 P="$B/pkg"
