@@ -432,6 +432,41 @@ func serve() {
 		}
 		jr(w, map[string]any{"ok": true, "cur": version, "latest": lv, "newer": lv != "" && lv != version, "st": upGet()})
 	})
+	mux.HandleFunc("/api/update/upload", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			jr(w, map[string]any{"ok": false, "msg": "Guna POST"})
+			return
+		}
+		upMu.Lock()
+		busy := upRun
+		if !busy {
+			upRun = true
+		}
+		upMu.Unlock()
+		if busy {
+			jr(w, map[string]any{"ok": false, "msg": "Kemas kini sedang berjalan"})
+			return
+		}
+		fail := func(msg string) {
+			upMu.Lock()
+			upRun = false
+			upMu.Unlock()
+			jr(w, map[string]any{"ok": false, "msg": msg})
+		}
+		data, err := io.ReadAll(io.LimitReader(r.Body, maxPkg+1))
+		if err != nil || len(data) > maxPkg {
+			fail("Fail terlalu besar atau tidak dapat dibaca")
+			return
+		}
+		ver, vp, vpro, err := verifyPackage(data)
+		if err != nil {
+			fail(err.Error())
+			return
+		}
+		upSet("run", "Pakej disahkan, memasang...")
+		go doUploadUpdate(ver, vp, vpro)
+		jr(w, map[string]any{"ok": true, "msg": "Pakej disahkan: versi " + ver})
+	})
 	mux.HandleFunc("/api/update/state", func(w http.ResponseWriter, r *http.Request) {
 		jr(w, upGet())
 	})
