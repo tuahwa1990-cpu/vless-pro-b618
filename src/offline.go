@@ -144,9 +144,12 @@ func stageFiles(vp, vpro []byte) error {
 }
 
 // launchUpgrade menjalankan upgrade.sh dalam sesi baharu, supaya ia boleh menghentikan UI ini.
-func launchUpgrade() error {
+func launchUpgrade() error { return launchScript(home + "/upgrade.sh") }
+
+// launchScript menjalankan skrip dalam sesi baharu (setsid), kerana skrip akan menghentikan UI.
+func launchScript(path string) error {
 	lf, _ := os.OpenFile(home+"/run/vp.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
-	cmd := exec.Command("/bin/sh", home+"/upgrade.sh")
+	cmd := exec.Command("/bin/sh", path)
 	if lf != nil {
 		cmd.Stdout, cmd.Stderr = lf, lf
 	}
@@ -168,5 +171,49 @@ func doUploadUpdate(ver string, vp, vpro []byte) {
 		return
 	}
 	upSet("done", "Dipasang, memulakan semula UI...")
+	time.Sleep(60 * time.Second)
+}
+
+// rollbackSh memulihkan vpro dan vp dari backup yang dibuat oleh upgrade.sh.
+const rollbackSh = `#!/bin/sh
+H=/online/vlesspro
+B=$H/backup
+[ -f $B/vpro.prev ] || { echo "Tiada versi sebelum untuk dipulihkan"; exit 1; }
+mount -o remount,rw /online 2>/dev/null
+p=; [ -f $H/run/ui.pid ] && read p < $H/run/ui.pid
+[ -n "$p" ] && kill $p 2>/dev/null
+sleep 1
+[ -n "$p" ] && kill -9 $p 2>/dev/null
+rm -f $H/run/ui.pid
+cp $B/vpro.prev $H/bin/vpro.tmp && mv $H/bin/vpro.tmp $H/bin/vpro && chmod 755 $H/bin/vpro || { echo "GAGAL pulih vpro"; exit 1; }
+if [ -f $B/vp.prev ]; then cp $B/vp.prev $H/vp.tmp && mv $H/vp.tmp $H/vp && chmod 755 $H/vp; fi
+sh $H/vp ui-start
+sleep 2
+echo "Dipulihkan ke versi sebelum"
+`
+
+// hasRollback melaporkan sama ada backup versi sebelum wujud.
+func hasRollback() bool {
+	_, err := os.Stat(home + "/backup/vpro.prev")
+	return err == nil
+}
+
+// doRollback ialah kerja latar belakang untuk pemulihan versi sebelum.
+func doRollback() {
+	defer func() { upMu.Lock(); upRun = false; upMu.Unlock() }()
+	if !hasRollback() {
+		upSet("err", "Tiada versi sebelum untuk dipulihkan")
+		return
+	}
+	if err := os.WriteFile(home+"/rollback.sh", []byte(rollbackSh), 0755); err != nil {
+		upSet("err", "Tidak dapat sediakan pemulihan")
+		return
+	}
+	upSet("run", "Memulihkan versi sebelum...")
+	if err := launchScript(home + "/rollback.sh"); err != nil {
+		upSet("err", "Gagal memulakan pemulihan")
+		return
+	}
+	upSet("done", "Dipulihkan, memulakan semula UI...")
 	time.Sleep(60 * time.Second)
 }

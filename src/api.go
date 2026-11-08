@@ -430,7 +430,7 @@ func serve() {
 			jr(w, map[string]any{"ok": false, "cur": version, "msg": "Tidak dapat semak: " + shortErr(err)})
 			return
 		}
-		jr(w, map[string]any{"ok": true, "cur": version, "latest": lv, "newer": lv != "" && lv != version, "st": upGet()})
+		jr(w, map[string]any{"ok": true, "cur": version, "latest": lv, "newer": lv != "" && lv != version, "st": upGet(), "prev": hasRollback()})
 	})
 	mux.HandleFunc("/api/update/upload", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
@@ -466,6 +466,29 @@ func serve() {
 		upSet("run", "Pakej disahkan, memasang...")
 		go doUploadUpdate(ver, vp, vpro)
 		jr(w, map[string]any{"ok": true, "msg": "Pakej disahkan: versi " + ver})
+	})
+	mux.HandleFunc("/api/update/rollback", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			jr(w, map[string]any{"ok": false, "msg": "Guna POST"})
+			return
+		}
+		if !hasRollback() {
+			jr(w, map[string]any{"ok": false, "msg": "Tiada versi sebelum untuk dipulihkan"})
+			return
+		}
+		upMu.Lock()
+		busy := upRun
+		if !busy {
+			upRun = true
+		}
+		upMu.Unlock()
+		if busy {
+			jr(w, map[string]any{"ok": false, "msg": "Kemas kini sedang berjalan"})
+			return
+		}
+		upSet("run", "Memulakan pemulihan...")
+		go doRollback()
+		jr(w, map[string]any{"ok": true, "msg": "Pemulihan dimulakan"})
 	})
 	mux.HandleFunc("/api/update/state", func(w http.ResponseWriter, r *http.Request) {
 		jr(w, upGet())
