@@ -217,3 +217,9 @@ func doRollback() {
 	upSet("done", "Dipulihkan, memulakan semula UI...")
 	time.Sleep(60 * time.Second)
 }
+
+// mustChange benar jika kata laluan masih yang dijana semasa pemasangan baharu.
+func mustChange() bool {
+	_, err := os.Stat(home + "/etc/pass_initial")
+	return err == nil
+}

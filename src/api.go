@@ -125,7 +125,7 @@ func serve() {
 		mu.Lock()
 		rx, tx := rateRx, rateTx
 		mu.Unlock()
-		jr(w, map[string]any{"version": version, "mode": readStr(home+"/etc/mode", "xlite"),
+		jr(w, map[string]any{"mustchange": mustChange(), "version": version, "mode": readStr(home+"/etc/mode", "xlite"),
 			"vless": vlessUp(), "xlite": xliteRunning(), "hasx": xliteInstalled(), "node": name, "lic": l, "locked": locked(l),
 			"since": since, "now": time.Now().Unix(), "rx": rx, "tx": tx})
 	})
@@ -402,9 +402,17 @@ func serve() {
 			return
 		}
 		passMu.Lock()
+		same := subtle.ConstantTimeCompare([]byte(np), []byte(pass)) == 1
+		passMu.Unlock()
+		if same && mustChange() {
+			jr(w, map[string]any{"ok": false, "msg": "Kata laluan baharu mesti berbeza daripada yang lama"})
+			return
+		}
+		passMu.Lock()
 		pass = np
 		passMu.Unlock()
 		_ = os.WriteFile(home+"/etc/pass", []byte(np+"\n"), 0600)
+		_ = os.Remove(home + "/etc/pass_initial")
 		jr(w, map[string]any{"ok": true, "msg": "Kata laluan ditukar", "token": tokenOf(np)})
 	})
 	mux.HandleFunc("/api/system", func(w http.ResponseWriter, r *http.Request) {
@@ -562,6 +570,11 @@ func serve() {
 		if !authed(r) {
 			w.WriteHeader(401)
 			jr(w, map[string]any{"auth": false})
+			return
+		}
+		if mustChange() && r.URL.Path != "/api/pass" && r.URL.Path != "/api/status" {
+			w.WriteHeader(403)
+			jr(w, map[string]any{"ok": false, "mustchange": true, "msg": "Tukar kata laluan dahulu"})
 			return
 		}
 		mux.ServeHTTP(w, r)

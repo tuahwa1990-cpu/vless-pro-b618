@@ -12,6 +12,7 @@ if [ ! -s $H/etc/pass ]; then
   u=${u%%-*}
   [ -n "$u" ] || u=$(date +%s)
   echo "$u" > $H/etc/pass; chmod 600 $H/etc/pass
+  : > $H/etc/pass_initial
   echo "Kata laluan UI baharu: $u"
 else
   echo "Kata laluan UI sedia ada dikekalkan."
