@@ -76,12 +76,13 @@ func sqmApply(s SQM) error {
 	if dev == "" {
 		return fmt.Errorf("antara muka WAN tidak dijumpai")
 	}
+	s.Down = 0 // muat turun memintas kernel (pecutan MediaTek), tc tidak boleh mengehadkannya
 	sqmClean(dev)
 	if !s.On {
 		return nil
 	}
-	if s.Up <= 0 && s.Down <= 0 {
-		return fmt.Errorf("tetapkan sekurang-kurangnya satu had (Mbit/s)")
+	if s.Up <= 0 {
+		return fmt.Errorf("tetapkan had muat naik (Mbit/s)")
 	}
 	step := func(name string, a ...string) error {
 		if out, err := run2(name, a...); err != nil {
@@ -97,22 +98,6 @@ func sqmApply(s SQM) error {
 			{"qdisc", "add", "dev", dev, "parent", "1:11", "handle", "110:", "fq_codel"},
 		} {
 			if err := step("tc", a...); err != nil {
-				return err
-			}
-		}
-	}
-	if s.Down > 0 {
-		_, _ = run2("modprobe", "ifb")
-		for _, a := range [][]string{
-			{"ip", "link", "add", "name", ifbName, "type", "ifb"},
-			{"ip", "link", "set", "dev", ifbName, "up"},
-			{"tc", "qdisc", "add", "dev", ifbName, "root", "handle", "1:", "htb", "default", "11"},
-			{"tc", "class", "add", "dev", ifbName, "parent", "1:", "classid", "1:11", "htb", "rate", kbit(s.Down), "ceil", kbit(s.Down)},
-			{"tc", "qdisc", "add", "dev", ifbName, "parent", "1:11", "handle", "110:", "fq_codel"},
-			{"tc", "qdisc", "add", "dev", dev, "handle", "ffff:", "ingress"},
-			{"tc", "filter", "add", "dev", dev, "parent", "ffff:", "protocol", "all", "u32", "match", "u32", "0", "0", "action", "mirred", "egress", "redirect", "dev", ifbName},
-		} {
-			if err := step(a[0], a[1:]...); err != nil {
 				return err
 			}
 		}
@@ -137,11 +122,6 @@ func sqmWatch() {
 		if s.On {
 			sqmMu.Lock()
 			ok := sqmActive()
-			if ok && s.Down > 0 {
-				if out, _ := run2("tc", "qdisc", "show", "dev", wanIface(), "ingress"); !strings.Contains(out, "ingress") {
-					ok = false
-				}
-			}
 			if !ok {
 				if err := sqmApply(s); err != nil {
 					fmt.Fprintln(os.Stderr, "sqm:", err)
@@ -165,7 +145,7 @@ func regSQM(mux *http.ServeMux, act func(string, func(*http.Request) (string, bo
 				jr(w, map[string]any{"ok": false, "msg": "Data tidak sah"})
 				return
 			}
-			if s.On && s.Down > 0 && s.Down < 0.5 || s.On && s.Up > 0 && s.Up < 0.5 {
+			if s.On && s.Up > 0 && s.Up < 0.5 {
 				jr(w, map[string]any{"ok": false, "msg": "Had minimum 0.5 Mbit/s"})
 				return
 			}
@@ -188,9 +168,6 @@ func regSQM(mux *http.ServeMux, act func(string, func(*http.Request) (string, bo
 		}
 		dev := wanIface()
 		st, _ := run2("tc", "-s", "qdisc", "show", "dev", dev)
-		if ib, err := run2("tc", "-s", "qdisc", "show", "dev", ifbName); err == nil && ib != "" {
-			st += "\n\n--- muat turun (" + ifbName + ") ---\n" + ib
-		}
 		jr(w, map[string]any{"cfg": loadSQM(), "iface": dev, "active": sqmActive(),
 			"tc": findBin("tc") != "", "ip": findBin("ip") != "", "stat": st})
 	})
