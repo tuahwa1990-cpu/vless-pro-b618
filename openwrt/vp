@@ -54,8 +54,18 @@ fwcheck() {
   sleep 2
   fw_on && echo "peraturan dipasang semula"
 }
+xlite_active() {
+  ours=; [ -f $R/xray.pid ] && read ours < $R/xray.pid
+  for p in $(pids_exe $XL/bin/xray) $(pids_exe $XL/bin/hev-socks5-tunnel); do
+    [ "$p" = "$ours" ] || return 0
+  done
+  return 1
+}
+# XLITE tidak disentuh melainkan sedang menyambung (xray/tunnel aktif)
 xlite_stop() {
   has_xlite || return 0
+  xlite_active || { rm -f $R/xlite.stopped; return 0; }
+  : > $R/xlite.stopped
   [ -x /etc/init.d/xlite ] && /etc/init.d/xlite stop >/dev/null 2>&1
   for p in $(pids_exe $XL/bin/xlite-core); do kill $p; done
   sleep 2
@@ -72,6 +82,8 @@ xlite_stop() {
 xlite_running() { has_xlite && [ -n "$(pids_exe $XL/bin/xlite-core)" ]; }
 start_xlite() {
   has_xlite || return 0
+  [ -f $R/xlite.stopped ] || return 0
+  rm -f $R/xlite.stopped
   xlite_running && return 0
   if [ -x /etc/init.d/xlite ]; then /etc/init.d/xlite start >/dev/null 2>&1
   else ( cd /; $XL/bin/xlite-core </dev/null >/dev/null 2>&1 & ); fi
