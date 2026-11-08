@@ -9,10 +9,12 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -22,12 +24,35 @@ var payload embed.FS
 
 const xrayURL = "https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-arm32-v7a.zip"
 
+// Mesti sepadan dengan vp/vpro di dalam modem; backupCmd hanya dijalankan dalam mod Pasang bersih.
+const backupCmd = `mount -o remount,rw /online 2>/dev/null; p=; [ -f /online/vlesspro/run/ui.pid ] && read p < /online/vlesspro/run/ui.pid; [ -n "$p" ] && kill $p 2>/dev/null; sleep 1; [ -n "$p" ] && kill -9 $p 2>/dev/null; rm -f /online/vlesspro/run/ui.pid; ts=$(date +%Y%m%d%H%M%S); mkdir -p /online/vlesspro/backup && mv /online/vlesspro/etc /online/vlesspro/backup/etc-$ts && mkdir -p /online/vlesspro/etc && for f in license public.key; do [ -f /online/vlesspro/backup/etc-$ts/$f ] && cp /online/vlesspro/backup/etc-$ts/$f /online/vlesspro/etc/$f; done; chmod 600 /online/vlesspro/etc/license 2>/dev/null; echo "Tetapan lama dialih ke /online/vlesspro/backup/etc-$ts; lesen dikekalkan"`
+
 var ip = "192.168.8.1"
 var opts = []string{"-o", "StrictHostKeyChecking=accept-new", "-o", "ConnectTimeout=8"}
 
+var stdin = bufio.NewReader(os.Stdin)
+
+type device struct{ name, ip string }
+
+// Hanya peranti ARMv7 yang disokong oleh pakej ini.
+var devices = []device{
+	{"Huawei B618 (dan B-series/E-series Huawei ARMv7 lain)", "192.168.8.1"},
+	{"Gteniq MiFi iQ02X55 / iQ03X55", "192.168.100.1"},
+}
+
+func ask(prompt string) string {
+	fmt.Print(prompt)
+	s, _ := stdin.ReadString('\n')
+	return strings.TrimSpace(s)
+}
+
+func yes(q string) bool {
+	c := strings.ToLower(ask(q + " [Y/n]: "))
+	return c == "" || c == "y" || c == "ya"
+}
+
 func pause() {
-	fmt.Print("\nTekan Enter untuk tutup...")
-	bufio.NewReader(os.Stdin).ReadString('\n')
+	ask("\nTekan Enter untuk tutup...")
 }
 
 func die(msg string) {
@@ -36,10 +61,24 @@ func die(msg string) {
 	os.Exit(1)
 }
 
+func cancelled() {
+	fmt.Println("\nDibatalkan. Tiada apa diubah pada modem.")
+	pause()
+	os.Exit(0)
+}
+
 func run(name string, args ...string) (string, error) {
 	cmd := exec.Command(name, args...)
 	out, err := cmd.CombinedOutput()
 	return string(out), err
+}
+
+// sshLive menunjukkan output modem secara langsung (bukan selepas siap).
+func sshLive(cmd string) error {
+	c := exec.Command("ssh", append(append([]string{}, opts...), "root@"+ip, cmd)...)
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+	return c.Run()
 }
 
 func ssh(cmd string) (string, error) {
@@ -123,11 +162,67 @@ func getXray(tmp string) error {
 	return fmt.Errorf("fail xray tiada dalam zip")
 }
 
+// pickDevice membenarkan pengguna pilih jenis modem atau masukkan IP sendiri.
+func pickDevice() string {
+	fmt.Println("Pilih modem anda:")
+	for i, d := range devices {
+		fmt.Printf("  %d. %s  (%s)\n", i+1, d.name, d.ip)
+	}
+	lain := len(devices) + 1
+	fmt.Printf("  %d. Lain-lain (masukkan IP)\n", lain)
+	for {
+		c := ask("Pilihan [1]: ")
+		if c == "" {
+			c = "1"
+		}
+		n, err := strconv.Atoi(c)
+		if err == nil && n >= 1 && n <= len(devices) {
+			return devices[n-1].ip
+		}
+		if err == nil && n == lain {
+			for {
+				s := ask("Masukkan IP modem: ")
+				if net.ParseIP(s) != nil {
+					return s
+				}
+				fmt.Println("IP tidak sah.")
+			}
+		}
+		fmt.Println("Pilihan tidak sah.")
+	}
+}
+
+type modemState struct {
+	arch  string
+	xlite bool // XLITE dijumpai
+	vx    bool // Xray VLESS Pro sedia ada
+	lama  bool // pemasangan VLESS Pro sedia ada (folder etc)
+}
+
+func checkModem() modemState {
+	out, _ := ssh("uname -m; [ -f /online/xlite/bin/xray ] && echo xl; [ -f /online/vlesspro/bin/xray ] && echo vx; [ -d /online/vlesspro/etc ] && echo lama; true")
+	f := strings.Fields(out)
+	var s modemState
+	if len(f) > 0 {
+		s.arch = f[0]
+	}
+	tok := map[string]bool{}
+	for _, t := range f[1:] {
+		tok[t] = true
+	}
+	s.xlite = tok["xl"]
+	s.vx = tok["vx"]
+	s.lama = tok["lama"]
+	return s
+}
+
 func main() {
 	if len(os.Args) > 1 && os.Args[1] != "" {
 		ip = os.Args[1]
+	} else {
+		ip = pickDevice()
 	}
-	fmt.Println("Pemasang VLESS Pro (B618 / Gteniq ARMv7 / ARMv7 OpenWrt)")
+	fmt.Println("\nPemasang VLESS Pro (B618 / Gteniq ARMv7)")
 	fmt.Println("Modem:", ip)
 
 	if _, err := exec.LookPath("ssh"); err != nil {
@@ -137,16 +232,58 @@ func main() {
 		die("scp tiada. Pasang 'OpenSSH Client' dalam Settings > Apps > Optional features.")
 	}
 
-	fmt.Println("[1/4] Menyemak modem ...")
+	fmt.Println("\n[1/4] Menyemak modem ...")
 	if _, err := ssh("echo ok"); err != nil {
 		die("tidak dapat sambung SSH ke " + ip + ". Pastikan PC disambung ke WiFi modem dan SSH modem dihidupkan.")
 	}
+	st := checkModem()
+	if !strings.HasPrefix(st.arch, "armv7") {
+		fmt.Printf("AMARAN: modem melaporkan seni bina '%s'. Pemasang ini untuk ARMv7 sahaja.\n", st.arch)
+		if !yes("Teruskan juga?") {
+			cancelled()
+		}
+	}
 
-	st, _ := ssh("[ -f /online/xlite/bin/xray ] && echo xl; [ -f /online/vlesspro/bin/xray ] && echo vx; [ -d /online/vlesspro/etc ] && echo lama; true")
-	noX := !strings.Contains(st, "xl") && !strings.Contains(st, "vx")
-	upgrade := strings.Contains(st, "lama")
+	mode := "baru"
+	if st.lama {
+		fmt.Println("\nPemasangan VLESS Pro sedia ada dijumpai.")
+		fmt.Println("  1. Baiki / naik taraf (disyorkan): kemas kini fail, kekalkan tetapan, lesen dan nod.")
+		fmt.Println("  2. Pasang bersih: alih tetapan lama ke folder backup, pasang semula dengan kata laluan UI baharu.")
+		if ask("Pilihan [1]: ") == "2" {
+			mode = "bersih"
+		} else {
+			mode = "baiki"
+		}
+	}
+	if mode == "bersih" {
+		fmt.Println("\nAMARAN: tetapan lama akan dialih ke /online/vlesspro/backup/ dan kata laluan UI akan bertukar.")
+		fmt.Println("Lesen akan dikekalkan secara automatik. Nod dan tetapan lain akan dialih ke backup.")
+		if ask("Taip PADAM untuk teruskan: ") != "PADAM" {
+			cancelled()
+		}
+	}
+
+	noX := !st.xlite && !st.vx
+	fmt.Println("\nRingkasan sebelum pasang:")
+	fmt.Println("  Modem        :", ip, "("+st.arch+")")
+	if st.xlite {
+		fmt.Println("  XLITE        : dijumpai (tidak diubah)")
+	} else {
+		fmt.Println("  XLITE        : tidak dijumpai")
+	}
+	switch mode {
+	case "baiki":
+		fmt.Println("  Tindakan     : naik taraf VLESS Pro (tetapan dikekalkan)")
+	case "bersih":
+		fmt.Println("  Tindakan     : pasang bersih (tetapan lama dalam backup)")
+	default:
+		fmt.Println("  Tindakan     : pemasangan baharu")
+	}
 	if noX {
-		fmt.Println("XLITE tidak dijumpai: Xray akan dimuat turun dan dipasang bersama VLESS Pro.")
+		fmt.Println("  Xray         : akan dimuat turun dan dipasang bersama VLESS Pro")
+	}
+	if !yes("\nTeruskan pemasangan?") {
+		cancelled()
 	}
 
 	tmp, err := os.MkdirTemp("", "vpro")
@@ -158,8 +295,15 @@ func main() {
 		die("gagal menyediakan fail: " + err.Error())
 	}
 
-	if upgrade {
-		fmt.Println("[2/4] Pemasangan sedia ada dijumpai: naik taraf (tetapan dan lesen dikekalkan).")
+	fmt.Println("\n[2/4] Menghantar fail ...")
+	if mode == "bersih" {
+		out, err := ssh(backupCmd)
+		fmt.Print(out)
+		if err != nil {
+			die("gagal mengalih tetapan lama (lihat mesej di atas). Tiada apa dipasang.")
+		}
+	}
+	if mode == "baiki" {
 		if err := scp(filepath.Join(tmp, "new"), "/online/vlesspro/", true); err != nil {
 			die("gagal menghantar fail")
 		}
@@ -167,7 +311,6 @@ func main() {
 			die("gagal menghantar fail")
 		}
 	} else {
-		fmt.Println("[2/4] Menghantar fail ...")
 		if err := scp(filepath.Join(tmp, "vlesspro"), "/online/", true); err != nil {
 			die("gagal menghantar fail")
 		}
@@ -183,19 +326,20 @@ func main() {
 		}
 	}
 
-	fmt.Println("[3/4] Memasang ...")
+	fmt.Println("\n[3/4] Memasang ...")
 	script := "sh /online/vlesspro/install.sh"
-	if upgrade {
+	if mode == "baiki" {
 		script = "sh /online/vlesspro/upgrade.sh"
 	}
-	out, err := ssh(script)
-	fmt.Print(out)
-	if err != nil {
+	if err := sshLive(script); err != nil {
 		die("pemasangan di modem gagal (lihat mesej di atas)")
 	}
 
-	fmt.Println("[4/4] Siap.")
+	fmt.Println("\n[4/4] Siap.")
 	fmt.Println("Buka di pelayar: http://" + ip + ":8990")
+	if mode != "baiki" {
+		fmt.Println("Kata laluan UI baharu ditunjukkan di atas. Tukar selepas log masuk pertama.")
+	}
 	fmt.Println("Hantar ID Peranti (di atas) kepada penjual untuk mendapatkan kunci lesen.")
 	if !noX {
 		fmt.Println("XLITE tidak diubah dan boleh ditukar semula bila-bila masa.")
