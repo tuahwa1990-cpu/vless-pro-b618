@@ -98,6 +98,7 @@ func sampler() {
 	lastSave := time.Now()
 	for now := range tk.C {
 		ifn := wanIface()
+		trackWan(ifn != "" && ifaceIP(ifn) != "")
 		rx, tx, ok := netBytes(ifn)
 		if !ok {
 			continue
@@ -242,6 +243,16 @@ func probeIP(force bool) map[string]any {
 			}
 			mu.Unlock()
 		}
+	} else {
+		cl := &http.Client{Timeout: 7 * time.Second, Transport: &http.Transport{DisableKeepAlives: true}}
+		if r, err := cl.Get("http://ip-api.com/json/?fields=status,query,country,countryCode,isp"); err == nil {
+			b, _ := io.ReadAll(io.LimitReader(r.Body, 4096))
+			r.Body.Close()
+			var j map[string]any
+			if json.Unmarshal(b, &j) == nil && j["status"] == "success" {
+				res = map[string]any{"ok": true, "ip": j["query"], "country": j["country"], "cc": j["countryCode"], "isp": j["isp"], "direct": true}
+			}
+		}
 	}
 	mu.Lock()
 	ipCache, ipTime = res, time.Now()
@@ -275,4 +286,75 @@ func tcpPing(host string, port int) int {
 	}
 	c.Close()
 	return int(time.Since(t0) / time.Millisecond)
+}
+
+// Rekod WAN terputus (naik -> turun), disimpan dalam etc/wandrops.json.
+var (
+	dropMu    sync.Mutex
+	drops     []int64
+	wanWasUp  = true
+	dropsInit bool
+)
+
+func trackWan(up bool) {
+	dropMu.Lock()
+	defer dropMu.Unlock()
+	if !dropsInit {
+		dropsInit = true
+		if b, err := os.ReadFile(home + "/etc/wandrops.json"); err == nil {
+			_ = json.Unmarshal(b, &drops)
+		}
+	}
+	if wanWasUp && !up {
+		drops = append(drops, time.Now().Unix())
+		cut := time.Now().Add(-7 * 24 * time.Hour).Unix()
+		for len(drops) > 0 && (drops[0] < cut || len(drops) > 200) {
+			drops = drops[1:]
+		}
+		b, _ := json.Marshal(drops)
+		_ = os.WriteFile(home+"/etc/wandrops.json", b, 0600)
+	}
+	wanWasUp = up
+}
+
+func dropCount(d time.Duration) int {
+	dropMu.Lock()
+	defer dropMu.Unlock()
+	cut := time.Now().Add(-d).Unix()
+	n := 0
+	for _, x := range drops {
+		if x >= cut {
+			n++
+		}
+	}
+	return n
+}
+
+func dnsServers() []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, f := range []string{"/tmp/resolv.conf.auto", "/tmp/resolv.conf.d/resolv.conf.auto", "/tmp/resolv.conf", "/etc/resolv.conf"} {
+		b, err := os.ReadFile(f)
+		if err != nil {
+			continue
+		}
+		for _, l := range strings.Split(string(b), "\n") {
+			fl := strings.Fields(l)
+			if len(fl) >= 2 && fl[0] == "nameserver" {
+				ip := fl[1]
+				if i := strings.Index(ip, "%"); i > 0 {
+					ip = ip[:i]
+				}
+				if net.ParseIP(ip) == nil || strings.HasPrefix(ip, "127.") || ip == "::1" || seen[ip] {
+					continue
+				}
+				seen[ip] = true
+				out = append(out, ip)
+			}
+		}
+		if len(out) > 0 {
+			break
+		}
+	}
+	return out
 }

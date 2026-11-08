@@ -34,6 +34,7 @@ svg.gr{width:100%;height:150px;display:block}
 .toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:#2b3044;border:1px solid var(--bd);padding:11px 18px;border-radius:14px;z-index:20;max-width:88%;text-align:center}
 pre{white-space:pre-wrap;word-break:break-all;font:12px ui-monospace,monospace;color:var(--mu);margin:0}
 #lg{display:flex;align-items:center;justify-content:center;height:100%;padding:24px}#lg .c{width:100%;max-width:340px;text-align:center}
+.ovc{padding:4px 14px}.ov{display:flex;align-items:center;gap:12px;padding:13px 0;border-top:1px solid var(--bd)}.ov:first-child{border-top:0}.oi{width:40px;height:40px;border-radius:12px;background:#1b3a30;display:flex;align-items:center;justify-content:center;flex:none}.oi svg{width:22px;height:22px;stroke:var(--ac);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.ol{font-weight:700;min-width:84px;color:var(--tx)}.ov2{color:var(--tx);font-weight:600;word-break:break-all}.ib{padding:8px;border-radius:12px;margin-left:auto;border-color:var(--bd)}.ib svg{width:20px;height:20px;stroke:var(--mu);fill:none;stroke-width:2;display:block}.bar{height:7px;border-radius:5px;background:#2b3044;margin-top:8px}.bar i{display:block;height:100%;border-radius:5px;background:var(--ac)}
 </style></head><body>
 <div id="app"></div><div id="sc"></div>
 <script>
@@ -82,13 +83,31 @@ function toggle(){if(S.locked){toast('Aktifkan lesen dahulu (Tetapan)');return}
  busy=true;P.ip=null;uHome();api('/api/mode',t).then(function(r){toast(r.msg);var n=0,iv=setInterval(function(){load().then(function(){n++;var done=t=='vless'?isOn():(S.mode=='xlite'&&(S.xlite||!hx));if(done||n>20){clearInterval(iv);busy=false;uHome();if(t=='vless'&&!done)toast(hx?'Gagal menyambung, XLITE dipulihkan':'Gagal menyambung');if(done&&t=='vless')ipq()}})},3000)})}
 /* STATUS */
 function rStatus(m){m.innerHTML='<div class="tt"><div id="a" class="'+(T.st=='o'?'on':'')+'">Gambaran</div><div id="b" class="'+(T.st=='g'?'on':'')+'">Graf</div></div><div id="sb"></div>';
- $('a').onclick=function(){T.st='o';clearInterval(tmr);rStatus(m)};$('b').onclick=function(){T.st='g';rStatus(m)};T.st=='o'?(sOver(),clearInterval(tmr),tmr=setInterval(function(){if(V!='status'||T.st!='o'||!$('sb')){clearInterval(tmr);return}sOver()},5000)):sGr()}
-function sOver(){Promise.all([api('/api/overview'),api('/api/status')]).then(function(a){var o=a[0],s=a[1],on=s.mode=='vless'&&s.vless;
- var used=(o.memtot-o.memfree)/1024|0,tot=o.memtot/1024|0,pc=Math.round(used/tot*100);
- var h='<div class="c"><div class="kv"><span>Terowong</span><b>'+(on?'VLESS Pro berjalan':s.xlite?'XLITE berjalan':'Tiada')+'</b></div><div class="kv"><span>WAN</span><b>'+esc(o.iface||'-')+' '+(o.wanip?'aktif':'tiada')+'</b></div><div class="kv"><span>Peranti</span><b>RAM '+used+' / '+tot+' MB · '+pc+'%</b></div></div>'+
- '<div class="sec">Sambungan</div><div class="c" id="cn"><div class="kv"><span>IP awam</span><b id="ip">'+(on?'...':'-')+'</b></div><div class="kv"><span>Negara</span><b id="co">-</b></div><div class="kv"><span>ISP</span><b id="is">-</b></div><div class="kv"><span>Mod</span><b>'+(on?'Redirect · xray berjalan':s.xlite?'XLITE':'-')+'</b></div><div class="kv"><span>Tempoh</span><b>'+(on&&s.since?hms(s.now-s.since):'-')+'</b></div><div class="kv"><span>Trafik WAN (sejak modem hidup)</span><b>↑ '+fB(o.tx)+' · ↓ '+fB(o.rx)+'</b></div></div>'+
- '<div class="sec">Rangkaian</div><div class="c"><div class="kv"><span>IP WAN</span><b>'+esc(o.wanip||'-')+'</b></div><div class="kv"><span>Get laluan</span><b>'+esc(o.gw||'-')+'</b></div></div>';
- $('sb').innerHTML=h;if(on)api('/api/ip').then(function(r){if(r.ok){$('ip').textContent=r.ip;$('co').textContent=r.country+' '+r.cc;$('is').textContent=r.isp}else $('ip').textContent='Gagal'})})}
+ $('a').onclick=function(){T.st='o';clearInterval(tmr);rStatus(m)};$('b').onclick=function(){T.st='g';rStatus(m)};T.st=='o'?(sOver(1),clearInterval(tmr),tmr=setInterval(function(){if(V!='status'||T.st!='o'||!$('sb')){clearInterval(tmr);return}sOver()},5000)):sGr()}
+function ovr(ico,lbl,val,ex,sub){return '<div class="ov"><span class="oi">'+ic(ico)+'</span><span class="ol">'+lbl+'</span><span class="ov2">'+val+(sub||'')+'</span>'+(ex||'')+'</div>'}
+function ovk(ico,lbl,val,cls){return '<div class="ov"><span class="oi" style="background:none">'+ic(ico)+'</span><span class="ol">'+lbl+'</span><span class="ov2 '+(cls||'')+'" style="text-align:right;flex:1">'+val+'</span></div>'}
+function sOver(f){Promise.all([api('/api/overview'),api('/api/status')]).then(function(a){var o=a[0],s=a[1],on=s.mode=='vless'&&s.vless;
+ var used=(o.memtot-o.memfree)/1024|0,tot=o.memtot/1024|0,pc=Math.round(used/tot*100),up=!!o.wanip;
+ var tun=on?'VLESS Pro bersambung':s.xlite?'XLITE berjalan':'VPN terputus';
+ var h='<div class="c ovc">'+
+ ovr('route','Terowong',esc(tun),'<button id="orf" class="ib" title="Segar semula">'+ic('upd')+'</button>')+
+ ovr('pulse','WAN',esc(o.iface||'-')+' '+(up?'aktif':'tiada'),'',' · '+o.drops1h+' putus dalam 1 j')+
+ '<div class="ov"><span class="oi">'+ic('sys')+'</span><span class="ol">Peranti</span><span class="ov2" style="flex:1">RAM '+used+' / '+tot+' MB<b class="ok" style="float:right">'+pc+'%</b><div class="bar"><i style="width:'+pc+'%"></i></div></span></div></div>'+
+ '<div class="sec">Sambungan</div><div class="c ovc">'+
+ ovk('home','IP awam','<span id="ip">'+(on?'...':'-')+'</span>')+
+ ovk('route','Negara','<span id="co">-</span>')+
+ ovk('db','ISP','<span id="is">-</span>')+
+ ovk('pwr','Mod',on?'Redirect · <span class="ok">xray berjalan</span>':s.xlite?'XLITE':'Redirect · <span class="bad">xray berhenti</span>')+
+ ovk('pulse','Tempoh',on&&s.since?hms(s.now-s.since):'—')+
+ ovk('upd','Trafik','↑ '+fB(o.tx)+' · ↓ '+fB(o.rx))+'</div>'+
+ '<div class="sec">Rangkaian</div><div class="c ovc">'+
+ ovk('home','IP WAN',esc(o.wanip||'-')+(o.iface?' <span class="tag">'+esc(o.iface)+'</span>':''))+
+ ovk('route','Get laluan',esc(o.gw||'-'))+
+ ovk('db','DNS 1',esc((o.dns||[])[0]||'-'))+
+ ovk('db','DNS 2',esc((o.dns||[])[1]||'-'))+
+ ovk('pulse','WAN putus',o.drops24h?'<span class="wn">'+o.drops24h+' dalam 24 j</span>':'Tiada dalam 24 j')+'</div>';
+ $('sb').innerHTML=h;$('orf').onclick=function(){$('orf').disabled=true;sOver(1)};
+ api('/api/ip'+(f?'?force=1':'')).then(function(r){if(!$('ip'))return;if(r.ok){$('ip').textContent=r.ip;$('co').innerHTML=esc(r.country)+' <span class="tag">'+esc(r.cc)+'</span>';$('is').textContent=r.isp}else $('ip').textContent=on?'Gagal':'-'}).catch(function(){})})}
 function line(pts,w,h,max,col){if(!pts.length)return '';var d='',n=pts.length;pts.forEach(function(v,i){if(v==null)return;var x=n>1?i/(n-1)*w:0,y=h-Math.min(v,max)/max*(h-8)-4;d+=(d?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)});return '<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2.2" stroke-linejoin="round"/>'}
 function sGr(){clearInterval(tmr);tmr=setInterval(function(){if(V!='status'||T.st!='g'||!$('sb')){clearInterval(tmr);return}sGd()},3000);sGd()}
 function sGd(){api('/api/graphs').then(function(g){var sp=g.speed,lv=g.live||sp,dm=0;lv.forEach(function(x){dm=Math.max(dm,x[0],x[1])});var mx=Math.max(dm,20*1024);

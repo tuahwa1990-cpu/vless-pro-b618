@@ -143,7 +143,8 @@ func serve() {
 		ifn := wanIface()
 		rx, tx, _ := netBytes(ifn)
 		jr(w, map[string]any{"iface": ifn, "wanip": ifaceIP(ifn), "gw": gateway(),
-			"memtot": tot, "memfree": free, "rx": rx, "tx": tx})
+			"memtot": tot, "memfree": free, "rx": rx, "tx": tx,
+			"dns": dnsServers(), "drops1h": dropCount(time.Hour), "drops24h": dropCount(24 * time.Hour)})
 	})
 	mux.HandleFunc("/api/graphs", func(w http.ResponseWriter, r *http.Request) {
 		mu.Lock()
