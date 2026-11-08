@@ -1,0 +1,29 @@
+VLESS PRO - HUAWEI B618: PANDUAN PEMASANGAN PELANGGAN
+
+Syarat: modem B618 sudah ada XLITE dan akses SSH (root). Peranti disambung ke WiFi/LAN modem.
+Modem tidak boleh muat turun fail HTTPS, jadi fail mesti dihantar dari PC atau telefon.
+(ConnectBot hanya terminal dan tidak boleh hantar fail. Guna PC atau Termux untuk langkah pasang.)
+
+=== CARA A: KOMPUTER WINDOWS 10/11 (paling mudah) ===
+1. Salin vlesspro-b618-*.tgz ke komputer. Klik kanan fail > Extract / atau buka PowerShell:
+     tar xzf vlesspro-b618-*.tgz
+2. Masuk folder vlesspro-b618, klik dua kali pasang.bat
+3. Catat KATA LALUAN UI dan ID PERANTI yang dipaparkan. Hantar ID kepada penjual.
+
+=== CARA B: TELEFON ANDROID (Termux) ===
+1. Pasang Termux (F-Droid). Buka dan jalankan sekali:
+     pkg install openssh
+     termux-setup-storage
+2. Simpan fail .tgz dalam Downloads, kemudian:
+     tar xzf ~/storage/downloads/vlesspro-b618-*.tgz -C ~
+     sh ~/vlesspro-b618/pasang.sh
+3. Catat KATA LALUAN UI dan ID PERANTI. Hantar ID kepada penjual.
+
+=== SELEPAS PASANG ===
+1. Buka Chrome: http://192.168.8.1:8990 dan log masuk dengan kata laluan UI.
+2. Tetapan > tampal kunci lesen > Aktifkan.
+3. Profil > + > tampal pautan vless:// (atau Langganan untuk URL langganan).
+4. Utama > Sambung. Untuk kembali ke XLITE: Putuskan.
+5. Selepas modem restart: Tetapan > Suis boot > Pasang (sekali sahaja).
+
+Naik taraf: jalankan pemasang yang sama dengan pakej baharu. Lesen dan tetapan kekal.

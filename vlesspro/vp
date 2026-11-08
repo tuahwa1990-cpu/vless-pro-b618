@@ -1,0 +1,171 @@
+#!/bin/sh
+# VLESS Manager Pro (edisi B618) - kawalan. XLITE tidak diubah.
+H=/online/vlesspro
+VPRO=$H/bin/vpro
+R=$H/run
+MARK=254
+I="iptables -t nat"
+mkdir -p $R $H/etc $H/backup 2>/dev/null
+
+mode() { m=; [ -f $H/etc/mode ] && read m < $H/etc/mode; echo "${m:-xlite}"; }
+licstate() { $VPRO lic 2>/dev/null | awk -F= '$1=="state"{print $2}'; }
+xbin() {
+  if [ -x $H/bin/xray ]; then echo $H/bin/xray
+  elif [ -x /online/xlite/bin/xray ]; then echo /online/xlite/bin/xray; fi
+}
+pids_exe() {
+  for p in /proc/[0-9]*; do
+    t=$(ls -l $p/exe 2>/dev/null)
+    case "$t" in *"-> $1"*) echo ${p#/proc/};; esac
+  done
+}
+alive() { [ -n "$1" ] && [ -d /proc/$1 ]; }
+
+fw_off() {
+  while $I -D PREROUTING -i br0 -p tcp -j VLESSPRO 2>/dev/null; do :; done
+  while $I -D PREROUTING -i br0 -p udp --dport 53 -j REDIRECT --to-ports 10854 2>/dev/null; do :; done
+  while $I -D PREROUTING -i br0 -p tcp --dport 53 -j REDIRECT --to-ports 10854 2>/dev/null; do :; done
+  $I -F VLESSPRO 2>/dev/null; $I -X VLESSPRO 2>/dev/null
+}
+fw_on() {
+  fw_off
+  $I -N VLESSPRO || return 1
+  $I -A VLESSPRO -m mark --mark $MARK -j RETURN
+  for n in 0.0.0.0/8 127.0.0.0/8 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 169.254.0.0/16 224.0.0.0/4 240.0.0.0/4; do
+    $I -A VLESSPRO -d $n -j RETURN
+  done
+  $I -A VLESSPRO -p tcp -j REDIRECT --to-ports 12346
+  $I -A PREROUTING -i br0 -p udp --dport 53 -j REDIRECT --to-ports 10854
+  $I -A PREROUTING -i br0 -p tcp --dport 53 -j REDIRECT --to-ports 10854
+  $I -A PREROUTING -i br0 -p tcp -j VLESSPRO
+}
+xlite_fw_off() {
+  while $I -D PREROUTING -p tcp -j XLITE 2>/dev/null; do :; done
+  while $I -D PREROUTING -p udp -j XLITE 2>/dev/null; do :; done
+  while $I -D PREROUTING -p udp -m udp --dport 53 -j REDIRECT --to-ports 10853 2>/dev/null; do :; done
+  while $I -D PREROUTING -p tcp -m tcp --dport 53 -j REDIRECT --to-ports 10853 2>/dev/null; do :; done
+  $I -F XLITE 2>/dev/null; $I -X XLITE 2>/dev/null
+}
+xlite_stop() {
+  for p in $(pids_exe /online/xlite/bin/xlite-core); do kill $p; done
+  sleep 2
+  for p in $(pids_exe /online/xlite/bin/xlite-core); do kill -9 $p; done
+  ours=; [ -f $R/xray.pid ] && read ours < $R/xray.pid
+  for p in $(pids_exe /online/xlite/bin/xray) $(pids_exe /online/xlite/bin/hev-socks5-tunnel); do
+    [ "$p" = "$ours" ] || kill $p
+  done
+  sleep 1
+  for p in $(pids_exe /online/xlite/bin/xray) $(pids_exe /online/xlite/bin/hev-socks5-tunnel); do
+    [ "$p" = "$ours" ] || kill -9 $p
+  done
+  xlite_fw_off
+}
+xlite_running() { [ -n "$(pids_exe /online/xlite/bin/xlite-core)" ]; }
+start_xlite() {
+  xlite_running && return 0
+  mount -o remount,rw /online 2>/dev/null
+  ( cd /; /online/xlite/bin/xlite-core </dev/null >/dev/null 2>&1 & )
+}
+stop_xray() {
+  p=; [ -f $R/xray.pid ] && read p < $R/xray.pid
+  if alive "$p"; then
+    case "$(ls -l /proc/$p/exe 2>/dev/null)" in *xray*) kill $p; sleep 1; alive "$p" && kill -9 $p;; esac
+  fi
+  rm -f $R/xray.pid
+}
+start_xray() {
+  X=$(xbin)
+  [ -n "$X" ] || { echo "xray tiada"; return 1; }
+  $VPRO gen || return 1
+  "$X" run -test -c $R/xray.json >$R/test.out 2>&1 || { echo "konfigurasi ditolak xray"; return 1; }
+  stop_xray
+  : > $R/xray.out
+  ( "$X" run -c $R/xray.json >>$R/xray.out 2>&1 </dev/null & echo $! > $R/xray.pid )
+  n=0
+  while [ $n -lt 15 ]; do
+    netstat -ltn 2>/dev/null | awk '$4 ~ /:12346$/{f=1} END{exit !f}' && return 0
+    sleep 1; n=$((n+1))
+  done
+  echo "xray tidak mendengar pada 12346"; return 1
+}
+to_vless() {
+  st=$(licstate)
+  case "$st" in active|expired) ;; *) echo "lesen: $st"; return 3;; esac
+  [ -s $H/etc/nodes.json ] || { echo "tiada nod"; return 4; }
+  $I -S > $H/backup/nat.before 2>/dev/null
+  xlite_stop
+  if start_xray && fw_on; then
+    echo vless > $H/etc/mode; echo "OK: VLESS Manager Pro aktif"
+  else
+    echo "GAGAL: memulihkan XLITE"
+    stop_xray; fw_off; start_xlite; echo xlite > $H/etc/mode
+    return 1
+  fi
+}
+to_xlite() {
+  stop_xray; fw_off
+  start_xlite
+  echo xlite > $H/etc/mode
+  echo "OK: XLITE"
+}
+restart() {
+  [ "$(mode)" = vless ] || return 0
+  fw_off; stop_xray
+  if start_xray && fw_on; then echo "OK"; else echo "GAGAL: memulihkan XLITE"; fw_off; stop_xray; start_xlite; echo xlite > $H/etc/mode; return 1; fi
+}
+start_ui() {
+  p=; [ -f $R/ui.pid ] && read p < $R/ui.pid
+  alive "$p" && return 0
+  n=0
+  while [ $n -lt 60 ]; do
+    ifconfig br0 2>/dev/null | awk '/192\.168\.8\.1/{f=1} END{exit !f}' && break
+    sleep 1; n=$((n+1))
+  done
+  ( cd $H; "$VPRO" serve </dev/null >>$R/ui.out 2>&1 & echo $! > $R/ui.pid )
+}
+ui_stop() {
+  p=; [ -f $R/ui.pid ] && read p < $R/ui.pid
+  if alive "$p"; then kill $p; sleep 1; alive "$p" && kill -9 $p; fi
+  rm -f $R/ui.pid
+}
+boot() {
+  start_ui
+  if [ "$(mode)" = vless ]; then sleep 25; to_vless; fi
+}
+hook_install() {
+  A=/system/etc/autorun.sh
+  [ -f $A ] || { echo "autorun.sh tiada"; return 1; }
+  [ -f $H/backup/autorun.sh.orig ] || cp $A $H/backup/autorun.sh.orig || { echo "gagal sandar"; return 1; }
+  awk '/vlesspro-hook/{f=1} END{exit !f}' $A && { echo "sudah dipasang"; return 0; }
+  mount -o remount,rw /system || { echo "gagal remount"; return 1; }
+  { echo ""; echo "# vlesspro-hook"; echo "/online/vlesspro/vp boot &"; } >> $A
+  mount -o remount,ro /system
+  echo "OK: dipasang (salinan asal: $H/backup/autorun.sh.orig)"
+}
+hook_remove() {
+  A=/system/etc/autorun.sh
+  mount -o remount,rw /system || return 1
+  awk '!/vlesspro-hook/ && !/vlesspro\/vp boot/' $A > $R/autorun.tmp && cp $R/autorun.tmp $A
+  mount -o remount,ro /system
+  echo "OK: dibuang"
+}
+doctor() {
+  for c in mkdir cp mv rm chmod sleep kill ls awk sed iptables netstat ifconfig mount; do
+    command -v $c >/dev/null 2>&1 || echo "TIADA: $c"
+  done
+  [ -n "$(xbin)" ] && echo "xray: $(xbin)" || echo "TIADA: xray"
+  echo "doctor selesai"
+}
+status() {
+  echo "mod=$(mode)"; echo "lesen=$(licstate)"
+  p=; [ -f $R/xray.pid ] && read p < $R/xray.pid
+  alive "$p" && echo "vless=berjalan" || echo "vless=berhenti"
+  xlite_running && echo "xlite=berjalan" || echo "xlite=berhenti"
+}
+
+case "$1" in
+  boot) boot;; to-vless) to_vless;; to-xlite) to_xlite;; restart) restart;;
+  ui-start) start_ui;; ui-restart) ui_stop; start_ui;; hook-install) hook_install;; hook-remove) hook_remove;;
+  doctor) doctor;; status) status;;
+  *) echo "vp: boot | to-vless | to-xlite | restart | ui-start | ui-restart | hook-install | hook-remove | doctor | status";;
+esac
