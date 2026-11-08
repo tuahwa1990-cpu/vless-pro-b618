@@ -18,6 +18,12 @@ else
 fi
 $H/vp doctor
 echo "ID Peranti: $($H/bin/vpro id)"
+L=$($H/bin/vpro lic | awk -F= '$1=="state"{print $2}')
+if [ "$L" = "active" ]; then
+  echo "Lesen sedia ada dikesan dan sah. Tiada tindakan diperlukan."
+else
+  echo "Belum ada lesen aktif (status: $L). Tampal kunci lesen di UI: Tetapan > Lesen."
+fi
 $H/vp ui-start
 sleep 2
 echo "Buka di telefon: http://192.168.8.1:8990  (pengguna: apa-apa, kata laluan di atas)"
