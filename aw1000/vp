@@ -1,0 +1,202 @@
+#!/bin/sh
+# VLESS Manager Pro (edisi OpenWrt / AW1000 Ultra). Berfungsi dengan atau tanpa XLITE.
+H=${VP_HOME:-/data/vlesspro}
+XL=${VP_XLITE:-/opt/xlite}
+LAN=br-lan
+VPRO=$H/bin/vpro
+R=$H/run
+MARK=254
+I="iptables -t nat"
+export VP_HOME=$H VP_XLITE=$XL VP_AUTORUN=/etc/rc.local
+mkdir -p $R $H/etc $H/backup 2>/dev/null
+
+mode() { m=; [ -f $H/etc/mode ] && read m < $H/etc/mode; echo "${m:-xlite}"; }
+licstate() { $VPRO lic 2>/dev/null | awk -F= '$1=="state"{print $2}'; }
+has_xlite() { [ -x $XL/bin/xlite-core ]; }
+xbin() {
+  if [ -x $H/bin/xray ]; then echo $H/bin/xray
+  elif [ -x $XL/bin/xray ]; then echo $XL/bin/xray
+  elif [ -x /usr/bin/xray ]; then echo /usr/bin/xray; fi
+}
+pids_exe() {
+  for p in /proc/[0-9]*; do
+    t=$(ls -l $p/exe 2>/dev/null)
+    case "$t" in *"-> $1"*) echo ${p#/proc/};; esac
+  done
+}
+alive() { [ -n "$1" ] && [ -d /proc/$1 ]; }
+
+fw_off() {
+  while $I -D PREROUTING -i $LAN -p tcp -j VLESSPRO 2>/dev/null; do :; done
+  while $I -D PREROUTING -i $LAN -p udp --dport 53 -j REDIRECT --to-ports 10854 2>/dev/null; do :; done
+  while $I -D PREROUTING -i $LAN -p tcp --dport 53 -j REDIRECT --to-ports 10854 2>/dev/null; do :; done
+  $I -F VLESSPRO 2>/dev/null; $I -X VLESSPRO 2>/dev/null
+}
+fw_on() {
+  fw_off
+  $I -N VLESSPRO || return 1
+  $I -A VLESSPRO -m mark --mark $MARK -j RETURN
+  for n in 0.0.0.0/8 127.0.0.0/8 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 169.254.0.0/16 224.0.0.0/4 240.0.0.0/4; do
+    $I -A VLESSPRO -d $n -j RETURN
+  done
+  $I -A VLESSPRO -p tcp -j REDIRECT --to-ports 12346
+  # DNS dialihkan hanya jika etc/dnsredir wujud (AdGuardHome/dnsmasq router dibiarkan secara lalai)
+  if [ -f $H/etc/dnsredir ]; then
+    $I -A PREROUTING -i $LAN -p udp --dport 53 -j REDIRECT --to-ports 10854
+    $I -A PREROUTING -i $LAN -p tcp --dport 53 -j REDIRECT --to-ports 10854
+  fi
+  $I -A PREROUTING -i $LAN -p tcp -j VLESSPRO
+}
+# dipanggil bila firewall router dimuat semula
+fwcheck() {
+  [ "$(mode)" = vless ] || return 0
+  $I -C PREROUTING -i $LAN -p tcp -j VLESSPRO 2>/dev/null && return 0
+  sleep 2
+  fw_on && echo "peraturan dipasang semula"
+}
+xlite_active() {
+  ours=; [ -f $R/xray.pid ] && read ours < $R/xray.pid
+  for p in $(pids_exe $XL/bin/xray) $(pids_exe $XL/bin/hev-socks5-tunnel); do
+    [ "$p" = "$ours" ] || return 0
+  done
+  return 1
+}
+# XLITE tidak disentuh melainkan sedang menyambung (xray/tunnel aktif)
+xlite_stop() {
+  has_xlite || return 0
+  xlite_active || { rm -f $R/xlite.stopped; return 0; }
+  : > $R/xlite.stopped
+  [ -x /etc/init.d/xlite ] && /etc/init.d/xlite stop >/dev/null 2>&1
+  for p in $(pids_exe $XL/bin/xlite-core); do kill $p; done
+  sleep 2
+  for p in $(pids_exe $XL/bin/xlite-core); do kill -9 $p; done
+  ours=; [ -f $R/xray.pid ] && read ours < $R/xray.pid
+  for p in $(pids_exe $XL/bin/xray) $(pids_exe $XL/bin/hev-socks5-tunnel); do
+    [ "$p" = "$ours" ] || kill $p
+  done
+  sleep 1
+  for p in $(pids_exe $XL/bin/xray) $(pids_exe $XL/bin/hev-socks5-tunnel); do
+    [ "$p" = "$ours" ] || kill -9 $p
+  done
+}
+xlite_running() { has_xlite && [ -n "$(pids_exe $XL/bin/xlite-core)" ]; }
+start_xlite() {
+  has_xlite || return 0
+  [ -f $R/xlite.stopped ] || return 0
+  rm -f $R/xlite.stopped
+  xlite_running && return 0
+  if [ -x /etc/init.d/xlite ]; then /etc/init.d/xlite start >/dev/null 2>&1
+  else ( cd /; $XL/bin/xlite-core </dev/null >/dev/null 2>&1 & ); fi
+}
+stop_xray() {
+  p=; [ -f $R/xray.pid ] && read p < $R/xray.pid
+  if alive "$p"; then
+    case "$(ls -l /proc/$p/exe 2>/dev/null)" in *xray*) kill $p; sleep 1; alive "$p" && kill -9 $p;; esac
+  fi
+  rm -f $R/xray.pid
+}
+start_xray() {
+  X=$(xbin)
+  [ -n "$X" ] || { echo "xray tiada"; return 1; }
+  $VPRO gen || return 1
+  "$X" run -test -c $R/xray.json >$R/test.out 2>&1 || { echo "konfigurasi ditolak xray"; return 1; }
+  stop_xray
+  : > $R/xray.out
+  ( trap '' HUP; "$X" run -c $R/xray.json >>$R/xray.out 2>&1 </dev/null & echo $! > $R/xray.pid )
+  n=0
+  while [ $n -lt 15 ]; do
+    netstat -ltn 2>/dev/null | awk '$4 ~ /:12346$/{f=1} END{exit !f}' && return 0
+    sleep 1; n=$((n+1))
+  done
+  echo "xray tidak mendengar pada 12346"; return 1
+}
+to_vless() {
+  st=$(licstate)
+  case "$st" in active|expired) ;; *) echo "lesen: $st"; return 3;; esac
+  [ -s $H/etc/nodes.json ] || { echo "tiada nod"; return 4; }
+  $I -S > $H/backup/nat.before 2>/dev/null
+  xlite_stop
+  if start_xray && fw_on; then
+    echo vless > $H/etc/mode; echo "OK: VLESS Manager Pro aktif"
+  else
+    echo "GAGAL: memulihkan keadaan asal"
+    stop_xray; fw_off; start_xlite; echo xlite > $H/etc/mode
+    return 1
+  fi
+}
+to_xlite() {
+  stop_xray; fw_off
+  start_xlite
+  echo xlite > $H/etc/mode
+  echo "OK: XLITE"
+}
+restart() {
+  [ "$(mode)" = vless ] || return 0
+  fw_off; stop_xray
+  if start_xray && fw_on; then echo "OK"; else echo "GAGAL: memulihkan"; fw_off; stop_xray; start_xlite; echo xlite > $H/etc/mode; return 1; fi
+}
+lan_ip() {
+  l=; [ -f $H/etc/listen ] && read l < $H/etc/listen
+  echo "${l%:*}"
+}
+start_ui() {
+  p=; [ -f $R/ui.pid ] && read p < $R/ui.pid
+  alive "$p" && return 0
+  ip=$(lan_ip); ip=${ip:-192.168.2.1}
+  n=0
+  while [ $n -lt 60 ]; do
+    ifconfig $LAN 2>/dev/null | grep -q "addr:$ip " && break
+    sleep 1; n=$((n+1))
+  done
+  ( cd $H; trap '' HUP; "$VPRO" serve </dev/null >>$R/ui.out 2>&1 & echo $! > $R/ui.pid )
+}
+ui_stop() {
+  p=; [ -f $R/ui.pid ] && read p < $R/ui.pid
+  if alive "$p"; then kill $p; sleep 1; alive "$p" && kill -9 $p; fi
+  rm -f $R/ui.pid
+}
+boot() {
+  start_ui
+  if [ "$(mode)" = vless ]; then sleep 30; to_vless; fi
+}
+HK=/etc/hotplug.d/firewall/99-vlesspro
+hook_install() {
+  A=/etc/rc.local
+  [ -f $A ] || { printf '#!/bin/sh\nexit 0\n' > $A; chmod 755 $A; }
+  [ -f $H/backup/rc.local.orig ] || cp $A $H/backup/rc.local.orig || { echo "gagal sandar"; return 1; }
+  if grep -q vlesspro-hook $A; then echo "rc.local sudah dipasang"
+  else
+    awk -v h="$H" '/^exit 0/&&!d{print "# vlesspro-hook"; print h"/vp boot &"; d=1} {print} END{if(!d){print "# vlesspro-hook"; print h"/vp boot &"}}' $A > $R/rc.tmp && cp $R/rc.tmp $A && chmod 755 $A || return 1
+  fi
+  mkdir -p /etc/hotplug.d/firewall
+  printf '#!/bin/sh\n# vlesspro-hook\n[ "$ACTION" = "" ] && exit 0\n%s/vp fwcheck >/dev/null 2>&1 &\n' "$H" > $HK
+  chmod 755 $HK
+  echo "OK: dipasang (salinan asal: $H/backup/rc.local.orig)"
+}
+hook_remove() {
+  A=/etc/rc.local
+  awk '!/vlesspro-hook/ && !/vlesspro\/vp boot/' $A > $R/rc.tmp && cp $R/rc.tmp $A && chmod 755 $A
+  rm -f $HK
+  echo "OK: dibuang"
+}
+doctor() {
+  for c in mkdir cp mv rm chmod sleep kill ls awk sed grep iptables netstat ifconfig; do
+    command -v $c >/dev/null 2>&1 || echo "TIADA: $c"
+  done
+  [ -n "$(xbin)" ] && echo "xray: $(xbin)" || echo "TIADA: xray"
+  has_xlite && echo "XLITE: ada ($XL)" || echo "XLITE: tiada (mod sendiri)"
+  echo "doctor selesai"
+}
+status() {
+  echo "mod=$(mode)"; echo "lesen=$(licstate)"
+  p=; [ -f $R/xray.pid ] && read p < $R/xray.pid
+  alive "$p" && echo "vless=berjalan" || echo "vless=berhenti"
+  xlite_running && echo "xlite=berjalan" || echo "xlite=berhenti"
+}
+
+case "$1" in
+  boot) boot;; to-vless) to_vless;; to-xlite) to_xlite;; restart) restart;; fwcheck) fwcheck;;
+  ui-start) start_ui;; ui-restart) ui_stop; start_ui;; hook-install) hook_install;; hook-remove) hook_remove;;
+  doctor) doctor;; status) status;;
+  *) echo "vp: boot | to-vless | to-xlite | restart | fwcheck | ui-start | ui-restart | hook-install | hook-remove | doctor | status";;
+esac

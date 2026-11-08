@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -61,7 +62,7 @@ func setKey(t *testing.T, pub ed25519.PublicKey) {
 func TestPakejSahDiterima(t *testing.T) {
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
 	setKey(t, pub)
-	vp, vpro := []byte("vp-script"), []byte("vpro-binary")
+	vp, vpro := []byte("vp-script"), fakeELF(0)
 	ver, gvp, gvpro, err := verifyPackage(pakejSah(t, priv, vp, vpro))
 	if err != nil {
 		t.Fatalf("pakej sah ditolak: %v", err)
@@ -74,7 +75,7 @@ func TestPakejSahDiterima(t *testing.T) {
 func TestPakejDitolak(t *testing.T) {
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
 	_, otherPriv, _ := ed25519.GenerateKey(rand.Reader)
-	vp, vpro := []byte("vp-script"), []byte("vpro-binary")
+	vp, vpro := []byte("vp-script"), fakeELF(0)
 
 	cases := map[string]func() ([]byte, string){
 		"kunci keluaran kosong": func() ([]byte, string) {
@@ -155,5 +156,36 @@ func TestVerCmp(t *testing.T) {
 		if got := verCmp(c.a, c.b); got != c.want {
 			t.Errorf("verCmp(%s,%s)=%d, mahu %d", c.a, c.b, got, c.want)
 		}
+	}
+}
+
+// fakeELF ialah pengepala ELF minimum untuk seni bina semasa; m!=0 untuk machine lain.
+func fakeELF(m int) []byte {
+	if m == 0 {
+		switch runtime.GOARCH {
+		case "arm":
+			m = 0x28
+		case "arm64":
+			m = 0xB7
+		default:
+			m = 0x3E
+		}
+	}
+	b := make([]byte, 64)
+	copy(b, "\x7fELF")
+	b[18], b[19] = byte(m), byte(m>>8)
+	return b
+}
+
+func TestSeniBinaSalahDitolak(t *testing.T) {
+	pub, priv, _ := ed25519.GenerateKey(nil)
+	setKey(t, pub)
+	salah := 0xB7
+	if runtime.GOARCH == "arm64" {
+		salah = 0x28
+	}
+	_, _, _, err := verifyPackage(pakejSah(t, priv, []byte("vp"), fakeELF(salah)))
+	if err == nil || !strings.Contains(err.Error(), "seni bina") {
+		t.Fatalf("pakej seni bina salah patut ditolak, dapat: %v", err)
 	}
 }

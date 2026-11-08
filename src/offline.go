@@ -16,6 +16,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -67,6 +68,9 @@ func verifyPackage(data []byte) (ver string, vp, vpro []byte, err error) {
 		if m[n] == "" || hex.EncodeToString(h[:]) != m[n] {
 			return "", nil, nil, fmt.Errorf("semakan %s gagal", n)
 		}
+	}
+	if !elfMatches(files["new/vpro"]) {
+		return "", nil, nil, errors.New("pakej ini untuk seni bina peranti lain, ditolak")
 	}
 	if v, ok := files["VERSION"]; ok {
 		ver = strings.TrimSpace(string(v))
@@ -245,4 +249,21 @@ func verCmp(a, b string) int {
 		}
 	}
 	return 0
+}
+
+// elfMatches memastikan vpro dalam pakej ialah untuk seni bina yang sedang berjalan.
+func elfMatches(b []byte) bool {
+	if len(b) < 20 || string(b[:4]) != "\x7fELF" {
+		return false
+	}
+	m := int(b[18]) | int(b[19])<<8
+	switch runtime.GOARCH {
+	case "arm":
+		return m == 0x28
+	case "arm64":
+		return m == 0xB7
+	case "amd64":
+		return m == 0x3E
+	}
+	return true
 }

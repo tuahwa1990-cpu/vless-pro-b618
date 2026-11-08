@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"sync"
 	"syscall"
@@ -24,7 +25,19 @@ var caPEM []byte
 //go:embed upgrade.sh
 var upgradeSh []byte
 
-const defUpd = "https://raw.githubusercontent.com/tuahwa1990-cpu/vless-pro-b618/main/b618-latest.txt"
+// Setiap sasaran ada fail sendiri di GitHub supaya binari seni bina lain tidak tersalah pasang.
+// ARM 32-bit (B618): b618-latest.txt, b618-sha256.txt, new/. ARM64 (AW1000): aw1000-latest.txt, aw1000-sha256.txt, aw1000/.
+func target() (tag, dir string) {
+	if runtime.GOARCH == "arm64" {
+		return "aw1000", "aw1000/"
+	}
+	return "b618", "new/"
+}
+
+var defUpd = func() string {
+	t, _ := target()
+	return "https://raw.githubusercontent.com/tuahwa1990-cpu/vless-pro-b618/main/" + t + "-latest.txt"
+}()
 
 func updURL() string { return readStr(home+"/etc/update_url", defUpd) }
 
@@ -132,8 +145,9 @@ func doUpdate(force bool) {
 		return
 	}
 	base := updBase()
+	tag, tdir := target()
 	upSet("run", "Memuat turun senarai semak...")
-	sb, err := fetch(base+"b618-sha256.txt", 4096, 20*time.Second)
+	sb, err := fetch(base+tag+"-sha256.txt", 4096, 20*time.Second)
 	if err != nil {
 		upSet("err", "Senarai semak gagal: "+shortErr(err))
 		return
@@ -147,7 +161,7 @@ func doUpdate(force bool) {
 	_ = os.MkdirAll(home+"/new", 0755)
 	for _, f := range files {
 		upSet("run", "Memuat turun "+f.n+"...")
-		b, err := fetch(base+"new/"+f.n, f.max, 5*time.Minute)
+		b, err := fetch(base+tdir+f.n, f.max, 5*time.Minute)
 		if err != nil {
 			upSet("err", "Muat turun "+f.n+" gagal: "+shortErr(err))
 			return
