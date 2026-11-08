@@ -81,9 +81,19 @@ function trTree(root){if(!RXT||!root)return;if(root.nodeType==3){trNode(root);re
 function trAttr(e){['placeholder','title'].forEach(function(a){var v=e.getAttribute&&e.getAttribute(a);if(v){if(e['__t'+a]===v)return;var r=trs(v);if(r!==v){e.setAttribute(a,r);e['__t'+a]=r}}})}
 if(RXT){new MutationObserver(function(ms){ms.forEach(function(m){if(m.type=='childList')[].forEach.call(m.addedNodes,trTree);else if(m.type=='characterData')trNode(m.target);else trAttr(m.target)})}).observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['placeholder','title']});trTree(document.body)}
 
-function rPlus(m){var fs=[['SQM (fq_codel)','Kurangkan lag semasa muat naik besar',rSqm,'pulse'],['Kuota data','Had data bulanan atau harian, amaran dan sekatan',rQuota,'db'],['Failover profil','Tukar ke profil lain secara automatik bila pelayan mati',rFo,'route'],['Akan datang','',0,'plus']];
+function rPlus(m){var fs=[['SQM (fq_codel)','Kurangkan lag semasa muat naik besar',rSqm,'pulse'],['Kuota data','Had data bulanan atau harian, amaran dan sekatan',rQuota,'db'],['Failover profil','Tukar ke profil lain secara automatik bila pelayan mati',rFo,'route'],['Tukar IP WAN','Putus dan sambung semula data untuk mendapatkan IP baharu',rWan,'lang']];
  m.innerHTML=fs.map(function(f,i){return '<div class="pf'+(f[2]?'':'" style="opacity:.55')+'" data-i="'+i+'"><span class="ic">'+ic(f[3])+'</span><div class="sp"><div class="nm">'+(i+1)+'. '+f[0]+'</div>'+(f[1]?'<div class="mu">'+f[1]+'</div>':'')+'</div>'+(f[2]?'<span class="mu">›</span>':'')+'</div>'}).join('');
  [].forEach.call(m.querySelectorAll('.pf'),function(e){var f=fs[+e.dataset.i];if(f[2])e.onclick=function(){f[2](m)}})}
+var wanT;
+function rWan(m){clearTimeout(wanT);api('/api/wanip').then(function(q){var run=q.state=='running';
+ m.innerHTML='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div><div class="c"><b style="font-size:18px">Tukar IP WAN</b>'+
+ '<p class="mu">Memutuskan dan menyambung semula data selular supaya operator memberikan IP baharu. Internet terputus kira-kira 30–60 saat; panel ini masih boleh dibuka. Jika VLESS sedang aktif, ia dimulakan semula secara automatik.</p>'+
+ '<button class="p" id="wg" style="width:100%"'+(run?' disabled':'')+'>'+(run?'Sedang berjalan...':'Tukar IP sekarang')+'</button></div>'+
+ (q.state!='idle'?'<div class="sec">Keputusan</div><div class="c">'+(run?'<div class="wn">'+esc(q.step||'')+'</div>':'<div class="'+(q.state=='done'?'ok':'bad')+'"><b>'+esc(q.msg||'')+'</b></div>')+
+ '<p class="mu">IP WAN modem: '+esc(q.before||'-')+(run?'':' → '+esc(q.after||'-'))+'<br>IP awam: '+esc(q.beforePub||'-')+(run?'':' → '+esc(q.afterPub||'-'))+(run?'':'<br>Masa: '+q.secs+' saat')+'</p></div>':'');
+ $('pbk').onclick=function(){clearTimeout(wanT);rPlus(m)};
+ $('wg').onclick=function(){cf({i:'🌐',t:'Tukar IP WAN?',m:'Internet akan terputus seketika.',ok:'Teruskan',d:1},function(){api('/api/wanip/run',{}).then(function(r){toast(r.msg);rWan(m)})})};
+ if(run)wanT=setTimeout(function(){if($('wg'))rWan(m)},2500)})}
 function rQuota(m){api('/api/quota').then(function(q){var c=q.cfg||{},lim=c.limit||0,pc=lim>0?Math.min(100,Math.round(q.used/lim*100)):0,st=q.state,col=st=='full'?'bad':st=='warn'?'wn':'ok';
  function dt(t){return new Date(t*1000).toLocaleDateString()}
  m.innerHTML='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div><div class="c"><div class="row"><div class="sp"><b style="font-size:18px">Kuota data</b><div class="'+(st=='off'?'mu':col)+'">'+(st=='off'?'Tidak aktif':st=='full'?(q.blocked?'Kuota habis · internet disekat':'Kuota habis'):st=='warn'?'Hampir habis':'Dalam had')+'</div></div><input type="checkbox" id="qo" style="width:auto"></div>'+

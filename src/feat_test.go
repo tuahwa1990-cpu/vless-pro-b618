@@ -75,3 +75,9 @@ func TestQuotaState(t *testing.T) {
 		t.Fatal(n)
 	}
 }
+
+func TestWanMsg(t *testing.T) {
+	if wanMsg("1.1.1.1", "2.2.2.2") == wanMsg("1.1.1.1", "1.1.1.1") || wanMsg("", "") == "" {
+		t.Fatal("mesej")
+	}
+}
