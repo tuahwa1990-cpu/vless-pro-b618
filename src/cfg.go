@@ -175,6 +175,8 @@ func buildConfig(ps []*Parsed, direct []string) map[string]any {
 		return m
 	}
 	rules := []any{rule(map[string]any{"inboundTag": []any{"dns-in", "probe"}})}
+	rt := loadRoutes()
+	rules = append(rules, routeRules(rt, rule)...)
 	var doms, ips []any
 	for _, d := range direct {
 		if strings.ContainsAny(d, "abcdefghijklmnopqrstuvwxyz") && !strings.Contains(d, ":") {
@@ -190,7 +192,7 @@ func buildConfig(ps []*Parsed, direct []string) map[string]any {
 		rules = append(rules, map[string]any{"type": "field", "ip": ips, "outboundTag": "direct"})
 	}
 	rules = append(rules, rule(map[string]any{"network": "tcp,udp"}))
-	routing := map[string]any{"domainStrategy": "AsIs", "rules": rules}
+	routing := map[string]any{"domainStrategy": rt.DS, "rules": rules}
 	cfg := map[string]any{
 		"log": map[string]any{"loglevel": o.LogLevel},
 		"inbounds": []any{
@@ -256,6 +258,7 @@ func activeParsed() ([]*Parsed, string, error) {
 }
 
 func genConfig() error {
+	geoLink()
 	ps, _, err := activeParsed()
 	if err != nil {
 		return err

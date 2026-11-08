@@ -520,6 +520,7 @@ func serve() {
 		return "Kemas kini dimulakan", true
 	})
 	regOpts(mux, act, body)
+	regRoutes(mux, act, body)
 	act("/api/mode", func(r *http.Request) (string, bool) {
 		switch strings.TrimSpace(string(body(r, 16))) {
 		case "vless":

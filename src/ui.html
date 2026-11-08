@@ -128,8 +128,33 @@ function lSubs(){api('/api/subs').then(function(ss){var b=$('pb2');if(!b)return;
 function addSub(){dlg('Tambah langganan','<input id="sn" placeholder="Nama"><p></p><input id="su" placeholder="https://...">',function(d){var b=$('do');b.disabled=true;api('/api/sub/add',{name:$('sn').value,url:$('su').value}).then(function(r){toast(r.msg);b.disabled=false;if(r.ok){d.remove();lSubs()}})})}
 /* MENU PAGES */
 function rLogs(m){m.innerHTML='<div class="row" style="margin-bottom:10px;flex-wrap:wrap"><button id="rf">Segar semula</button><a href="/api/log?dl=1"><button>Muat turun</button></a><button id="lc" class="d">Kosongkan</button></div><div class="c"><pre id="lt">...</pre></div>';var f=function(){fetch('/api/log').then(function(r){return r.text()}).then(function(t){$('lt').textContent=t.trim()||'(kosong)'})};$('rf').onclick=f;$('lc').onclick=function(){if(confirm('Kosongkan log?'))api('/api/log/clear','x').then(function(r){toast(r.msg);f()})};f()}
-function rRoute(m){api('/api/direct').then(function(r){m.innerHTML='<div class="c"><b>Terus (tanpa proksi)</b><p class="mu">Satu setiap baris: domain (contoh bank.com.my) atau IP/CIDR (contoh 1.2.3.0/24). Semua yang lain melalui profil terpilih. Hanya TCP dan DNS diproksi.</p><textarea id="dt" rows="9">'+esc(r.text)+'</textarea><p></p><button class="p" id="sv">Simpan</button></div>';
- $('sv').onclick=function(){api('/api/direct',$('dt').value).then(function(r){toast(r.msg)})}})}
+var PRE={
+ lan:{n:'LAN terus',r:[['geoip','private','direct']]},
+ my:{n:'Malaysia terus',r:[['geoip','my','direct']]},
+ cn:{n:'China terus',r:[['geosite','cn','direct'],['geoip','cn','direct']]},
+ ads:{n:'Blok iklan',r:[['geosite','category-ads-all','block']]}};
+var RT=null,GEO=null;
+function rRoute(m){Promise.all([api('/api/routes'),api('/api/geo'),api('/api/direct')]).then(function(a){RT=a[0];GEO=a[1];var dt=a[2].text;drawRoute(m,dt)})}
+function drawRoute(m,dt){var ge=GEO.geosite>0&&GEO.geoip>0;
+ var h='<div class="sec">Data geo</div><div class="c"><div class="kv"><span>geosite</span><b>'+(GEO.geosite?fB(GEO.geosite):'tiada')+'</b></div><div class="kv"><span>geoip</span><b>'+(GEO.geoip?fB(GEO.geoip):'tiada')+'</b></div><p class="mu" id="gm">'+esc(GEO.msg||'')+'</p><button id="gd" style="width:100%">'+(ge?'Kemas kini data geo':'Muat turun data geo')+'</button><p class="mu">Perlu internet pada modem (kira-kira 20 MB). Diperlukan untuk peraturan geosite/geoip dan preset.</p></div>'+
+ '<div class="sec">Strategi domain</div><div class="c"><select id="ds"><option value="AsIs">AsIs (laju, lalai)</option><option value="IPIfNonMatch">IPIfNonMatch (domain tidak padan diselesaikan ke IP)</option><option value="IPOnDemand">IPOnDemand</option></select></div>'+
+ '<div class="sec">Preset</div><div class="c">'+Object.keys(PRE).map(function(k){return '<button data-p="'+k+'" style="margin:0 6px 6px 0">'+PRE[k].n+'</button>'}).join('')+'<p class="mu">Menambah peraturan pada senarai di bawah (belum disimpan sehingga anda tekan Simpan).</p></div>'+
+ '<div class="sec">Peraturan (mengikut turutan, yang pertama padan digunakan)</div><div class="c" id="rl"></div>'+
+ '<div class="c"><div class="row"><select id="rt" style="width:34%"><option value="domain">domain</option><option value="keyword">kata kunci</option><option value="ip">IP/CIDR</option><option value="geosite">geosite</option><option value="geoip">geoip</option></select><input id="rv" placeholder="nilai"></div><div class="row" style="margin-top:8px"><select id="ra"><option value="direct">Terus</option><option value="proxy">Proksi</option><option value="block">Blok</option></select><button id="rad">Tambah</button></div></div>'+
+ '<button class="p" id="rsv" style="width:100%">Simpan penghalaan</button>'+
+ '<div class="sec">Senarai terus ringkas</div><div class="c"><p class="mu">Satu setiap baris: domain atau IP/CIDR yang terus tanpa proksi. Diutamakan selepas peraturan di atas. Hanya TCP dan DNS diproksi (UDP/QUIC tidak).</p><textarea id="dt" rows="6">'+esc(dt)+'</textarea><p></p><button class="p" id="sv">Simpan senarai</button></div>';
+ m.innerHTML=h;$('ds').value=RT.ds;
+ var rl=function(){var L=$('rl');if(!RT.rules.length){L.innerHTML='<div class="mu">Tiada peraturan. Semua melalui profil terpilih.</div>';return}
+  L.innerHTML=RT.rules.map(function(x,i){return '<div class="kv"><span>'+(i+1)+'. '+esc(x.t)+'</span><b>'+esc(x.v)+' → <span class="'+(x.a=='block'?'bad':x.a=='direct'?'ok':'wn')+'">'+({direct:'terus',proxy:'proksi',block:'blok'})[x.a]+'</span> <a data-u="'+i+'" style="cursor:pointer">↑</a> <a data-x="'+i+'" style="cursor:pointer;color:var(--bad)">✕</a></b></div>'}).join('');
+  [].forEach.call(L.querySelectorAll('a[data-x]'),function(e){e.onclick=function(){RT.rules.splice(+e.dataset.x,1);rl()}});
+  [].forEach.call(L.querySelectorAll('a[data-u]'),function(e){e.onclick=function(){var i=+e.dataset.u;if(i>0){var t=RT.rules[i];RT.rules[i]=RT.rules[i-1];RT.rules[i-1]=t;rl()}}})};
+ rl();
+ $('rad').onclick=function(){var v=$('rv').value.trim();if(!v)return;RT.rules.push({t:$('rt').value,v:v,a:$('ra').value});$('rv').value='';rl()};
+ [].forEach.call(m.querySelectorAll('button[data-p]'),function(b){b.onclick=function(){var p=PRE[b.dataset.p];if(p.r.some(function(x){return x[0].indexOf('geo')==0})&&!ge){toast('Muat turun data geo dahulu');return}
+  p.r.forEach(function(x){if(!RT.rules.some(function(y){return y.t==x[0]&&y.v==x[1]}))RT.rules.push({t:x[0],v:x[1],a:x[2]})});rl()}});
+ $('rsv').onclick=function(){RT.ds=$('ds').value;api('/api/routes',RT).then(function(r){toast(r.msg)})};
+ $('sv').onclick=function(){api('/api/direct',$('dt').value).then(function(r){toast(r.msg)})};
+ $('gd').onclick=function(){$('gd').disabled=true;api('/api/geo/get','x').then(function(r){toast(r.msg);var n=0,iv=setInterval(function(){api('/api/geo').then(function(g){GEO=g;if($('gm'))$('gm').textContent=g.msg||'';n++;if(!g.run||n>120||!$('gm')){clearInterval(iv);if($('gm'))drawRoute(m,$('dt').value)}})},3000)})}}
 function salinTeks(t){var o=document.createElement('textarea');o.value=t;o.setAttribute('readonly','');o.style.position='fixed';o.style.opacity='0';document.body.appendChild(o);o.select();o.setSelectionRange(0,t.length);var ok=false;try{ok=document.execCommand('copy')}catch(e){}o.remove();toast(ok?'ID disalin':'Salin gagal, tekan lama ID dan pilih Salin')}
 function rSet(m){Promise.all([api('/api/settings'),api('/api/lic')]).then(function(a){var s=a[0],l=a[1],st=l.state,tx={active:'Aktif',expired:'Lesen tamat tempoh',wrongdevice:'Kunci bukan untuk peranti ini',invalid:'Kunci tidak sah',none:'Belum diaktifkan'}[st]||'?',cl=st=='active'?'ok':st=='expired'?'wn':'bad';
  var e=l.exp||'0',ex=e==='0'?'Seumur hidup':e.substr(0,4)+'-'+e.substr(4,2)+'-'+e.substr(6,2);

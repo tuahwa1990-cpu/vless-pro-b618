@@ -99,6 +99,7 @@ start_xray() {
   X=$(xbin)
   [ -n "$X" ] || { echo "xray tiada"; return 1; }
   $VPRO gen || return 1
+  [ -d $H/geo ] && export XRAY_LOCATION_ASSET=$H/geo
   "$X" run -test -c $R/xray.json >$R/test.out 2>&1 || { echo "konfigurasi ditolak xray"; return 1; }
   stop_xray
   : > $R/xray.out

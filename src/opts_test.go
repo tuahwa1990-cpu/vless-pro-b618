@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -49,5 +51,34 @@ func TestConfigOpts(t *testing.T) {
 	c := buildConfig([]*Parsed{p}, nil)
 	if c["log"].(map[string]any)["loglevel"] != "error" || c["dns"] == nil {
 		t.Fatalf("%v", c)
+	}
+}
+
+func TestRoutes(t *testing.T) {
+	d := t.TempDir()
+	home = d
+	xliteDir = d + "/x"
+	_ = os.MkdirAll(d+"/etc", 0700)
+	if _, err := normRoutes(Routes{Rules: []Rule{{"geoip", "my", "direct"}}}); err == nil {
+		t.Fatal("geo tanpa data patut ditolak")
+	}
+	if _, err := normRoutes(Routes{Rules: []Rule{{"domain", "bad domain!", "direct"}}}); err == nil {
+		t.Fatal("domain tak sah")
+	}
+	_ = os.MkdirAll(d+"/geo", 0700)
+	_ = os.WriteFile(d+"/geo/geoip.dat", make([]byte, 200000), 0600)
+	n, err := normRoutes(Routes{DS: "IPIfNonMatch", Rules: []Rule{{"geoip", "MY", "direct"}, {"domain", "*.Ads.com", "block"}, {"ip", "10.0.0.0/8", "proxy"}}})
+	if err != nil || n.Rules[0].V != "my" || n.Rules[1].V != "ads.com" {
+		t.Fatal(n, err)
+	}
+	b, _ := json.Marshal(n)
+	_ = os.WriteFile(d+"/etc/routes.json", b, 0600)
+	p, _ := parseLink("vless://11111111-1111-1111-1111-111111111111@h.example:443?security=tls&type=ws&path=/&host=h.example#n")
+	cj, _ := json.Marshal(buildConfig([]*Parsed{p}, nil))
+	s := string(cj)
+	for _, w := range []string{"geoip:my", "domain:ads.com", "IPIfNonMatch", `"block"`} {
+		if !strings.Contains(s, w) {
+			t.Fatal("tiada", w)
+		}
 	}
 }
