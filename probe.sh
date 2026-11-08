@@ -21,9 +21,10 @@ done 2>/dev/null
 echo "-- Alat --"
 o=; for c in sh awk sed grep nohup setsid ps kill wget curl tar unzip iptables ip ss netstat opkg; do o="$o $c:$(has $c)"; done; echo "$o"
 echo "-- iptables / kernel --"
-o=; for k in nf_tproxy_ipv4 xt_TPROXY xt_REDIRECT nf_nat iptable_nat tun; do
-  if grep -q "$k" /proc/modules 2>/dev/null || [ -e /sys/module/$k ] || grep -q "$k" /proc/net/ip_tables_targets 2>/dev/null; then o="$o $k:ya"; else o="$o $k:?"; fi
-done; echo "$o"
+for t in nat mangle; do
+  if iptables -t $t -L -n >/dev/null 2>&1; then echo "iptables $t: BERFUNGSI"; else echo "iptables $t: gagal/tiada"; fi
+done
+if iptables -t nat -L -n 2>/dev/null | grep -q REDIRECT; then echo "peraturan REDIRECT: sedang digunakan"; fi
 [ -e /dev/net/tun ] && echo "/dev/net/tun: ada" || echo "/dev/net/tun: tiada"
 echo "-- Proses mengawal (init) --"
 [ -d /etc/init.d ] && echo "init.d: ada" ; [ -d /etc/rc.d ] && echo "rc.d: ada"
