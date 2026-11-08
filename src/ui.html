@@ -87,12 +87,12 @@ function rPlus(m){var fs=[['SQM (fq_codel)','Kurangkan lag semasa muat naik besa
 var wanT;
 function rWan(m){clearTimeout(wanT);api('/api/wanip').then(function(q){var run=q.state=='running';
  m.innerHTML='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div><div class="c"><b style="font-size:18px">Tukar IP WAN</b>'+
- '<p class="mu">Memutuskan dan menyambung semula data selular supaya operator memberikan IP baharu. Internet terputus kira-kira 30–60 saat; panel ini masih boleh dibuka. Jika VLESS sedang aktif, ia dimulakan semula secara automatik.</p>'+
+ '<p class="mu">Memutuskan dan menyambung semula data selular supaya operator memberikan IP baharu. Internet terputus kira-kira 1 minit (sehingga 3 minit jika operator lambat); panel ini masih boleh dibuka dari WiFi modem. Jika data tidak pulih selepas 2 percubaan, modem dimulakan semula secara automatik. VLESS dimulakan semula selepas itu.</p>'+
  '<button class="p" id="wg" style="width:100%"'+(run?' disabled':'')+'>'+(run?'Sedang berjalan...':'Tukar IP sekarang')+'</button></div>'+
  (q.state!='idle'?'<div class="sec">Keputusan</div><div class="c">'+(run?'<div class="wn">'+esc(q.step||'')+'</div>':'<div class="'+(q.state=='done'?'ok':'bad')+'"><b>'+esc(q.msg||'')+'</b></div>')+
  '<p class="mu">IP WAN modem: '+esc(q.before||'-')+(run?'':' → '+esc(q.after||'-'))+'<br>IP awam: '+esc(q.beforePub||'-')+(run?'':' → '+esc(q.afterPub||'-'))+(run?'':'<br>Masa: '+q.secs+' saat')+'</p></div>':'');
  $('pbk').onclick=function(){clearTimeout(wanT);rPlus(m)};
- $('wg').onclick=function(){cf({i:'🌐',t:'Tukar IP WAN?',m:'Internet akan terputus seketika.',ok:'Teruskan',d:1},function(){api('/api/wanip/run',{}).then(function(r){toast(r.msg);rWan(m)})})};
+ $('wg').onclick=function(){cf({i:'🌐',t:'Tukar IP WAN?',m:'Internet terputus sekurang-kurangnya 1 minit. Jika data tidak pulih, modem dimulakan semula.',ok:'Teruskan',d:1},function(){api('/api/wanip/run',{}).then(function(r){toast(r.msg);rWan(m)})})};
  if(run)wanT=setTimeout(function(){if($('wg'))rWan(m)},2500)})}
 function rQuota(m){api('/api/quota').then(function(q){var c=q.cfg||{},lim=c.limit||0,pc=lim>0?Math.min(100,Math.round(q.used/lim*100)):0,st=q.state,col=st=='full'?'bad':st=='warn'?'wn':'ok';
  function dt(t){return new Date(t*1000).toLocaleDateString()}

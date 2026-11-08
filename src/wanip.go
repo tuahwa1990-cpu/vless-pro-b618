@@ -73,46 +73,80 @@ func wanMsg(before, after string) string {
 	return "IP awam sama. Operator mungkin memberikan IP yang sama; cuba lagi selepas beberapa minit."
 }
 
-func wanChange() {
-	t0 := time.Now()
-	dev := wanIface()
-	wanSet(func(s *wanState) {
-		*s = wanState{State: "running", Step: "Menyemak IP semasa", Before: ifaceIP(dev), BeforePub: directPub()}
-	})
-	wanSet(func(s *wanState) { s.Step = "Memutuskan sambungan data" })
-	_ = runT(40*time.Second, "ifdown", "wan")
-	time.Sleep(3 * time.Second)
-	wanSet(func(s *wanState) { s.Step = "Menyambung semula" })
-	if runT(40*time.Second, "ifup", "wan") != nil {
-		wanSet(func(s *wanState) { s.State, s.Msg, s.Secs = "fail", "ifup wan gagal", int(time.Since(t0).Seconds()) })
-		return
+func runOut(d time.Duration, name string, args ...string) string {
+	b := findBin(name)
+	if b == "" {
+		return ""
 	}
-	wanSet(func(s *wanState) { s.Step = "Menunggu sambungan" })
-	ok := false
-	for i := 0; i < 90; i++ {
-		if d := wanIface(); d != "" && ifaceIP(d) != "" {
-			ok = true
-			break
+	ctx, c := context.WithTimeout(context.Background(), d)
+	defer c()
+	out, _ := exec.CommandContext(ctx, b, args...).Output()
+	return strings.TrimSpace(string(out))
+}
+
+func wanUp() bool {
+	d := wanIface()
+	return d != "" && ifaceIP(d) != ""
+}
+
+// wanWait menunggu WAN pulih sehingga had masa.
+func wanWait(max int) bool {
+	for i := 0; i < max; i++ {
+		if wanUp() {
+			return true
 		}
 		time.Sleep(time.Second)
 	}
+	return false
+}
+
+// wanCycle: putus sesi data dengan bersih (urutan sama seperti skrip netifd mipc) kemudian sambung.
+func wanCycle(apn string) bool {
+	_ = runT(40*time.Second, "ifdown", "wan")
+	if apn != "" {
+		_ = runT(20*time.Second, "mipc_wan_cli", "--data_call_deact_apn", apn)
+	}
+	time.Sleep(6 * time.Second)
+	if runT(40*time.Second, "ifup", "wan") != nil {
+		return false
+	}
+	return wanWait(75)
+}
+
+func wanChange() {
+	t0 := time.Now()
+	secs := func() int { return int(time.Since(t0).Seconds()) }
+	wanSet(func(s *wanState) {
+		*s = wanState{State: "running", Step: "Menyemak IP semasa", Before: ifaceIP(wanIface()), BeforePub: directPub()}
+	})
+	apn := runOut(5*time.Second, "uci", "get", "network.wan.apn")
+	ok := false
+	for try := 1; try <= 2 && !ok; try++ {
+		wanSet(func(s *wanState) {
+			s.Step = "Menyambung semula data (percubaan " + string(rune('0'+try)) + "/2)"
+		})
+		ok = wanCycle(apn)
+	}
 	if !ok {
 		wanSet(func(s *wanState) {
-			s.State, s.Msg, s.Secs = "fail", "WAN tidak pulih dalam 90 saat", int(time.Since(t0).Seconds())
+			s.State, s.Step, s.Secs = "fail", "", secs()
+			s.Msg = "WAN tidak pulih selepas 2 percubaan. Modem dimulakan semula dalam 10 saat."
 		})
+		time.Sleep(10 * time.Second)
+		doReboot()
 		return
 	}
 	pub := ""
-	for i := 0; i < 20 && pub == ""; i++ {
+	for i := 0; i < 5 && pub == ""; i++ {
 		if pub = directPub(); pub == "" {
-			time.Sleep(2 * time.Second)
+			time.Sleep(3 * time.Second)
 		}
 	}
 	nd := wanIface()
 	wanSet(func(s *wanState) { s.Step = "Memulakan semula VLESS" })
 	restartIfActive()
 	wanSet(func(s *wanState) {
-		s.State, s.Step, s.After, s.AfterPub, s.Secs = "done", "", ifaceIP(nd), pub, int(time.Since(t0).Seconds())
+		s.State, s.Step, s.After, s.AfterPub, s.Secs = "done", "", ifaceIP(nd), pub, secs()
 		s.Msg = wanMsg(s.BeforePub, pub)
 	})
 }
