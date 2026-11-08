@@ -148,7 +148,7 @@ func serve() {
 	mux.HandleFunc("/api/graphs", func(w http.ResponseWriter, r *http.Request) {
 		mu.Lock()
 		defer mu.Unlock()
-		jr(w, map[string]any{"speed": speed[:], "usage": usage, "lat": lat, "now": time.Now().Unix()})
+		jr(w, map[string]any{"speed": speed[:], "live": live[:], "usage": usage, "lat": lat, "now": time.Now().Unix()})
 	})
 	mux.HandleFunc("/api/lic", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {

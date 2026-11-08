@@ -28,6 +28,7 @@ var (
 	rateRx   float64
 	rateTx   float64
 	speed    [60][2]float64 // per-minit average, ring
+	live     [60][2]float64 // sampel 3 saat, ring (3 minit)
 	speedT   int64
 	usage    []usageB
 	lat      []latP
@@ -105,6 +106,8 @@ func sampler() {
 		if haveLast && rx >= lastRx && tx >= lastTx {
 			dr, dt := rx-lastRx, tx-lastTx
 			rateRx, rateTx = float64(dr)/3, float64(dt)/3
+			copy(live[0:], live[1:])
+			live[59] = [2]float64{rateRx, rateTx}
 			accRx += rateRx
 			accTx += rateTx
 			accN++
