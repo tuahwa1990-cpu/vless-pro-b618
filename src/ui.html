@@ -72,13 +72,13 @@ if(DICT){var ks=Object.keys(DICT).sort(function(a,b){return b.length-a.length});
  document.documentElement.lang=LANG}
 function trs(t){return RXT?t.replace(RXT,function(m){return DICT[m]||m}):t}
 function trNode(n){var p=n.parentNode;if(!p||p.nodeType!=1||/^(SCRIPT|STYLE|TEXTAREA)$/.test(p.nodeName)||(p.closest&&p.closest('.my')))return;
- var t=n.nodeValue;if(!t||!/[A-Za-z]/.test(t))return;var o=t.trim(),r=trs(t);if(r===t)return;
+ var t=n.nodeValue;if(!t||!/[A-Za-z]/.test(t)||n.__tr===t)return;var o=t.trim(),r=trs(t);if(r===t)return;
  if(SUBS&&DICT[o]&&p.closest&&p.closest(SUBSEL)){var sp=document.createElement('span');sp.className='tl';sp.appendChild(document.createTextNode(t.replace(o,DICT[o])));var sm=document.createElement('small');sm.className='my';sm.textContent=o;sp.appendChild(sm);p.replaceChild(sp,n);return}
- n.nodeValue=r}
+ n.nodeValue=r;n.__tr=r}
 function trTree(root){if(!RXT||!root)return;if(root.nodeType==3){trNode(root);return}if(root.nodeType!=1)return;
  var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),a=[],x;while(x=w.nextNode())a.push(x);a.forEach(trNode);
  var els=root.querySelectorAll?root.querySelectorAll('[placeholder],[title]'):[];[].forEach.call(els,trAttr);if(root.getAttribute)trAttr(root)}
-function trAttr(e){['placeholder','title'].forEach(function(a){var v=e.getAttribute&&e.getAttribute(a);if(v){var r=trs(v);if(r!==v)e.setAttribute(a,r)}})}
+function trAttr(e){['placeholder','title'].forEach(function(a){var v=e.getAttribute&&e.getAttribute(a);if(v){if(e['__t'+a]===v)return;var r=trs(v);if(r!==v){e.setAttribute(a,r);e['__t'+a]=r}}})}
 if(RXT){new MutationObserver(function(ms){ms.forEach(function(m){if(m.type=='childList')[].forEach.call(m.addedNodes,trTree);else if(m.type=='characterData')trNode(m.target);else trAttr(m.target)})}).observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['placeholder','title']});trTree(document.body)}
 function rLang(m){var cur=langNow();m.innerHTML='<p class="mu">Pilih bahasa paparan. Disimpan pada pelayar ini sahaja.</p>'+LANGS.map(function(l){
  return '<div class="pf'+(l.id==cur?' sel':'')+'" data-l="'+l.id+'"><span class="ic">'+ic('lang')+'</span><div class="sp"><div class="nm">'+l.n+'</div>'+(l.s?'<div class="mu my">'+l.s+'</div>':'')+'</div>'+(l.id==cur?'<b class="ok">✓</b>':'')+'</div>'}).join('');
