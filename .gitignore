@@ -1,0 +1,4 @@
+
+# Kunci persendirian penjual (JANGAN commit)
+*.seed
+*.key.priv
