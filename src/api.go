@@ -28,7 +28,7 @@ var (
 )
 
 func tokenOf(p string) string {
-	h := sha256.Sum256([]byte("vp|" + p))
+	h := sha256.Sum256([]byte("vp|" + version + "|" + p))
 	return hex.EncodeToString(h[:])
 }
 

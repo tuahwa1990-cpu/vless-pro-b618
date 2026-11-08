@@ -48,7 +48,7 @@ function fB(n){n=+n||0;var u=['B','KB','MB','GB','TB'],i=0;while(n>=1024&&i<4){n
 function fR(n){return fB(n)+'/s'}
 function hms(s){s=Math.max(0,s|0);var h=s/3600|0,m=s%3600/60|0;return [h,m,s%60].map(function(x){return x<10?'0'+x:x}).join(':')}
 function login(){$('app').innerHTML='<div id="lg"><div class="c"><h2 style="margin:0 0 4px">VLESS Pro</h2><p class="mu">Masukkan kata laluan modem</p><input id="pw" type="password" placeholder="Kata laluan" autofocus><p></p><button class="p" style="width:100%" id="go">Masuk</button><p class="mu" id="le"></p></div></div>';
- var go=function(){api('/api/login',$('pw').value).then(function(){boot()}).catch(function(){$('le').textContent='Kata laluan salah'})};$('go').onclick=go;$('pw').onkeydown=function(e){if(e.key=='Enter')go()}}
+ var go=function(){api('/api/login',$('pw').value).then(function(){location.reload()}).catch(function(){$('le').textContent='Kata laluan salah'})};$('go').onclick=go;$('pw').onkeydown=function(e){if(e.key=='Enter')go()}}
 var TT={home:'VLESS Pro',status:'Status',prof:'Profil',logs:'Log',route:'Penghalaan',set:'Tetapan',sys:'Sistem',upd:'Kemas kini',about:'Perihal'};
 function shell(){$('app').innerHTML='<header><span id="mb">'+ic('menu')+'</span><span id="ti"></span></header><main id="mn"></main><nav>'+
  [['home','Utama','home'],['status','Status','pulse'],['prof','Profil','db']].map(function(x){return '<div id="n_'+x[0]+'">'+ic(x[2])+x[1]+'</div>'}).join('')+'</nav>'+
@@ -61,7 +61,8 @@ function shell(){$('app').innerHTML='<header><span id="mb">'+ic('menu')+'</span>
 function dr(o){$('dr').className=o?'o':'';$('sc').className=o?'o':''}
 function go(v){V=v;clearInterval(tmr);tmr=null;$('ti').textContent=TT[v];['home','status','prof'].forEach(function(x){$('n_'+x).className=x==v?'on':''});R()}
 function R(){var m=$('mn');if(!m)return;({home:rHome,status:rStatus,prof:rProf,logs:rLogs,route:rRoute,set:rSet,sys:rSys,upd:rUpd,about:rAbout})[V](m)}
-function load(){return api('/api/status').then(function(s){S=s;off=s.now-Math.floor(Date.now()/1000);since=s.since;if(V=='home')uHome()}).catch(function(){})}
+var LV=null;
+function load(){return api('/api/status').then(function(s){if(LV===null)LV=s.version;else if(s.version!=LV){location.reload();return}S=s;off=s.now-Math.floor(Date.now()/1000);since=s.since;if(V=='home')uHome()}).catch(function(){})}
 /* HOME */
 function rHome(m){m.innerHTML='<div class="home"><h2 id="h1"></h2><div id="h2" class="mu" style="margin-top:6px;font-size:16px"></div><div class="pw" id="pw"><i style="inset:0"></i><i style="inset:22px"></i><i style="inset:40px"></i><button id="pb"></button></div><div class="tm" id="tm">00:00:00</div><div class="mu" style="letter-spacing:3px;margin-top:6px">SESI</div>'+
  '<div class="sp2"><div><span class="ic" style="background:#16324a"><svg viewBox="0 0 24 24" style="stroke:var(--ac2)"><path d="M12 4v14m-6-6l6 6 6-6"/></svg></span><span><small>MUAT TURUN</small><b id="dn">-</b></span></div><div><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 20V6m-6 6l6-6 6 6"/></svg></span><span><small>MUAT NAIK</small><b id="up">-</b></span></div></div>'+
