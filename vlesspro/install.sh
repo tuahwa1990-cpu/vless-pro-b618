@@ -6,11 +6,11 @@ mount -o remount,rw /online 2>/dev/null
 chmod 755 $H/vp $H/install.sh $H/bin/vpro 2>/dev/null
 [ -f $H/bin/xray ] && chmod 755 $H/bin/xray
 mkdir -p $H/etc $H/run $H/backup
+rm -f $H/etc/pass_initial
 [ -f $H/etc/mode ] || echo xlite > $H/etc/mode
 if [ ! -s $H/etc/pass ]; then
   echo "admin" > $H/etc/pass; chmod 600 $H/etc/pass
-  : > $H/etc/pass_initial
-  echo "Kata laluan UI awal: admin (akan diminta tukar pada log masuk pertama)"
+  echo "Kata laluan UI awal: admin (boleh ditukar di Tetapan)"
 else
   echo "Kata laluan UI sedia ada dikekalkan."
 fi
