@@ -145,3 +145,15 @@ func tamperEntry(t *testing.T, data []byte, name string, nb []byte) []byte {
 	}
 	return mkTgz(t, ents)
 }
+
+func TestVerCmp(t *testing.T) {
+	cases := []struct {
+		a, b string
+		want int
+	}{{"1.1.7", "1.1.8", -1}, {"1.1.8", "1.1.8", 0}, {"1.1.10", "1.1.9", 1}, {"1.2", "1.1.9", 1}, {"1.1", "1.1.0", 0}}
+	for _, c := range cases {
+		if got := verCmp(c.a, c.b); got != c.want {
+			t.Errorf("verCmp(%s,%s)=%d, mahu %d", c.a, c.b, got, c.want)
+		}
+	}
+}

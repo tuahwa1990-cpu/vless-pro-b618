@@ -438,7 +438,7 @@ func serve() {
 			jr(w, map[string]any{"ok": false, "cur": version, "msg": "Tidak dapat semak: " + shortErr(err)})
 			return
 		}
-		jr(w, map[string]any{"ok": true, "cur": version, "latest": lv, "newer": lv != "" && lv != version, "st": upGet(), "prev": hasRollback()})
+		jr(w, map[string]any{"ok": true, "cur": version, "latest": lv, "newer": lv != "" && verCmp(lv, version) > 0, "older": lv != "" && verCmp(lv, version) < 0, "st": upGet(), "prev": hasRollback()})
 	})
 	mux.HandleFunc("/api/update/upload", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {

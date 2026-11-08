@@ -25,7 +25,12 @@ if [ "$L" = "active" ]; then
 else
   echo "Belum ada lesen aktif (status: $L). Tampal kunci lesen di UI: Tetapan > Lesen."
 fi
+if [ ! -s $H/etc/listen ]; then
+  A=$(ifconfig br0 2>/dev/null | sed -n 's/.*inet addr:\([0-9.]*\).*/\1/p' | head -1)
+  [ -n "$A" ] && echo "$A:8990" > $H/etc/listen
+fi
+LS=$(cat $H/etc/listen 2>/dev/null); LS=${LS:-192.168.8.1:8990}
 $H/vp ui-start
 sleep 2
-echo "Buka di telefon: http://192.168.8.1:8990  (pengguna: apa-apa, kata laluan di atas)"
+echo "Buka di telefon: http://$LS  (kata laluan di atas)"
 echo "XLITE tidak diubah. Mod semasa: $($H/vp status | awk -F= '$1=="mod"{print $2}')"

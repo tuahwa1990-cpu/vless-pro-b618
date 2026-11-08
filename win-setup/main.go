@@ -200,14 +200,24 @@ type modemState struct {
 }
 
 func checkModem() modemState {
-	out, _ := ssh("uname -m; [ -f /online/xlite/bin/xray ] && echo xl; [ -f /online/vlesspro/bin/xray ] && echo vx; [ -d /online/vlesspro/etc ] && echo lama; true")
+	out, _ := ssh("echo A=$(sed -n 's/^CPU architecture[^0-9]*\\([0-9]*\\).*/\\1/p' /proc/cpuinfo | head -1); [ -f /online/xlite/bin/xray ] && echo xl; [ -f /online/vlesspro/bin/xray ] && echo vx; [ -d /online/vlesspro/etc ] && echo lama; true")
 	f := strings.Fields(out)
 	var s modemState
-	if len(f) > 0 {
-		s.arch = f[0]
-	}
 	tok := map[string]bool{}
-	for _, t := range f[1:] {
+	for _, t := range f {
+		if strings.HasPrefix(t, "A=") {
+			switch strings.TrimPrefix(t, "A=") {
+			case "7":
+				s.arch = "armv7"
+			case "8":
+				s.arch = "arm64"
+			case "":
+				s.arch = "tidak diketahui"
+			default:
+				s.arch = "arm" + strings.TrimPrefix(t, "A=")
+			}
+			continue
+		}
 		tok[t] = true
 	}
 	s.xlite = tok["xl"]

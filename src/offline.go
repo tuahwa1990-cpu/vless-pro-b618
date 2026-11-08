@@ -16,6 +16,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -222,4 +223,25 @@ func doRollback() {
 func mustChange() bool {
 	_, err := os.Stat(home + "/etc/pass_initial")
 	return err == nil
+}
+
+// verCmp bandingkan versi bernombor (1.1.10 > 1.1.9). Mengembalikan -1, 0 atau 1.
+func verCmp(a, b string) int {
+	pa, pb := strings.Split(strings.TrimSpace(a), "."), strings.Split(strings.TrimSpace(b), ".")
+	for i := 0; i < len(pa) || i < len(pb); i++ {
+		var x, y int
+		if i < len(pa) {
+			x, _ = strconv.Atoi(pa[i])
+		}
+		if i < len(pb) {
+			y, _ = strconv.Atoi(pb[i])
+		}
+		if x != y {
+			if x < y {
+				return -1
+			}
+			return 1
+		}
+	}
+	return 0
 }

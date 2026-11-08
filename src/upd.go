@@ -123,8 +123,12 @@ func doUpdate(force bool) {
 		upSet("err", "Tidak dapat semak: "+shortErr(err))
 		return
 	}
-	if lv == "" || (lv == version && !force) {
+	if lv == "" || (verCmp(lv, version) <= 0 && !force) {
 		upSet("ok", "Sudah versi terkini")
+		return
+	}
+	if verCmp(lv, version) < 0 {
+		upSet("err", "Versi di GitHub ("+lv+") lebih lama daripada yang dipasang, dibatalkan")
 		return
 	}
 	base := updBase()
