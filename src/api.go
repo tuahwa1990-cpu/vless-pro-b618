@@ -112,6 +112,7 @@ func serve() {
 	go sampler()
 	go prober()
 	go watchdog()
+	go sqmWatch()
 	go rebootSched()
 	mux := http.NewServeMux()
 	ui, _ := uiFS.ReadFile("ui.html")
@@ -522,6 +523,7 @@ func serve() {
 	})
 	regOpts(mux, act, body)
 	regRoutes(mux, act, body)
+	regSQM(mux, act, body)
 	act("/api/mode", func(r *http.Request) (string, bool) {
 		switch strings.TrimSpace(string(body(r, 16))) {
 		case "vless":
