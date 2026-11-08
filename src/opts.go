@@ -162,6 +162,7 @@ func diagText() string {
 	sec("ip route", sh("ip", "route"))
 	sec("iptables nat", sh("iptables", "-t", "nat", "-S"))
 	sec("tc WAN", sh("tc", "-s", "qdisc", "show", "dev", wanIface()))
+	sec("tc ifb", sh("tc", "-s", "qdisc", "show", "dev", ifbName))
 	sec("vp status", sh("/bin/sh", home+"/vp", "status"))
 	sec("vp.log", tail(home+"/run/vp.log", 6000))
 	sec("xray.out", tail(home+"/run/xray.out", 6000))

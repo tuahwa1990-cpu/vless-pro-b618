@@ -188,6 +188,9 @@ func regSQM(mux *http.ServeMux, act func(string, func(*http.Request) (string, bo
 		}
 		dev := wanIface()
 		st, _ := run2("tc", "-s", "qdisc", "show", "dev", dev)
+		if ib, err := run2("tc", "-s", "qdisc", "show", "dev", ifbName); err == nil && ib != "" {
+			st += "\n\n--- muat turun (" + ifbName + ") ---\n" + ib
+		}
 		jr(w, map[string]any{"cfg": loadSQM(), "iface": dev, "active": sqmActive(),
 			"tc": findBin("tc") != "", "ip": findBin("ip") != "", "stat": st})
 	})
