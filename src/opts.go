@@ -112,7 +112,7 @@ func watchdog() {
 			fails = 0
 			last = time.Now()
 			fmt.Fprintln(os.Stderr, "pemantau: sambung semula automatik")
-			runVP(true, "restart")
+			recoverVP()
 		}
 	}
 }

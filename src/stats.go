@@ -121,6 +121,7 @@ func sampler() {
 			}
 			usage[len(usage)-1].Rx += dr
 			usage[len(usage)-1].Tx += dt
+			quotaAdd(dr, dt)
 			dirty = true
 			mi := now.Unix() / 60
 			if speedT == 0 {

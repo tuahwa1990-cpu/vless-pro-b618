@@ -81,9 +81,33 @@ function trTree(root){if(!RXT||!root)return;if(root.nodeType==3){trNode(root);re
 function trAttr(e){['placeholder','title'].forEach(function(a){var v=e.getAttribute&&e.getAttribute(a);if(v){if(e['__t'+a]===v)return;var r=trs(v);if(r!==v){e.setAttribute(a,r);e['__t'+a]=r}}})}
 if(RXT){new MutationObserver(function(ms){ms.forEach(function(m){if(m.type=='childList')[].forEach.call(m.addedNodes,trTree);else if(m.type=='characterData')trNode(m.target);else trAttr(m.target)})}).observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['placeholder','title']});trTree(document.body)}
 
-function rPlus(m){var fs=[['SQM (fq_codel)','Kurangkan lag semasa muat turun atau muat naik besar',1],['Akan datang','',0],['Akan datang','',0]];
- m.innerHTML=fs.map(function(f,i){return '<div class="pf'+(f[2]?'':'" style="opacity:.55')+'" data-i="'+i+'"><span class="ic">'+ic(f[2]?'pulse':'plus')+'</span><div class="sp"><div class="nm">'+(i+1)+'. '+f[0]+'</div>'+(f[1]?'<div class="mu">'+f[1]+'</div>':'')+'</div>'+(f[2]?'<span class="mu">›</span>':'')+'</div>'}).join('');
- [].forEach.call(m.querySelectorAll('.pf'),function(e){if(e.dataset.i=='0')e.onclick=function(){rSqm(m)}})}
+function rPlus(m){var fs=[['SQM (fq_codel)','Kurangkan lag semasa muat naik besar',rSqm,'pulse'],['Kuota data','Had data bulanan atau harian, amaran dan sekatan',rQuota,'db'],['Failover profil','Tukar ke profil lain secara automatik bila pelayan mati',rFo,'route'],['Akan datang','',0,'plus']];
+ m.innerHTML=fs.map(function(f,i){return '<div class="pf'+(f[2]?'':'" style="opacity:.55')+'" data-i="'+i+'"><span class="ic">'+ic(f[3])+'</span><div class="sp"><div class="nm">'+(i+1)+'. '+f[0]+'</div>'+(f[1]?'<div class="mu">'+f[1]+'</div>':'')+'</div>'+(f[2]?'<span class="mu">›</span>':'')+'</div>'}).join('');
+ [].forEach.call(m.querySelectorAll('.pf'),function(e){var f=fs[+e.dataset.i];if(f[2])e.onclick=function(){f[2](m)}})}
+function rQuota(m){api('/api/quota').then(function(q){var c=q.cfg||{},lim=c.limit||0,pc=lim>0?Math.min(100,Math.round(q.used/lim*100)):0,st=q.state,col=st=='full'?'bad':st=='warn'?'wn':'ok';
+ function dt(t){return new Date(t*1000).toLocaleDateString()}
+ m.innerHTML='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div><div class="c"><div class="row"><div class="sp"><b style="font-size:18px">Kuota data</b><div class="'+(st=='off'?'mu':col)+'">'+(st=='off'?'Tidak aktif':st=='full'?(q.blocked?'Kuota habis · internet disekat':'Kuota habis'):st=='warn'?'Hampir habis':'Dalam had')+'</div></div><input type="checkbox" id="qo" style="width:auto"></div>'+
+ '<div style="margin-top:12px"><b style="font-size:22px">'+q.used.toFixed(2)+' GB</b><span class="mu"> / '+(lim>0?lim+' GB':'tiada had')+'</span><div class="bar"><i style="width:'+pc+'%;background:var(--'+(st=='full'?'bad':'ac')+')"></i></div></div>'+
+ '<p class="mu">Muat turun '+fB(q.rx)+' · Muat naik '+fB(q.tx)+'<br>Tempoh: '+dt(q.start)+' – '+dt(q.end)+'</p>'+
+ '<p class="mu">Had data (GB)</p><input id="ql" type="number" step="0.5" min="0" inputmode="decimal">'+
+ '<p class="mu">Tempoh</p><select id="qp"><option value="month">Bulanan</option><option value="day">Harian</option></select>'+
+ '<div id="qrw"><p class="mu">Hari tetapan semula (1–28)</p><input id="qr" type="number" min="1" max="28" inputmode="numeric"></div>'+
+ '<div class="row" style="margin-top:12px"><input type="checkbox" id="qc" style="width:auto"><span class="sp">Sekat internet bila kuota habis</span></div>'+
+ '<p class="mu">Jika dimatikan, hanya amaran dipaparkan. Jika dihidupkan, semua trafik ke internet disekat sehingga tempoh baharu bermula atau had dinaikkan; panel ini masih boleh diakses melalui rangkaian modem.</p>'+
+ '<button class="p" id="qs" style="width:100%;margin-top:6px">Simpan</button><button id="qz" style="width:100%;margin-top:8px">Tetapkan semula pengiraan</button>'+
+ '<p class="mu" style="margin-top:12px">Pengiraan berdasarkan jumlah trafik pada antara muka WAN modem (muat turun + muat naik). Ia mungkin berbeza sedikit daripada bacaan pengendali.</p></div>';
+ $('pbk').onclick=function(){rPlus(m)};$('qo').checked=!!c.on;$('ql').value=c.limit||0;$('qp').value=c.period||'month';$('qr').value=c.rday||1;$('qc').checked=!!c.cut;
+ function vis(){$('qrw').style.display=$('qp').value=='month'?'':'none'}vis();$('qp').onchange=vis;
+ $('qs').onclick=function(){$('qs').disabled=true;api('/api/quota',{on:$('qo').checked,limit:parseFloat($('ql').value)||0,period:$('qp').value,rday:parseInt($('qr').value)||1,cut:$('qc').checked}).then(function(r){toast(r.msg);$('qs').disabled=false;rQuota(m)})};
+ $('qz').onclick=function(){cf({i:'🔄',t:'Tetapkan semula?',m:'Pengiraan data akan kembali kepada 0.',ok:'Tetapkan semula',d:1},function(){api('/api/quota/reset',{}).then(function(r){toast(r.msg);rQuota(m)})})}})}
+function rFo(m){api('/api/failover').then(function(q){var c=q.cfg||{};
+ m.innerHTML='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div><div class="c"><div class="row"><div class="sp"><b style="font-size:18px">Failover profil</b><div class="mu">Profil semasa: '+esc(q.cur||'-')+'</div></div><input type="checkbox" id="fo" style="width:auto"></div>'+
+ '<p class="mu">Bila sambungan gagal berulang, sistem menyemak pelayan semua profil dan bertukar kepada yang boleh dicapai dengan ping terendah, kemudian memulakan semula sambungan.</p>'+
+ (q.n<2?'<p class="wn">Perlu sekurang-kurangnya 2 profil.</p>':'')+(q.grp?'<p class="wn">Kumpulan profil sedang digunakan; kumpulan sudah mengimbangi sendiri, jadi failover tidak dilaksanakan.</p>':'')+(!q.auto?'<p class="wn">Hidupkan “Sambung semula automatik” di Tetapan dan guna mod VLESS Pro, kerana failover bergantung padanya.</p>':'')+
+ '<button class="p" id="fs" style="width:100%">Simpan</button></div><div class="sec">Sejarah penukaran</div><div class="c" id="fl"></div>';
+ $('pbk').onclick=function(){rPlus(m)};$('fo').checked=!!c.on;
+ $('fl').innerHTML=(q.log&&q.log.length)?q.log.map(function(e){return '<div class="ov"><span class="ov2" style="flex:1"><b>'+esc(e.from||'-')+' → '+esc(e.to)+'</b><div class="mu">'+new Date(e.t*1000).toLocaleString()+' · '+esc(e.why)+'</div></span></div>'}).join(''):'<span class="mu">Tiada penukaran lagi.</span>';
+ $('fs').onclick=function(){api('/api/failover',{on:$('fo').checked}).then(function(r){toast(r.msg)})}})}
 function rSqm(m){api('/api/sqm').then(function(q){var c=q.cfg||{};
  if(!q.tc||!q.ip){m.innerHTML='<div class="c"><b>SQM (fq_codel)</b><p class="bad">Tidak disokong pada peranti ini (tc tiada)</p></div>';return}
  m.innerHTML='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div><div class="c"><div class="row"><div class="sp"><b style="font-size:18px">SQM (fq_codel)</b><div class="'+(q.active?'ok':'mu')+'">'+(q.active?'Aktif sekarang':'Tidak aktif')+' · '+esc(q.iface||'-')+'</div></div><input type="checkbox" id="sq" style="width:auto"></div>'+
@@ -126,8 +150,8 @@ function load(){return api('/api/status').then(function(s){if(LV===null)LV=s.ver
 /* HOME */
 function rHome(m){m.innerHTML='<div class="home"><h2 id="h1"></h2><div id="h2" class="mu" style="margin-top:6px;font-size:16px"></div><div class="pw" id="pw"><i style="inset:0"></i><i style="inset:22px"></i><i style="inset:40px"></i><button id="pb"></button></div><div class="ses"><i></i><span class="tm" id="tm">00:00:00</span><small>SESI</small></div>'+
  '<div class="sp2"><div><span class="ic" style="background:#16324a"><svg viewBox="0 0 24 24" style="stroke:var(--ac2)"><path d="M12 4v14m-6-6l6 6 6-6"/></svg></span><span><small>MUAT TURUN</small><b id="dn">-</b></span></div><div><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 20V6m-6 6l6-6 6 6"/></svg></span><span><small>MUAT NAIK</small><b id="up">-</b></span></div></div>'+
- '<div class="pf" id="pc" style="text-align:left"><span class="ic">'+ic('route')+'</span><div class="sp"><div class="nm" id="pn">-</div></div></div></div>';
- $('pc').onclick=function(){go('prof')};$('pb').onclick=toggle;uHome();tmr=setInterval(tick,1000);if(S&&S.vless)ipq()}
+ '<div id="qb"></div><div class="pf" id="pc" style="text-align:left"><span class="ic">'+ic('route')+'</span><div class="sp"><div class="nm" id="pn">-</div></div></div></div>';
+ $('pc').onclick=function(){go('prof')};api('/api/quota').then(function(q){var e=$('qb');if(!e||(q.state!='warn'&&q.state!='full'))return;e.innerHTML='<div class="pf" style="text-align:left;border-color:var(--'+(q.state=='full'?'bad':'ac')+')"><span class="ic">'+ic('db')+'</span><div class="sp"><div class="nm">'+(q.state=='full'?'Kuota data habis':'Kuota data hampir habis')+'</div><div class="mu">'+q.used.toFixed(2)+' / '+q.cfg.limit+' GB</div></div></div>'}).catch(function(){});$('pb').onclick=toggle;uHome();tmr=setInterval(tick,1000);if(S&&S.vless)ipq()}
 function isOn(){return S&&S.mode=='vless'&&S.vless}
 function uHome(){if(!S||!$('pb'))return;var on=isOn();$('pw').className='pw'+(on?'':' off')+(busy?' busy':'');
  $('pb').innerHTML=ic('pwr')+(busy?'Sila tunggu':on?'Putuskan':'Sambung');$('pb').disabled=busy;
