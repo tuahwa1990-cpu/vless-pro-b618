@@ -32,8 +32,8 @@ getx() {
   [ "$NOX" = 1 ] || return 0
   command -v curl >/dev/null && command -v unzip >/dev/null || { echo "Jalankan dahulu:  pkg install curl unzip"; exit 1; }
   T=$(mktemp -d)
-  echo "Memuat turun Xray (sekitar 15 MB) ..."
-  curl -fL -o "$T/x.zip" https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-arm32-v7a.zip || { echo "GAGAL memuat turun Xray (semak internet telefon)"; exit 1; }
+  echo "Memuat turun Xray v26.3.27 (sekitar 15 MB) ..."
+  curl -fL -o "$T/x.zip" https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-arm32-v7a.zip || { echo "GAGAL memuat turun Xray (semak internet telefon)"; exit 1; }
   (cd "$T" && unzip -oq x.zip xray) || { echo "GAGAL membuka zip Xray"; exit 1; }
   $SSH 'mkdir -p /online/vlesspro/bin'
   $SCP "$T/xray" root@$IP:/online/vlesspro/bin/xray || { echo "GAGAL menghantar Xray (ruang storan modem mencukupi?)"; exit 1; }

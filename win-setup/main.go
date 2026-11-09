@@ -22,7 +22,7 @@ import (
 //go:embed payload
 var payload embed.FS
 
-const xrayURL = "https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-arm32-v7a.zip"
+const xrayURL = "https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-arm32-v7a.zip"
 
 // Mesti sepadan dengan vp/vpro di dalam modem; backupCmd hanya dijalankan dalam mod Pasang bersih.
 const backupCmd = `mount -o remount,rw /online 2>/dev/null; p=; [ -f /online/vlesspro/run/ui.pid ] && read p < /online/vlesspro/run/ui.pid; [ -n "$p" ] && kill $p 2>/dev/null; sleep 1; [ -n "$p" ] && kill -9 $p 2>/dev/null; rm -f /online/vlesspro/run/ui.pid; ts=$(date +%Y%m%d%H%M%S); mkdir -p /online/vlesspro/backup && mv /online/vlesspro/etc /online/vlesspro/backup/etc-$ts && mkdir -p /online/vlesspro/etc && for f in license public.key; do [ -f /online/vlesspro/backup/etc-$ts/$f ] && cp /online/vlesspro/backup/etc-$ts/$f /online/vlesspro/etc/$f; done; chmod 600 /online/vlesspro/etc/license 2>/dev/null; echo "Tetapan lama dialih ke /online/vlesspro/backup/etc-$ts; lesen dikekalkan"`

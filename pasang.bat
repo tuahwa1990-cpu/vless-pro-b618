@@ -42,7 +42,7 @@ set T=%TEMP%\vpx
 rd /s /q "%T%" >nul 2>&1
 mkdir "%T%"
 echo Memuat turun Xray (sekitar 15 MB) ...
-curl -fL -o "%T%\x.zip" https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-arm32-v7a.zip || (echo GAGAL memuat turun Xray & pause & exit /b 1)
+curl -fL -o "%T%\x.zip" https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-arm32-v7a.zip || (echo GAGAL memuat turun Xray & pause & exit /b 1)
 tar -xf "%T%\x.zip" -C "%T%" xray || (echo GAGAL membuka zip Xray & pause & exit /b 1)
 ssh %O% root@%IP% "mkdir -p /online/vlesspro/bin"
 scp -O %O% "%T%\xray" root@%IP%:/online/vlesspro/bin/xray || (echo GAGAL menghantar Xray. Ruang storan modem mencukupi? & pause & exit /b 1)
