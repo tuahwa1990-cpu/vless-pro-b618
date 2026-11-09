@@ -242,6 +242,49 @@ func serve() {
 		}
 		return fmt.Sprintf("Ditambah %d, ditolak %d", added, bad), added > 0
 	})
+	mux.HandleFunc("/api/node/link", func(w http.ResponseWriter, r *http.Request) {
+		i, err := strconv.Atoi(r.URL.Query().Get("i"))
+		ns := loadNodes()
+		if err != nil || i < 0 || i >= len(ns) {
+			jr(w, map[string]any{"ok": false})
+			return
+		}
+		jr(w, map[string]any{"ok": true, "link": ns[i].Link})
+	})
+	act("/api/node/edit", func(r *http.Request) (string, bool) {
+		var in struct {
+			I    int    `json:"i"`
+			Link string `json:"link"`
+		}
+		if json.Unmarshal(body(r, 65536), &in) != nil {
+			return "Data tidak sah", false
+		}
+		ns := loadNodes()
+		if in.I < 0 || in.I >= len(ns) {
+			return "Indeks tidak sah", false
+		}
+		ln := strings.TrimSpace(in.Link)
+		p, err := parseLink(ln)
+		if err != nil {
+			return "Pautan tidak sah: " + err.Error(), false
+		}
+		oldID, newID := nid(ns[in.I].Link), nid(ln)
+		ns[in.I].Link, ns[in.I].Name = ln, p.Name
+		_ = saveNodes(ns)
+		if oldID != newID { // kekalkan keahlian kumpulan
+			gs := loadGroups()
+			for gi := range gs {
+				for mi := range gs[gi].Members {
+					if gs[gi].Members[mi] == oldID {
+						gs[gi].Members[mi] = newID
+					}
+				}
+			}
+			_ = saveGroups(gs)
+		}
+		restartIfActive()
+		return "Profil dikemas kini", true
+	})
 	act("/api/node/del", func(r *http.Request) (string, bool) {
 		i, err := strconv.Atoi(strings.TrimSpace(string(body(r, 64))))
 		ns := loadNodes()
