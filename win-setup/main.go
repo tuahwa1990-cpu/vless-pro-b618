@@ -32,11 +32,12 @@ var opts = []string{"-o", "StrictHostKeyChecking=accept-new", "-o", "ConnectTime
 
 var stdin = bufio.NewReader(os.Stdin)
 
-type device struct{ name, ip string }
+type device struct{ name, ip, kind string }
 
-// Hanya peranti ARMv7 yang disokong oleh pakej ini.
+// Peranti yang disokong: B618 (ARMv7, /online) dan AW1000 Ultra (arm64, OpenWrt, /data).
 var devices = []device{
-	{"Huawei B618", "192.168.8.1"},
+	{"Huawei B618", "192.168.8.1", "b618"},
+	{"Arcadyan AW1000 Ultra", "192.168.2.1", "aw1000"},
 }
 
 func ask(prompt string) string {
@@ -162,7 +163,7 @@ func getXray(tmp string) error {
 }
 
 // pickDevice membenarkan pengguna pilih jenis modem atau masukkan IP sendiri.
-func pickDevice() string {
+func pickDevice() device {
 	fmt.Println("Pilih modem anda:")
 	for i, d := range devices {
 		fmt.Printf("  %d. %s  (%s)\n", i+1, d.name, d.ip)
@@ -176,14 +177,14 @@ func pickDevice() string {
 		}
 		n, err := strconv.Atoi(c)
 		if err == nil && n >= 1 && n <= len(devices) {
-			return devices[n-1].ip
+			return devices[n-1]
 		}
 		if err == nil && n == lain {
 			for {
-				fmt.Println("AMARAN: pemasang ini hanya diuji pada Huawei B618. Modem lain mungkin tidak berfungsi.")
+				fmt.Println("AMARAN: pemasang ini hanya diuji pada Huawei B618 dan Arcadyan AW1000 Ultra. Modem lain mungkin tidak berfungsi.")
 				s := ask("Masukkan IP modem: ")
 				if net.ParseIP(s) != nil {
-					return s
+					return device{"Lain-lain", s, "b618"}
 				}
 				fmt.Println("IP tidak sah.")
 			}
@@ -227,12 +228,20 @@ func checkModem() modemState {
 }
 
 func main() {
+	dev := device{"Huawei B618", ip, "b618"}
 	if len(os.Args) > 1 && os.Args[1] != "" {
 		ip = os.Args[1]
+		dev = device{"Lain-lain", ip, "b618"}
+		for _, d := range devices {
+			if d.ip == ip {
+				dev = d
+			}
+		}
 	} else {
-		ip = pickDevice()
+		dev = pickDevice()
+		ip = dev.ip
 	}
-	fmt.Println("\nPemasang VLESS Pro (Huawei B618)")
+	fmt.Println("\nPemasang VLESS Pro (" + dev.name + ")")
 	fmt.Println("Modem:", ip)
 
 	if _, err := exec.LookPath("ssh"); err != nil {
@@ -245,6 +254,10 @@ func main() {
 	fmt.Println("\n[1/4] Menyemak modem ...")
 	if _, err := ssh("echo ok"); err != nil {
 		die("tidak dapat sambung SSH ke " + ip + ". Pastikan PC disambung ke WiFi modem dan SSH modem dihidupkan.")
+	}
+	if dev.kind == "aw1000" {
+		installAW1000()
+		return
 	}
 	st := checkModem()
 	if !strings.HasPrefix(st.arch, "armv7") {
@@ -355,5 +368,76 @@ func main() {
 	if !noX {
 		fmt.Println("XLITE tidak diubah dan boleh ditukar semula bila-bila masa.")
 	}
+	pause()
+}
+
+// installAW1000 memasang/menaik taraf VLESS Pro pada Arcadyan AW1000 Ultra (arm64, OpenWrt).
+// Sama seperti aw1000/pasang.sh: tetapan, lesen dan nod sedia ada tidak diubah, XLITE tidak disentuh.
+func installAW1000() {
+	out, _ := ssh("echo A=$(uname -m); [ -d /data/vlesspro/etc ] && echo lama; [ -x /data/vlesspro/bin/xray ] && echo vx; [ -x /opt/xlite/bin/xray ] && echo xl; [ -x /usr/bin/xray ] && echo ux; true")
+	tok := map[string]bool{}
+	arch := ""
+	for _, t := range strings.Fields(out) {
+		if strings.HasPrefix(t, "A=") {
+			arch = strings.TrimPrefix(t, "A=")
+			continue
+		}
+		tok[t] = true
+	}
+	if arch != "aarch64" {
+		fmt.Printf("AMARAN: modem melaporkan seni bina '%s'. Pemasang AW1000 ini untuk arm64 (aarch64) sahaja.\n", arch)
+		if !yes("Teruskan juga?") {
+			cancelled()
+		}
+	}
+	hasX := tok["vx"] || tok["xl"] || tok["ux"]
+	fmt.Println("\nRingkasan sebelum pasang:")
+	fmt.Println("  Modem        :", ip, "(AW1000 Ultra, "+arch+")")
+	if tok["lama"] {
+		fmt.Println("  Tindakan     : naik taraf VLESS Pro (tetapan, lesen dan nod dikekalkan)")
+	} else {
+		fmt.Println("  Tindakan     : pemasangan baharu")
+	}
+	if tok["xl"] {
+		fmt.Println("  XLITE        : dijumpai (tidak diubah)")
+	} else {
+		fmt.Println("  XLITE        : tidak dijumpai")
+	}
+	if !hasX {
+		fmt.Println("  AMARAN       : Xray tidak dijumpai pada modem. UI akan dipasang tetapi sambungan VLESS tidak boleh digunakan sehingga Xray ada.")
+	}
+	if !yes("\nTeruskan pemasangan?") {
+		cancelled()
+	}
+	tmp, err := os.MkdirTemp("", "vpro")
+	if err != nil {
+		die(err.Error())
+	}
+	defer os.RemoveAll(tmp)
+	if _, err := extract(tmp); err != nil {
+		die("gagal menyediakan fail: " + err.Error())
+	}
+	f, err := os.Open(filepath.Join(tmp, "aw1000.tgz"))
+	if err != nil {
+		die("fail pemasang AW1000 tiada dalam program ini")
+	}
+	defer f.Close()
+	fmt.Println("\n[2/4] Menghantar fail ...")
+	c := exec.Command("ssh", append(append([]string{}, opts...), "root@"+ip,
+		"p=; [ -f /data/vlesspro/run/ui.pid ] && read p < /data/vlesspro/run/ui.pid; [ -n \"$p\" ] && kill $p 2>/dev/null; rm -f /data/vlesspro/bin/vpro; mkdir -p /data && cd /data && tar xzf -")...)
+	c.Stdin = f
+	if o, err := c.CombinedOutput(); err != nil {
+		fmt.Print(string(o))
+		die("gagal menghantar fail ke modem")
+	}
+	fmt.Println("\n[3/4] Memasang ...")
+	if err := sshLive("sh /data/vlesspro/install.sh"); err != nil {
+		die("pemasangan di modem gagal (lihat mesej di atas)")
+	}
+	fmt.Println("\n[4/4] Siap.")
+	fmt.Println("Buka di pelayar: http://" + ip + ":8990")
+	fmt.Println("Log masuk dengan kata laluan awal: admin. Boleh ditukar di Tetapan.")
+	fmt.Println("Lesen: jika belum ada, hantar ID Peranti (di atas) kepada penjual.")
+	fmt.Println("Simpan kunci lesen anda. Jika modem direset, pasang semula dan tampal kunci yang sama.")
 	pause()
 }
