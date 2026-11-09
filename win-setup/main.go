@@ -503,6 +503,7 @@ func installAW1000() {
 	fmt.Println("\n[2/4] Menghantar fail ...")
 	c := exec.Command("ssh", append(append([]string{}, opts...), "root@"+ip,
 		"p=; [ -f /data/vlesspro/run/ui.pid ] && read p < /data/vlesspro/run/ui.pid; [ -n \"$p\" ] && kill $p 2>/dev/null; rm -f /data/vlesspro/bin/vpro; mkdir -p /data && cd /data && tar xzf -")...)
+	c.Env = sshEnv
 	c.Stdin = f
 	if o, err := c.CombinedOutput(); err != nil {
 		fmt.Print(string(o))
