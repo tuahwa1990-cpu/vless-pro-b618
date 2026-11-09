@@ -84,25 +84,37 @@ func sqmApply(s SQM) error {
 	if s.Up <= 0 {
 		return fmt.Errorf("tetapkan had muat naik (Mbit/s)")
 	}
-	step := func(name string, a ...string) error {
-		if out, err := run2(name, a...); err != nil {
-			sqmClean(dev)
-			return fmt.Errorf("%s %s: %s", name, strings.Join(a[:min(3, len(a))], " "), out)
-		}
-		return nil
+	htb := [][]string{
+		{"qdisc", "add", "dev", dev, "root", "handle", "1:", "htb", "default", "11"},
+		{"class", "add", "dev", dev, "parent", "1:", "classid", "1:11", "htb", "rate", kbit(s.Up), "ceil", kbit(s.Up)},
+		{"qdisc", "add", "dev", dev, "parent", "1:11", "handle", "110:", "fq_codel"},
 	}
-	if s.Up > 0 {
-		for _, a := range [][]string{
-			{"qdisc", "add", "dev", dev, "root", "handle", "1:", "htb", "default", "11"},
-			{"class", "add", "dev", dev, "parent", "1:", "classid", "1:11", "htb", "rate", kbit(s.Up), "ceil", kbit(s.Up)},
-			{"qdisc", "add", "dev", dev, "parent", "1:11", "handle", "110:", "fq_codel"},
-		} {
-			if err := step("tc", a...); err != nil {
-				return err
+	burst := int(s.Up * 1250)
+	if burst < 6000 {
+		burst = 6000
+	}
+	tbf := [][]string{
+		{"qdisc", "add", "dev", dev, "root", "handle", "1:", "tbf", "rate", kbit(s.Up), "burst", fmt.Sprint(burst), "latency", "50ms"},
+		{"qdisc", "add", "dev", dev, "parent", "1:1", "handle", "110:", "fq_codel"},
+	}
+	var first error
+	for _, set := range [][][]string{htb, tbf} {
+		var err error
+		for _, a := range set {
+			if out, e := run2("tc", a...); e != nil {
+				err = fmt.Errorf("tc %s: %s", strings.Join(a[:min(3, len(a))], " "), out)
+				break
 			}
 		}
+		if err == nil {
+			return nil
+		}
+		if first == nil {
+			first = err
+		}
+		sqmClean(dev)
 	}
-	return nil
+	return fmt.Errorf("kernel modem tiada htb/tbf, SQM tidak boleh dipasang (%v)", first)
 }
 
 func sqmActive() bool {
@@ -111,7 +123,7 @@ func sqmActive() bool {
 		return false
 	}
 	out, _ := run2("tc", "qdisc", "show", "dev", dev)
-	return strings.Contains(out, "htb")
+	return strings.Contains(out, "htb") || strings.Contains(out, "tbf")
 }
 
 // Pemantau: pasang semula jika WAN dicipta semula (contoh sambungan data bertukar).
