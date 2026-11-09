@@ -73,6 +73,10 @@ stop_xray() {
   if alive "$p"; then
     case "$(ls -l /proc/$p/exe 2>/dev/null)" in *xray*) kill $p; sleep 1; alive "$p" && kill -9 $p;; esac
   fi
+  # Xray VLESS Pro yang tertinggal (fail PID hilang/tidak sepadan): matikan ikut binari sendiri sahaja, bukan Xray XLITE
+  for q in $(pids_exe $H/bin/xray); do kill $q; done
+  sleep 1
+  for q in $(pids_exe $H/bin/xray); do kill -9 $q; done
   rm -f $R/xray.pid
 }
 start_xray() {
