@@ -269,6 +269,12 @@ type adDay struct {
 	B int    `json:"b"`
 }
 
+type adHour struct {
+	H int64 `json:"h"` // unix/3600
+	Q int   `json:"q"`
+	B int   `json:"b"`
+}
+
 type adRecent struct {
 	T int64  `json:"t"`
 	D string `json:"d"`
@@ -278,6 +284,7 @@ type adStats struct {
 	AllQ   int            `json:"allq"`
 	AllB   int            `json:"allb"`
 	Days   []adDay        `json:"days"`
+	Hours  []adHour       `json:"hours"`
 	Top    map[string]int `json:"top"`
 	Recent []adRecent     `json:"recent"`
 }
@@ -320,6 +327,18 @@ func adCount(name string, blocked bool) {
 		if len(stData.Days) > 14 {
 			stData.Days = stData.Days[len(stData.Days)-14:]
 		}
+	}
+	hr := time.Now().Unix() / 3600
+	if n := len(stData.Hours); n == 0 || stData.Hours[n-1].H != hr {
+		stData.Hours = append(stData.Hours, adHour{H: hr})
+		if len(stData.Hours) > 24 {
+			stData.Hours = stData.Hours[len(stData.Hours)-24:]
+		}
+	}
+	h := &stData.Hours[len(stData.Hours)-1]
+	h.Q++
+	if blocked {
+		h.B++
 	}
 	d := &stData.Days[len(stData.Days)-1]
 	d.Q++
@@ -789,7 +808,7 @@ func regAd(mux *http.ServeMux, act func(string, func(*http.Request) (string, boo
 		if n := len(stData.Days); n > 0 && stData.Days[n-1].D == today.D {
 			today = stData.Days[n-1]
 		}
-		st := map[string]any{"today": today, "allq": stData.AllQ, "allb": stData.AllB, "days": stData.Days, "top": top, "recent": recent}
+		st := map[string]any{"today": today, "allq": stData.AllQ, "allb": stData.AllB, "days": stData.Days, "hours": stData.Hours, "top": top, "recent": recent}
 		stMu.Unlock()
 		adUp.Lock()
 		run, msg := adUp.run, adUp.msg
