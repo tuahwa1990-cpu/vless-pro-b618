@@ -86,6 +86,42 @@ function plusOpen(m,i){var f=plusFs()[i];if(!f)return rPlus(m);try{history.repla
 function rPlus(m){var fs=plusFs();try{history.replaceState(null,'','#plus')}catch(e){}
  m.innerHTML=fs.map(function(f,i){return '<div class="pf" data-i="'+i+'"><span class="ic">'+ic(f[3])+'</span><div class="sp"><div class="nm">'+(i+1)+'. '+f[0]+'</div>'+(f[1]?'<div class="mu">'+f[1]+'</div>':'')+'</div><span class="mu">›</span></div>'}).join('');
  [].forEach.call(m.querySelectorAll('.pf'),function(e){e.onclick=function(){plusOpen(m,+e.dataset.i)}})}
+var adT;
+function rAd(m){clearTimeout(adT);api('/api/adblock').then(function(q){var c=q.cfg||{},st=q.stats||{},td=st.today||{q:0,b:0},pc=td.q>0?Math.round(td.b*100/td.q):0,ap=c.on&&q.active;
+ function nf(n){return (n||0).toLocaleString()}
+ if(!q.ram){m.innerHTML='<div class="c"><b>Sekat iklan</b><p class="bad">Tidak disokong: RAM peranti tidak mencukupi.</p></div>';return}
+ var days=st.days||[],mx=1;days.forEach(function(d){if(d.q>mx)mx=d.q});
+ m.innerHTML='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div><div class="c"><div class="row"><div class="sp"><b style="font-size:18px">Sekat iklan</b><div class="'+(ap?'ok':q.run?'wn':'mu')+'">'+(ap?'Aktif sekarang':q.run?esc(q.msg||'Memuat turun...'):c.on?(q.mode?'Menunggu penapis bermula':'Perlu VLESS Pro disambung'):'Tidak aktif')+'</div></div><input type="checkbox" id="ao" style="width:auto"></div>'+
+ '<p class="mu">Penapis DNS: domain iklan dan penjejak dijawab kosong untuk semua peranti pada modem, dan dikira. Soalan lain diteruskan seperti biasa. Aktif bila VLESS Pro disambung.</p></div>'+
+ '<div class="sec">Statistik hari ini</div><div class="c"><div class="row" style="text-align:center"><div class="sp"><b style="font-size:26px;color:var(--ac)">'+nf(td.b)+'</b><div class="mu">Disekat</div></div><div class="sp"><b style="font-size:26px">'+nf(td.q)+'</b><div class="mu">Soalan DNS</div></div><div class="sp"><b style="font-size:26px">'+pc+'%</b><div class="mu">Disekat</div></div></div>'+
+ '<div class="bar"><i style="width:'+pc+'%"></i></div><p class="mu">Jumlah sejak mula: '+nf(st.allb)+' disekat daripada '+nf(st.allq)+' soalan · '+nf(q.total)+' domain dalam senarai</p>'+
+ (days.length>1?'<div style="display:flex;align-items:flex-end;gap:3px;height:60px;margin-top:6px">'+days.map(function(d){return '<div title="'+d.d+': '+d.b+'/'+d.q+'" style="flex:1;background:var(--bd);border-radius:3px;height:'+Math.max(4,Math.round(d.q*60/mx))+'px;position:relative"><i style="position:absolute;left:0;right:0;bottom:0;background:var(--ac);border-radius:3px;height:'+(d.q?Math.round(d.b*100/d.q):0)+'%"></i></div>'}).join('')+'</div><div class="mu" style="font-size:11px">'+days.length+' hari terakhir (bar hijau = bahagian disekat)</div>':'')+'</div>'+
+ '<div class="sec">Domain paling banyak disekat</div><div class="c">'+((st.top&&st.top.length)?st.top.map(function(x){return '<div class="row" style="padding:4px 0"><span class="sp" style="word-break:break-all">'+esc(x.d)+'</span><b>'+nf(x.n)+'</b></div>'}).join(''):'<span class="mu">Tiada data lagi.</span>')+'</div>'+
+ '<div class="sec">Disekat terkini</div><div class="c">'+((st.recent&&st.recent.length)?st.recent.map(function(x){return '<div class="row" style="padding:3px 0"><span class="sp" style="word-break:break-all">'+esc(x.d)+'</span><span class="mu">'+new Date(x.t*1000).toLocaleTimeString()+'</span></div>'}).join(''):'<span class="mu">Tiada data lagi.</span>')+'</div>'+
+ '<div class="sec">Senarai</div><div class="c">'+(q.lists||[]).map(function(l){return '<div class="row" style="padding:5px 0"><input type="checkbox" class="al" value="'+l.id+'" style="width:auto"><span class="sp">'+esc(l.name)+'<div class="mu">'+(l.at?nf(l.n)+' domain · '+new Date(l.at*1000).toLocaleDateString():'belum dimuat turun')+'</div></span></div>'}).join('')+
+ '<p class="mu">Senarai putih (jangan sekat, satu domain setiap baris)</p><textarea id="aw" rows="3" placeholder="contoh: ads.laman-saya.com"></textarea>'+
+ '<p class="mu">Senarai hitam tambahan (sentiasa sekat)</p><textarea id="ab" rows="3"></textarea>'+
+ '<button class="p" id="as" style="width:100%;margin-top:8px">Simpan</button><button id="ag" style="width:100%;margin-top:8px"'+(q.run?' disabled':'')+'>Kemas kini senarai sekarang</button><button id="az" style="width:100%;margin-top:8px">Tetapkan semula statistik</button>'+
+ '<p class="mu" style="margin-top:12px">Senarai dimuat turun daripada GitHub (kira-kira 10 MB) dan dikemas kini sendiri setiap 7 hari. Had: tidak menyekat iklan yang datang daripada domain yang sama dengan kandungan (contohnya YouTube), dan peranti yang menggunakan DNS-over-HTTPS sendiri tidak ditapis.</p></div>';
+ $('pbk').onclick=function(){clearTimeout(adT);rPlus(m)};$('ao').checked=!!c.on;
+ [].forEach.call(m.querySelectorAll('.al'),function(e){e.checked=(c.lists||[]).indexOf(e.value)>=0});
+ $('aw').value=(c.white||[]).join('\n');$('ab').value=(c.black||[]).join('\n');
+ function ln(id){return $(id).value.split(/\s+/).filter(Boolean)}
+ $('as').onclick=function(){$('as').disabled=true;api('/api/adblock',{on:$('ao').checked,lists:[].filter.call(m.querySelectorAll('.al'),function(e){return e.checked}).map(function(e){return e.value}),white:ln('aw'),black:ln('ab')}).then(function(r){toast(r.msg);rAd(m)})};
+ $('ag').onclick=function(){api('/api/adblock/update',{}).then(function(r){toast(r.msg);rAd(m)})};
+ $('az').onclick=function(){cf({i:'🔄',t:'Tetapkan semula?',m:'Semua statistik sekat iklan akan dipadam.',ok:'Tetapkan semula',d:1},function(){api('/api/adblock/reset',{}).then(function(r){toast(r.msg);rAd(m)})})};
+ var dirty=false;m.oninput=m.onchange=function(){dirty=true};
+ (function tk(){adT=setTimeout(function(){if(!$('ao'))return;if(dirty)tk();else rAd(m)},q.run?3000:8000)})()})}
+var wanT;
+function rWan(m){clearTimeout(wanT);api('/api/wanip').then(function(q){var run=q.state=='running';
+ m.innerHTML='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div><div class="c"><b style="font-size:18px">Tukar IP WAN</b>'+
+ '<p class="mu">Memutuskan dan menyambung semula data selular supaya operator memberikan IP baharu. Internet terputus kira-kira 1 minit (sehingga 3 minit jika operator lambat); panel ini masih boleh dibuka dari WiFi modem. Jika data tidak pulih selepas 2 percubaan, modem dimulakan semula secara automatik. VLESS dimulakan semula selepas itu.</p>'+
+ '<button class="p" id="wg" style="width:100%"'+(run?' disabled':'')+'>'+(run?'Sedang berjalan...':'Tukar IP sekarang')+'</button></div>'+
+ (q.state!='idle'?'<div class="sec">Keputusan</div><div class="c">'+(run?'<div class="wn">'+esc(q.step||'')+'</div>':'<div class="'+(q.state=='done'?'ok':'bad')+'"><b>'+esc(q.msg||'')+'</b></div>')+
+ '<p class="mu">IP WAN modem: '+esc(q.before||'-')+(run?'':' → '+esc(q.after||'-'))+'<br>IP awam: '+esc(q.beforePub||'-')+(run?'':' → '+esc(q.afterPub||'-'))+(run?'':'<br>Masa: '+q.secs+' saat')+'</p></div>':'');
+ $('pbk').onclick=function(){clearTimeout(wanT);rPlus(m)};
+ $('wg').onclick=function(){cf({i:'🌐',t:'Tukar IP WAN?',m:'Internet terputus sekurang-kurangnya 1 minit. Jika data tidak pulih, modem dimulakan semula.',ok:'Teruskan',d:1},function(){api('/api/wanip/run',{}).then(function(r){toast(r.msg);rWan(m)})})};
+ if(run)wanT=setTimeout(function(){if($('wg'))rWan(m)},2500)})}
 function rQuota(m){api('/api/quota').then(function(q){var c=q.cfg||{},lim=c.limit||0,pc=lim>0?Math.min(100,Math.round(q.used/lim*100)):0,st=q.state,col=st=='full'?'bad':st=='warn'?'wn':'ok';
  function dt(t){return new Date(t*1000).toLocaleDateString()}
  m.innerHTML='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div><div class="c"><div class="row"><div class="sp"><b style="font-size:18px">Kuota data</b><div class="'+(st=='off'?'mu':col)+'">'+(st=='off'?'Tidak aktif':st=='full'?(q.blocked?'Kuota habis · internet disekat':'Kuota habis'):st=='warn'?'Hampir habis':'Dalam had')+'</div></div><input type="checkbox" id="qo" style="width:auto"></div>'+
@@ -136,11 +172,11 @@ function hms(s){s=Math.max(0,s|0);var h=s/3600|0,m=s%3600/60|0;return [h,m,s%60]
 function login(){$('app').innerHTML='<div id="lg"><div class="c"><h2 style="margin:0 0 4px">VLESS Pro</h2><p class="mu">Masukkan kata laluan modem</p><input id="pw" type="password" placeholder="Kata laluan" autofocus><p></p><button class="p" style="width:100%" id="go">Masuk</button><p class="mu" id="le"></p></div></div>';
  var go=function(){api('/api/login',$('pw').value).then(function(){location.reload()}).catch(function(){$('le').textContent='Kata laluan salah'})};$('go').onclick=go;$('pw').onkeydown=function(e){if(e.key=='Enter')go()}}
 var TT={plus:'Feature Plus',lang:'Bahasa',tema:'Tema',home:'VLESS Pro',status:'Status',prof:'Profil',logs:'Log',route:'Penghalaan',set:'Tetapan',sys:'Sistem',tema:'Tema',upd:'Kemas kini',about:'Perihal'};
-function shell(){$('app').innerHTML='<header><span id="mb">'+ic('menu')+'</span><span id="bk" style="display:none" title="Kembali ke panel">'+ic('back')+'</span><span id="ti"></span></header><main id="mn"></main><nav>'+
+function shell(){$('app').innerHTML='<header><span id="mb">'+ic('menu')+'</span><span id="bk" style="display:none" title="Menu">'+ic('back')+'</span><span id="ti"></span></header><main id="mn"></main><nav>'+
  [['home','Utama','home'],['status','Status','pulse'],['prof','Profil','db']].map(function(x){return '<div id="n_'+x[0]+'">'+ic(x[2])+x[1]+'</div>'}).join('')+'</nav>'+
  '<div id="dr"><h2>vless pro</h2><small>NAVIGASI</small>'+[['logs','Log','logs'],['route','Penghalaan','route'],['set','Tetapan','set'],['sys','Sistem','sys'],['tema','Tema','pal'],['lang','Bahasa','lang'],['plus','Feature Plus','plus']].map(function(x){return '<a data-v="'+x[0]+'">'+ic(x[2])+x[1]+'</a>'}).join('')+'<hr><small>APLIKASI</small>'+
  [['upd','Kemas kini','upd'],['about','Perihal','inf']].map(function(x){return '<a data-v="'+x[0]+'">'+ic(x[2])+x[1]+'</a>'}).join('')+'<a id="lo">'+ic('out')+'Log Keluar</a></div>';
- $('mb').onclick=function(){dr(1)};$('bk').onclick=function(){go('home')};$('sc').onclick=function(){dr(0)};
+ $('mb').onclick=function(){dr(1)};$('bk').onclick=function(){dr(1)};$('sc').onclick=function(){dr(0)};
  ['home','status','prof'].forEach(function(v){$('n_'+v).onclick=function(){go(v)}});
  [].forEach.call(document.querySelectorAll('#dr a[data-v]'),function(a){a.onclick=function(){dr(0);go(a.dataset.v)}});
  $('lo').onclick=function(){api('/api/logout',{}).then(function(){login()})}}
