@@ -24,6 +24,7 @@ import (
 //go:embed payload
 var payload embed.FS
 
+const xrayURL64 = "https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-arm64-v8a.zip"
 const xrayURL = "https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-arm32-v7a.zip"
 
 // Mesti sepadan dengan vp/vpro di dalam modem; backupCmd hanya dijalankan dalam mod Pasang bersih.
@@ -177,10 +178,10 @@ func extract(dir string) (string, error) {
 	return dir, err
 }
 
-func getXray(tmp string) error {
+func getXray(tmp, url string) error {
 	fmt.Println("Memuat turun Xray (sekitar 15 MB) ...")
 	c := &http.Client{Timeout: 5 * time.Minute}
-	resp, err := c.Get(xrayURL)
+	resp, err := c.Get(url)
 	if err != nil {
 		return err
 	}
@@ -418,7 +419,7 @@ func main() {
 	}
 
 	if noX {
-		if err := getXray(tmp); err != nil {
+		if err := getXray(tmp, xrayURL); err != nil {
 			die("gagal memuat turun Xray: " + err.Error())
 		}
 		ssh("mkdir -p /online/vlesspro/bin")
@@ -482,7 +483,7 @@ func installAW1000() {
 		fmt.Println("  XLITE        : tidak dijumpai")
 	}
 	if !hasX {
-		fmt.Println("  AMARAN       : Xray tidak dijumpai pada modem. UI akan dipasang tetapi sambungan VLESS tidak boleh digunakan sehingga Xray ada.")
+		fmt.Println("  Xray         : akan dimuat turun dan dipasang bersama VLESS Pro")
 	}
 	if !yes("\nTeruskan pemasangan?") {
 		cancelled()
@@ -508,6 +509,24 @@ func installAW1000() {
 	if o, err := c.CombinedOutput(); err != nil {
 		fmt.Print(string(o))
 		die("gagal menghantar fail ke modem")
+	}
+	if !hasX {
+		if err := getXray(tmp, xrayURL64); err != nil {
+			die("gagal memuat turun Xray: " + err.Error())
+		}
+		xf, err := os.Open(filepath.Join(tmp, "xray"))
+		if err != nil {
+			die(err.Error())
+		}
+		defer xf.Close()
+		xc := exec.Command("ssh", append(append([]string{}, opts...), "root@"+ip,
+			"mkdir -p /data/vlesspro/bin && cat > /data/vlesspro/bin/xray && chmod 755 /data/vlesspro/bin/xray")...)
+		xc.Env = sshEnv
+		xc.Stdin = xf
+		if o, err := xc.CombinedOutput(); err != nil {
+			fmt.Print(string(o))
+			die("gagal menghantar Xray (ruang storan modem mencukupi?)")
+		}
 	}
 	fmt.Println("\n[3/4] Memasang ...")
 	if err := sshLive("sh /data/vlesspro/install.sh"); err != nil {
