@@ -160,7 +160,7 @@ function rFo(m){api('/api/failover').then(function(q){var c=q.cfg||{};
  $('pbk').onclick=function(){rPlus(m)};$('fo').checked=!!c.on;
  $('fl').innerHTML=(q.log&&q.log.length)?q.log.map(function(e){return '<div class="ov"><span class="ov2" style="flex:1"><b>'+esc(e.from||'-')+' → '+esc(e.to)+'</b><div class="mu">'+new Date(e.t*1000).toLocaleString()+' · '+esc(e.why)+'</div></span></div>'}).join(''):'<span class="mu">Tiada penukaran lagi.</span>';
  $('fs').onclick=function(){api('/api/failover',{on:$('fo').checked}).then(function(r){toast(r.msg)})}})}
-function rSqm(m){api('/api/sqm').then(function(q){var c=q.cfg||{};
+function rSqm(m){api('/api/sqm').then(function(q){if(q.unsupported){m.innerHTML='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div><div class="c"><b style="font-size:18px">SQM (fq_codel)</b><p class="mu">Ciri ini belum disokong pada modem B618 (kernel tiada pengehad kadar).</p></div>';$('pbk').onclick=function(){rPlus(m)};return}var c=q.cfg||{};
  if(!q.tc||!q.ip){m.innerHTML='<div class="c"><b>SQM (fq_codel)</b><p class="bad">Tidak disokong pada peranti ini (tc tiada)</p></div>';return}
  m.innerHTML='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div><div class="c"><div class="row"><div class="sp"><b style="font-size:18px">SQM (fq_codel)</b><div class="'+(q.active?'ok':'mu')+'">'+(q.active?'Aktif sekarang':'Tidak aktif')+' · '+esc(q.iface||'-')+'</div></div><input type="checkbox" id="sq" style="width:auto"></div>'+
  '<p class="mu">Mengurangkan lag (bufferbloat) semasa muat naik besar. Tetapkan had kira-kira 85–95% daripada kelajuan muat naik sebenar anda (uji dengan speedtest dahulu).</p>'+

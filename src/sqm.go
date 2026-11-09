@@ -131,7 +131,7 @@ func sqmWatch() {
 	time.Sleep(20 * time.Second)
 	for {
 		s := loadSQM()
-		if s.On {
+		if s.On && !isB618() {
 			sqmMu.Lock()
 			ok := sqmActive()
 			if !ok {
@@ -148,6 +148,10 @@ func sqmWatch() {
 func regSQM(mux *http.ServeMux, act func(string, func(*http.Request) (string, bool)), body func(*http.Request, int64) []byte) {
 	mux.HandleFunc("/api/sqm", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
+			if isB618() {
+				jr(w, map[string]any{"ok": false, "msg": "Ciri SQM belum disokong pada modem B618"})
+				return
+			}
 			if locked(readLic()) {
 				jr(w, map[string]any{"ok": false, "msg": "Lesen belum aktif"})
 				return
@@ -181,6 +185,6 @@ func regSQM(mux *http.ServeMux, act func(string, func(*http.Request) (string, bo
 		dev := wanIface()
 		st, _ := run2("tc", "-s", "qdisc", "show", "dev", dev)
 		jr(w, map[string]any{"cfg": loadSQM(), "iface": dev, "active": sqmActive(),
-			"tc": findBin("tc") != "", "ip": findBin("ip") != "", "stat": st})
+			"unsupported": isB618(), "tc": findBin("tc") != "", "ip": findBin("ip") != "", "stat": st})
 	})
 }
