@@ -13,14 +13,15 @@ import (
 
 // Tukar IP WAN: putus dan sambung semula antara muka wan (netifd, proto mipc).
 type wanState struct {
-	State     string `json:"state"` // idle | running | done | fail
-	Step      string `json:"step"`
-	Before    string `json:"before"`
-	After     string `json:"after"`
-	BeforePub string `json:"beforePub"`
-	AfterPub  string `json:"afterPub"`
-	Secs      int    `json:"secs"`
-	Msg       string `json:"msg"`
+	State       string `json:"state"` // idle | running | done | fail
+	Step        string `json:"step"`
+	Before      string `json:"before"`
+	After       string `json:"after"`
+	BeforePub   string `json:"beforePub"`
+	AfterPub    string `json:"afterPub"`
+	Secs        int    `json:"secs"`
+	Msg         string `json:"msg"`
+	Unsupported bool   `json:"unsupported,omitempty"`
 }
 
 var (
@@ -156,6 +157,7 @@ func regWan(mux *http.ServeMux, act func(string, func(*http.Request) (string, bo
 		wanMu.Lock()
 		s := wanSt
 		wanMu.Unlock()
+		s.Unsupported = isB618()
 		jr(w, s)
 	})
 	act("/api/wanip/run", func(r *http.Request) (string, bool) {
