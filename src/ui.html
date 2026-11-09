@@ -3,7 +3,7 @@
 :root{--ff:system-ui,Roboto,sans-serif;--ib:#1b3a30;--in:#12141d;--on:#052e16;--bg:#111113;--bar:#1c1c1f;--cd:#191b26;--bd:#262a3b;--tx:#e9ebf2;--mu:#7d869c;--ac:#4ade80;--ac2:#38bdf8;--bad:#f87171;--wn:#f59e0b}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:15px var(--ff)}
 #app{display:flex;flex-direction:column;height:100%;max-width:640px;margin:0 auto}
-header{display:flex;align-items:center;gap:18px;padding:14px 16px;background:var(--bar);border-bottom:1px solid var(--bd);font-size:20px;font-weight:700}
+header{position:relative;display:flex;align-items:center;gap:18px;padding:14px 16px;background:var(--bar);border-bottom:1px solid var(--bd);font-size:20px;font-weight:700}
 header svg{width:26px;height:26px;stroke:var(--tx);fill:none;stroke-width:2;cursor:pointer}
 main{flex:1;overflow:auto;padding:14px 14px 90px}
 nav{position:fixed;bottom:0;left:0;right:0;max-width:640px;margin:0 auto;display:flex;background:var(--bar);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom)}
@@ -13,6 +13,7 @@ nav div.on{color:var(--ac)}nav svg{display:block;margin:0 auto 3px;width:26px;he
 #dr.o{transform:none}#sc{position:fixed;inset:0;background:#0008;z-index:8;display:none}#sc.o{display:block}
 #dr h2{margin:0;padding:16px;font-size:24px;font-weight:800;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid var(--bd)}
 .vpb,#dr h2 span{display:inline-block;font-weight:800;letter-spacing:2px;background:linear-gradient(90deg,#38bdf8,#4ade80,#facc15,#fb923c,#f472b6,#a78bfa,#38bdf8);background-size:200% 100%;background-repeat:repeat-x;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:vpFlow 6s linear infinite}
+#ti.vpb{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none}
 #dr h2 span{letter-spacing:3px}
 @keyframes vpFlow{to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.vpb,#dr h2 span{animation:none}}#dr small{display:block;color:var(--mu);font-size:12px;letter-spacing:1px;padding:18px 16px 6px}
