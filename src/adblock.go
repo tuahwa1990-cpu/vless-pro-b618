@@ -331,8 +331,8 @@ func adCount(name string, blocked bool) {
 			stData.Top[name]++
 		}
 		stData.Recent = append(stData.Recent, adRecent{T: time.Now().Unix(), D: name})
-		if len(stData.Recent) > 20 {
-			stData.Recent = stData.Recent[len(stData.Recent)-20:]
+		if len(stData.Recent) > 50 {
+			stData.Recent = stData.Recent[len(stData.Recent)-50:]
 		}
 	}
 	stDirty = true
@@ -778,8 +778,8 @@ func regAd(mux *http.ServeMux, act func(string, func(*http.Request) (string, boo
 			top = append(top, kv{d, n})
 		}
 		sort.Slice(top, func(i, j int) bool { return top[i].N > top[j].N })
-		if len(top) > 10 {
-			top = top[:10]
+		if len(top) > 30 {
+			top = top[:30]
 		}
 		recent := append([]adRecent{}, stData.Recent...)
 		for i, j := 0, len(recent)-1; i < j; i, j = i+1, j-1 {
