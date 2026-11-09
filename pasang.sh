@@ -21,7 +21,7 @@ if [ ! -f "$D/vlesspro/install.sh" ] || [ ! -d "$D/new" ]; then
   cp "$D/new/vp" "$D/vlesspro/vp"; cp "$D/new/vpro" "$D/vlesspro/bin/vpro"
   chmod 755 "$D/vlesspro/vp" "$D/vlesspro/install.sh" "$D/vlesspro/bin/vpro" "$D/new/vp" "$D/new/vpro" "$D/upgrade.sh"
 fi
-SSH="ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=8 root@$IP"
+SSH="ssh -n -o StrictHostKeyChecking=accept-new -o ConnectTimeout=8 root@$IP"
 SCP="scp -O -o StrictHostKeyChecking=accept-new -o ConnectTimeout=8"
 command -v ssh >/dev/null && command -v scp >/dev/null || { echo "ssh/scp tiada. Jalankan dahulu:  pkg install openssh"; exit 1; }
 echo "[1/4] Menyemak modem $IP ..."
