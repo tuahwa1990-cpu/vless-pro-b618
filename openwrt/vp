@@ -199,7 +199,7 @@ status() {
 
 case "$1" in
   boot) boot;; to-vless) to_vless;; to-xlite) to_xlite;; restart) restart;; fwcheck) fwcheck;;
-  ui-start) start_ui;; ui-restart) ui_stop; start_ui;; hook-install) hook_install;; hook-remove) hook_remove;;
+  ui-start) start_ui;; ui-restart) ui_stop; start_ui;; svc-restart) restart; ui_stop; start_ui;; hook-install) hook_install;; hook-remove) hook_remove;;
   doctor) doctor;; status) status;;
   *) echo "vp: boot | to-vless | to-xlite | restart | fwcheck | ui-start | ui-restart | hook-install | hook-remove | doctor | status";;
 esac

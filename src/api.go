@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
 	"embed"
@@ -27,8 +28,17 @@ var (
 	started = time.Now()
 )
 
+// sessNonce berubah pada setiap permulaan proses, jadi mula semula servis memaksa log masuk semula.
+var sessNonce = func() string {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return strconv.FormatInt(time.Now().UnixNano(), 36)
+	}
+	return hex.EncodeToString(b)
+}()
+
 func tokenOf(p string) string {
-	h := sha256.Sum256([]byte("vp|" + version + "|" + p))
+	h := sha256.Sum256([]byte("vp|" + version + "|" + sessNonce + "|" + p))
 	return hex.EncodeToString(h[:])
 }
 
