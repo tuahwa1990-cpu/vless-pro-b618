@@ -365,7 +365,7 @@ func main() {
 	}
 	fmt.Println("Lesen: jika belum ada, hantar ID Peranti (di atas) kepada penjual.")
 	fmt.Println("Simpan kunci lesen anda. Jika modem direset, pasang semula dan tampal kunci yang sama.")
-	if !noX {
+	if st.xlite {
 		fmt.Println("XLITE tidak diubah dan boleh ditukar semula bila-bila masa.")
 	}
 	pause()

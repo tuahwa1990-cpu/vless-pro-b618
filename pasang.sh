@@ -56,4 +56,4 @@ esac
 echo "[4/4] Siap."
 echo "Buka di Chrome: http://$IP:8990"
 echo "Hantar ID Peranti (di atas) kepada penjual untuk mendapatkan kunci lesen."
-[ "$NOX" = 1 ] || echo "XLITE tidak diubah dan boleh ditukar semula bila-bila masa."
+case "$X" in *ada*) echo "XLITE tidak diubah dan boleh ditukar semula bila-bila masa.";; esac
