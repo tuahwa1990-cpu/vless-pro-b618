@@ -39,6 +39,22 @@ func main() {
 	exp := flag.String("exp", "0", "tarikh tamat YYYYMMDD, atau 0 untuk tiada tamat")
 	issued := flag.String("issued", "", "tarikh keluar YYYYMMDD (lalai hari ini)")
 	gen := flag.String("gen", "", "jana pasangan kunci lesen baharu; tulis seed ke fail ini (tidak menimpa)")
+	// Android tanpa cgo kadangkala tidak memberi argumen melalui os.Args; baca /proc/self/cmdline.
+	if len(os.Args) <= 1 {
+		if b, err := os.ReadFile("/proc/self/cmdline"); err == nil {
+			p := strings.Split(strings.TrimRight(string(b), "\x00"), "\x00")
+			if len(p) > 1 {
+				os.Args = p
+			}
+		}
+	}
+	// Buang argumen asing di hadapan (binaan Android) sehingga bendera pertama.
+	for i := 1; i < len(os.Args); i++ {
+		if strings.HasPrefix(os.Args[i], "-") {
+			os.Args = append([]string{os.Args[0]}, os.Args[i:]...)
+			break
+		}
+	}
 	flag.Parse()
 
 	if *gen != "" {
@@ -62,6 +78,7 @@ func main() {
 	}
 
 	if *seedPath == "" || *pubB64 == "" || *id == "" || *name == "" {
+		fmt.Fprintf(os.Stderr, "args diterima: %d %q\n", len(os.Args), os.Args[:min(len(os.Args), 4)])
 		flag.Usage()
 		os.Exit(2)
 	}
