@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -78,6 +79,20 @@ func pickFailover(pings []int, cur int, rotate bool) int {
 	return best
 }
 
+// pickAlt: dipanggil bila sambungan sah gagal walaupun TCP ke pelayan semasa masih boleh dicapai.
+// Pilih profil lain yang boleh dicapai dengan ping terendah.
+func pickAlt(pings []int, cur int) int {
+	best := -1
+	for i, p := range pings {
+		if i != cur && p >= 0 && (best < 0 || p < pings[best]) {
+			best = i
+		}
+	}
+	return best
+}
+
+var foFails atomic.Int32 // kegagalan berturut dikesan pemantau (0-3)
+
 func pingAll(ns []Node) []int {
 	res := make([]int, len(ns))
 	var wg sync.WaitGroup
@@ -112,6 +127,9 @@ func failoverSwitch() bool {
 	pings := pingAll(ns)
 	rotate := !foLast.IsZero() && time.Since(foLast) < 15*time.Minute
 	n := pickFailover(pings, cur, rotate)
+	if n < 0 {
+		n = pickAlt(pings, cur) // pemantau sudah mengesahkan sambungan gagal
+	}
 	if n < 0 {
 		return false
 	}
@@ -348,7 +366,7 @@ func regFeat(mux *http.ServeMux, act func(string, func(*http.Request) (string, b
 		sort.Slice(l, func(i, j int) bool { return l[i].T > l[j].T })
 		o := loadOpts()
 		jr(w, map[string]any{"cfg": loadFO(), "log": l, "cur": cur, "n": len(ns), "grp": selGroup() >= 0,
-			"auto": o.AutoRecon && readStr(home+"/etc/mode", "xlite") == "vless"})
+			"auto": o.AutoRecon && readStr(home+"/etc/mode", "xlite") == "vless", "fails": foFails.Load()})
 	})
 	mux.HandleFunc("/api/quota", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {

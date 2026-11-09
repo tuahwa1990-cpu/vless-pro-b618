@@ -151,7 +151,7 @@ function rFo(m){api('/api/failover').then(function(q){var c=q.cfg||{};
  m.innerHTML='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div><div class="c"><div class="row"><div class="sp"><b style="font-size:18px">Failover profil</b><div class="mu">Profil semasa: '+esc(q.cur||'-')+'</div></div><input type="checkbox" id="fo" style="width:auto"></div>'+
  '<p class="mu">Bila sambungan gagal berulang, sistem menyemak pelayan semua profil dan bertukar kepada yang boleh dicapai dengan ping terendah, kemudian memulakan semula sambungan.</p>'+
  (q.n<2?'<p class="wn">Perlu sekurang-kurangnya 2 profil.</p>':'')+(q.grp?'<p class="wn">Kumpulan profil sedang digunakan; kumpulan sudah mengimbangi sendiri, jadi failover tidak dilaksanakan.</p>':'')+(!q.auto?'<p class="wn">Hidupkan “Sambung semula automatik” di Tetapan dan guna mod VLESS Pro, kerana failover bergantung padanya.</p>':'')+
- '<button class="p" id="fs" style="width:100%">Simpan</button></div><div class="sec">Sejarah penukaran</div><div class="c" id="fl"></div>';
+ (c.on&&q.auto?'<p class="'+(q.fails>0?'wn':'mu')+'">Pemantauan: '+(q.fails>0?'sambungan gagal '+q.fails+'/3 (bertukar pada 3, semakan setiap 30 saat)':'sambungan baik')+'</p>':'')+'<button class="p" id="fs" style="width:100%">Simpan</button></div><div class="sec">Sejarah penukaran</div><div class="c" id="fl"></div>';
  $('pbk').onclick=function(){rPlus(m)};$('fo').checked=!!c.on;
  $('fl').innerHTML=(q.log&&q.log.length)?q.log.map(function(e){return '<div class="ov"><span class="ov2" style="flex:1"><b>'+esc(e.from||'-')+' → '+esc(e.to)+'</b><div class="mu">'+new Date(e.t*1000).toLocaleString()+' · '+esc(e.why)+'</div></span></div>'}).join(''):'<span class="mu">Tiada penukaran lagi.</span>';
  $('fs').onclick=function(){api('/api/failover',{on:$('fo').checked}).then(function(r){toast(r.msg)})}})}
@@ -260,12 +260,42 @@ function rProf(m){m.innerHTML='<div class="tt"><div id="t1" class="'+(T.pro=='p'
 function lNodes(){api('/api/nodes').then(function(ns){P.nodes=ns;var b=$('pb2');if(!b)return;
  var h='<div class="row" style="margin-bottom:10px"><button id="pg">'+ic('pulse','style="width:18px;height:18px;vertical-align:-3px;stroke:currentColor;fill:none;stroke-width:2"')+' Uji semua</button><span class="mu sp" style="text-align:right">'+ns.length+' profil</span></div>';
  if(!ns.length)h+='<div class="c mu" style="text-align:center">Tiada profil. Tekan + untuk tambah pautan vless://</div>';
- ns.forEach(function(n){h+='<div class="pf'+(n.sel?' sel':'')+'" data-i="'+n.i+'"><span class="ic">'+ic('db')+'</span><div class="sp"><div class="nm">'+esc(n.name)+'</div><div class="mu">'+esc(n.host)+':'+n.port+' <b id="ms'+n.i+'"></b></div></div><span class="tag g">'+esc(n.net)+'</span><span class="tag">'+esc(n.sec)+'</span><button class="d" data-d="'+n.i+'">'+ic('out','style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;display:none"')+'✕</button></div>'});
+ ns.forEach(function(n){h+='<div class="pf'+(n.sel?' sel':'')+'" data-i="'+n.i+'"><span class="ic">'+ic('db')+'</span><div class="sp"><div class="nm">'+esc(n.name)+'</div><div class="mu">'+esc(n.host)+':'+n.port+' <b id="ms'+n.i+'"></b></div></div><span class="tag g">'+esc(n.net)+'</span><span class="tag">'+esc(n.sec)+'</span><button data-e="'+n.i+'" title="Edit">✎</button><button class="d" data-d="'+n.i+'">'+ic('out','style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;display:none"')+'✕</button></div>'});
  b.innerHTML=h;
- [].forEach.call(b.querySelectorAll('.pf'),function(e){e.onclick=function(ev){if(ev.target.dataset.d!=null)return;if(S.locked){toast('Aktifkan lesen dahulu');return}api('/api/node/use',e.dataset.i).then(function(r){toast(r.msg);load();lNodes()})}});
+ [].forEach.call(b.querySelectorAll('.pf'),function(e){e.onclick=function(ev){if(ev.target.dataset.d!=null||ev.target.dataset.e!=null)return;if(S.locked){toast('Aktifkan lesen dahulu');return}api('/api/node/use',e.dataset.i).then(function(r){toast(r.msg);load();lNodes()})}});
+  [].forEach.call(b.querySelectorAll('button[data-e]'),function(e){e.onclick=function(){editNode(+e.dataset.e)}});
  [].forEach.call(b.querySelectorAll('button[data-d]'),function(e){e.onclick=function(){cf({i:'🗑️',t:'Padam profil?',m:'Profil ini akan dibuang.',ok:'Padam',d:1},function(){api('/api/node/del',e.dataset.d).then(function(r){toast(r.msg);lNodes()})})}});
  $('pg').onclick=function(){$('pg').disabled=true;api('/api/ping').then(function(r){r.forEach(function(v,i){var e=$('ms'+i);if(e){e.textContent=v<0?'· tamat':'· '+v+' ms';e.className=v<0?'bad':v<250?'ok':'wn'}});$('pg').disabled=false})}})}
 function dlg(t,body,okf){var d=document.createElement('div');d.style.cssText='position:fixed;inset:0;background:#000b;z-index:30;display:flex;align-items:flex-end;justify-content:center';d.innerHTML='<div class="c" style="width:100%;max-width:640px;margin:0;border-radius:22px 22px 0 0;max-height:85%;overflow:auto"><h3 style="margin:0 0 10px">'+t+'</h3>'+body+'<div class="row" style="margin-top:14px"><button id="dx" class="sp">Batal</button><button id="do" class="p sp">OK</button></div></div>';document.body.appendChild(d);$('dx').onclick=function(){d.remove()};$('do').onclick=function(){okf(d)}}
+function editNode(i){fetch('/api/node/link?i='+i).then(function(r){return r.json()}).then(function(q){if(!q.ok){toast('Gagal');return}
+ var u;try{u=new URL(q.link)}catch(x){toast('Pautan tidak sah');return}
+ var P=u.searchParams,g=function(k){return P.get(k)||''},h=u.hostname.replace(/^\[|\]$/g,'');
+ function f(id,l,v,ex){return '<div style="margin:10px 0 2px" class="mu">'+l+'</div><input id="e_'+id+'" value="'+esc(v)+'" '+(ex||'')+' autocomplete="off" autocapitalize="off" spellcheck="false">'}
+ function sl(id,l,v,o){return '<div style="margin:10px 0 2px" class="mu">'+l+'</div><select id="e_'+id+'">'+o.map(function(x){return '<option value="'+x+'"'+(x==v?' selected':'')+'>'+x+'</option>'}).join('')+'</select>'}
+ var net=g('type')||'tcp',sec=g('security')||'none';
+ var body='<div class="sec" style="margin-top:0">Asas</div>'+f('nm','Remark',decodeURIComponent(u.hash.slice(1)))+f('ad','Alamat *',h)+f('pt','Port *',u.port,'inputmode="numeric"')+
+  '<div style="margin:10px 0 2px" class="mu">UUID *</div><div class="row"><input id="e_id" class="sp" type="password" value="'+esc(decodeURIComponent(u.username))+'" autocomplete="off"><button id="e_eye" type="button" style="margin-left:6px">👁</button></div>'+
+  '<div class="sec">Pengangkutan</div>'+sl('ty','Rangkaian',net,['tcp','ws','grpc','httpupgrade','xhttp'])+
+  '<div id="e_w1">'+f('pa','Path',g('path'))+f('ho','Host header',g('host'))+'</div>'+
+  '<div id="e_w2">'+f('sv','Nama servis (gRPC)',g('serviceName'))+'</div>'+
+  '<div class="sec">Keselamatan</div>'+sl('se','Keselamatan',sec,['none','tls','reality'])+
+  '<div id="e_w3">'+f('sn','SNI',g('sni'))+f('fp','Fingerprint (cth: chrome)',g('fp'))+f('al','ALPN (cth: h2,http/1.1)',g('alpn'))+
+  '<label class="row" style="padding:10px 0"><input type="checkbox" id="e_ai" style="width:22px;height:22px"'+(/^(1|true)$/.test(g('allowInsecure'))?' checked':'')+'><span class="sp">Benarkan sijil tidak selamat</span></label></div>'+
+  '<div id="e_w4">'+f('pk','Public key (pbk)',g('pbk'))+f('si','Short ID (sid)',g('sid'))+f('sp','SpiderX (spx)',g('spx'))+'</div>'+
+  '<div id="e_w5">'+f('fl','Flow (cth: xtls-rprx-vision)',g('flow'))+'</div>';
+ dlg('Edit profil',body,function(d){
+  var v=function(k){return $('e_'+k).value.trim()},ty=v('ty'),se=v('se'),np=new URLSearchParams(u.search);
+  function st(k,x){if(x)np.set(k,x);else np.delete(k)}
+  st('type',ty);np.set('encryption','none');st('security',se=='none'?'':se);
+  st('path',(ty=='ws'||ty=='httpupgrade'||ty=='xhttp')?v('pa'):'');st('host',(ty=='ws'||ty=='httpupgrade'||ty=='xhttp')?v('ho'):'');st('serviceName',ty=='grpc'?v('sv'):'');
+  var tl=se!='none';st('sni',tl?v('sn'):'');st('fp',tl?v('fp'):'');st('alpn',se=='tls'?v('al'):'');st('allowInsecure',(se=='tls'&&$('e_ai').checked)?'1':'');
+  st('pbk',se=='reality'?v('pk'):'');st('sid',se=='reality'?v('si'):'');st('spx',se=='reality'?v('sp'):'');st('flow',tl&&ty=='tcp'?v('fl'):'');
+  var ad=v('ad');if(!ad||!v('pt')||!$('e_id').value.trim()){toast('Alamat, port dan UUID wajib');return}
+  var lk='vless://'+encodeURIComponent($('e_id').value.trim())+'@'+(ad.indexOf(':')>=0?'['+ad+']':ad)+':'+v('pt')+'?'+np.toString()+'#'+encodeURIComponent(v('nm')||ad);
+  api('/api/node/edit',{i:i,link:lk}).then(function(r){toast(r.msg);if(r.ok){d.remove();load();lNodes()}})});
+ function vis(){var ty=$('e_ty').value,se=$('e_se').value,sh=function(id,x){$(id).style.display=x?'':'none'};sh('e_w1',ty=='ws'||ty=='httpupgrade'||ty=='xhttp');sh('e_w2',ty=='grpc');sh('e_w3',se!='none');sh('e_w4',se=='reality');sh('e_w5',se!='none'&&ty=='tcp')}
+ $('e_ty').onchange=$('e_se').onchange=vis;vis();
+ $('e_eye').onclick=function(){var x=$('e_id');x.type=x.type=='password'?'text':'password'}})}
 function addNode(){dlg('Tambah profil','<textarea id="lk" rows="5" placeholder="Tampal pautan vless:// (boleh beberapa baris)"></textarea>',function(d){api('/api/node/add',$('lk').value).then(function(r){toast(r.msg);if(r.ok){d.remove();lNodes()}})})}
 function lGroups(){api('/api/groups').then(function(gs){var b=$('pb2');if(!b)return;var h='';if(!gs.length)h='<div class="c mu" style="text-align:center">Tiada kumpulan. Kumpulan memilih profil secara automatik (terpantas, rawak atau bergilir).</div>';
  gs.forEach(function(g){h+='<div class="pf'+(g.sel?' sel':'')+'" style="flex-wrap:wrap" data-i="'+g.i+'"><span class="ic">'+ic('stk')+'</span><div class="sp"><div class="nm">'+esc(g.name)+'</div><div class="mu">'+g.members.length+' profil</div></div><span class="tag b">'+({random:'Rawak',roundRobin:'Bergilir'}[g.strat]||'Terpantas')+'</span><button class="d" data-d="'+g.i+'">✕</button><div style="width:100%;display:flex;flex-wrap:wrap;gap:6px">'+g.members.map(function(x){return '<span class="tag" style="text-transform:none">'+esc(x)+'</span>'}).join('')+'</div></div>'});
