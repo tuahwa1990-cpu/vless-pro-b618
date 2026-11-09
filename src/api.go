@@ -114,6 +114,7 @@ func serve() {
 	go watchdog()
 	go sqmWatch()
 	go quotaLoop()
+	go adManager()
 	go rebootSched()
 	mux := http.NewServeMux()
 	ui, _ := uiFS.ReadFile("ui.html")
@@ -527,7 +528,7 @@ func serve() {
 	regSQM(mux, act, body)
 	regFeat(mux, act, body)
 	regWan(mux, act)
-	regAd(mux, body)
+	regAd(mux, act, body)
 	act("/api/mode", func(r *http.Request) (string, bool) {
 		switch strings.TrimSpace(string(body(r, 16))) {
 		case "vless":

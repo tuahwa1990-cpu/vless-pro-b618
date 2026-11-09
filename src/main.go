@@ -13,7 +13,7 @@ import (
 	"syscall"
 )
 
-const version = "1.1.34"
+const version = "1.1.35"
 
 var home = func() string {
 	if h := os.Getenv("VP_HOME"); h != "" {
