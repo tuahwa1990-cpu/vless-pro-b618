@@ -290,12 +290,10 @@ func regOpts(mux *http.ServeMux, act func(string, func(*http.Request) (string, b
 		return fmt.Sprintf("Dipulihkan (%d fail)", n), true
 	})
 	act("/api/sys/restart", func(r *http.Request) (string, bool) {
-		if readStr(home+"/etc/mode", "xlite") == "vless" {
-			runVP(true, "restart")
-			return "Servis VLESS dimulakan semula", true
-		}
-		runVP(true, "ui-restart")
-		return "UI dimulakan semula, muat semula halaman sebentar lagi", true
+		// Mula semula VLESS Pro: xray (jika mod VLESS) dan UI ini. UI baharu menjana sesi baharu,
+		// jadi kata laluan diperlukan semula.
+		go func() { time.Sleep(time.Second); runVP(true, "svc-restart") }()
+		return "VLESS Pro dimulakan semula. Log masuk semula sebentar lagi.", true
 	})
 	act("/api/sys/reboot", func(r *http.Request) (string, bool) {
 		go func() { time.Sleep(2 * time.Second); doReboot() }()
