@@ -37,7 +37,7 @@ type device struct{ name, ip, kind string }
 // Peranti yang disokong: B618 (ARMv7, /online) dan AW1000 Ultra (arm64, OpenWrt, /data).
 var devices = []device{
 	{"Huawei B618", "192.168.8.1", "b618"},
-	{"Arcadyan AW1000 Ultra", "192.168.2.1", "aw1000"},
+	{"Arcadyan AW1000 Ultra", "192.168.1.1", "aw1000"},
 }
 
 func ask(prompt string) string {
