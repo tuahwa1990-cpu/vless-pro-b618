@@ -88,6 +88,7 @@ func watchdog() {
 		o := loadOpts()
 		if !o.AutoRecon || readStr(home+"/etc/mode", "xlite") != "vless" || locked(readLic()) {
 			fails = 0
+			foFails.Store(0)
 			continue
 		}
 		if time.Since(last) < 5*time.Minute {
@@ -107,6 +108,7 @@ func watchdog() {
 				fails = 0
 			}
 		}
+		foFails.Store(int32(fails))
 		if fails >= 3 {
 			_ = bad
 			fails = 0

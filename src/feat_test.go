@@ -200,3 +200,12 @@ func TestAdAnswerForward(t *testing.T) {
 		t.Fatal(stData)
 	}
 }
+
+func TestPickAlt(t *testing.T) {
+	if got := pickAlt([]int{20, 80, 40}, 0); got != 2 {
+		t.Fatalf("got %d", got)
+	}
+	if got := pickAlt([]int{20, -1}, 0); got != -1 {
+		t.Fatalf("got %d", got)
+	}
+}
