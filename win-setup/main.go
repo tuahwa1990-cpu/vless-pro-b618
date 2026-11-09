@@ -184,7 +184,14 @@ func pickDevice() device {
 				fmt.Println("AMARAN: pemasang ini hanya diuji pada Huawei B618 dan Arcadyan AW1000 Ultra. Modem lain mungkin tidak berfungsi.")
 				s := ask("Masukkan IP modem: ")
 				if net.ParseIP(s) != nil {
-					return device{"Lain-lain", s, "b618"}
+					k := "b618"
+					fmt.Println("Jenis modem pada IP ini:")
+					fmt.Println("  1. Huawei B618")
+					fmt.Println("  2. Arcadyan AW1000 Ultra")
+					if ask("Pilihan [1]: ") == "2" {
+						return device{"Arcadyan AW1000 Ultra", s, "aw1000"}
+					}
+					return device{"Lain-lain", s, k}
 				}
 				fmt.Println("IP tidak sah.")
 			}
@@ -232,6 +239,9 @@ func main() {
 	if len(os.Args) > 1 && os.Args[1] != "" {
 		ip = os.Args[1]
 		dev = device{"Lain-lain", ip, "b618"}
+		if len(os.Args) > 2 && os.Args[2] == "aw1000" {
+			dev = device{"Arcadyan AW1000 Ultra", ip, "aw1000"}
+		}
 		for _, d := range devices {
 			if d.ip == ip {
 				dev = d
