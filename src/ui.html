@@ -81,9 +81,20 @@ function trTree(root){if(!RXT||!root)return;if(root.nodeType==3){trNode(root);re
 function trAttr(e){['placeholder','title'].forEach(function(a){var v=e.getAttribute&&e.getAttribute(a);if(v){if(e['__t'+a]===v)return;var r=trs(v);if(r!==v){e.setAttribute(a,r);e['__t'+a]=r}}})}
 if(RXT){new MutationObserver(function(ms){ms.forEach(function(m){if(m.type=='childList')[].forEach.call(m.addedNodes,trTree);else if(m.type=='characterData')trNode(m.target);else trAttr(m.target)})}).observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['placeholder','title']});trTree(document.body)}
 
-function rPlus(m){var fs=[['SQM (fq_codel)','Kurangkan lag semasa muat naik besar',rSqm,'pulse'],['Kuota data','Had data bulanan atau harian, amaran dan sekatan',rQuota,'db'],['Failover profil','Tukar ke profil lain secara automatik bila pelayan mati',rFo,'route'],['Tukar IP WAN','Putus dan sambung semula data untuk mendapatkan IP baharu',rWan,'lang']];
+function rPlus(m){var fs=[['SQM (fq_codel)','Kurangkan lag semasa muat naik besar',rSqm,'pulse'],['Kuota data','Had data bulanan atau harian, amaran dan sekatan',rQuota,'db'],['Failover profil','Tukar ke profil lain secara automatik bila pelayan mati',rFo,'route'],['Tukar IP WAN','Putus dan sambung semula data untuk mendapatkan IP baharu',rWan,'lang'],['Sekat iklan','Sekat domain iklan dan penjejak untuk semua peranti',rAd,'pwr']];
  m.innerHTML=fs.map(function(f,i){return '<div class="pf'+(f[2]?'':'" style="opacity:.55')+'" data-i="'+i+'"><span class="ic">'+ic(f[3])+'</span><div class="sp"><div class="nm">'+(i+1)+'. '+f[0]+'</div>'+(f[1]?'<div class="mu">'+f[1]+'</div>':'')+'</div>'+(f[2]?'<span class="mu">›</span>':'')+'</div>'}).join('');
  [].forEach.call(m.querySelectorAll('.pf'),function(e){var f=fs[+e.dataset.i];if(f[2])e.onclick=function(){f[2](m)}})}
+var adT;
+function rAd(m){clearTimeout(adT);api('/api/adblock').then(function(q){var c=q.cfg||{},have=q.geosite>0;
+ m.innerHTML='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div><div class="c"><div class="row"><div class="sp"><b style="font-size:18px">Sekat iklan</b><div class="'+(q.active?'ok':q.run?'wn':'mu')+'">'+(q.active?'Aktif sekarang':q.run?esc(q.msg||'Memuat turun...'):c.on?'Menunggu senarai iklan':'Tidak aktif')+'</div></div><input type="checkbox" id="ao" style="width:auto"></div>'+
+ '<p class="mu">Menyekat domain iklan dan penjejak yang diketahui (senarai v2fly category-ads-all) untuk semua peranti yang menggunakan modem. Perlu mod VLESS Pro aktif.</p>'+
+ '<p class="mu">Senarai iklan: '+(have?fB(q.geosite)+' dimuat turun':'belum dimuat turun (dimuat turun automatik bila dihidupkan, kira-kira 10 MB)')+'</p>'+
+ '<button class="p" id="as" style="width:100%">Simpan</button><button id="ag" style="width:100%;margin-top:8px"'+(q.run?' disabled':'')+'>'+(have?'Kemas kini senarai':'Muat turun senarai')+'</button>'+
+ '<p class="mu" style="margin-top:12px">Had: hanya trafik TCP/HTTPS yang disekat. Iklan dalam aplikasi yang datang daripada domain sama dengan kandungan (contohnya video YouTube), trafik QUIC dan DNS-over-HTTPS tidak dapat disekat. Jika sesuatu laman rosak, tambah peraturan “Langsung” untuk domainnya di Penghalaan; peraturan anda diutamakan.</p></div>';
+ $('pbk').onclick=function(){clearTimeout(adT);rPlus(m)};$('ao').checked=!!c.on;
+ $('as').onclick=function(){$('as').disabled=true;api('/api/adblock',{on:$('ao').checked}).then(function(r){toast(r.msg);rAd(m)})};
+ $('ag').onclick=function(){api('/api/geo/get',{}).then(function(r){toast(r.msg);rAd(m)})};
+ if(q.run)adT=setTimeout(function(){if($('ao'))rAd(m)},3000)})}
 var wanT;
 function rWan(m){clearTimeout(wanT);api('/api/wanip').then(function(q){var run=q.state=='running';
  m.innerHTML='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div><div class="c"><b style="font-size:18px">Tukar IP WAN</b>'+

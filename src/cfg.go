@@ -177,6 +177,9 @@ func buildConfig(ps []*Parsed, direct []string) map[string]any {
 	rules := []any{rule(map[string]any{"inboundTag": []any{"dns-in", "probe"}})}
 	rt := loadRoutes()
 	rules = append(rules, routeRules(rt, rule)...)
+	if adActive() {
+		rules = append(rules, adRule())
+	}
 	var doms, ips []any
 	for _, d := range direct {
 		if strings.ContainsAny(d, "abcdefghijklmnopqrstuvwxyz") && !strings.Contains(d, ":") {

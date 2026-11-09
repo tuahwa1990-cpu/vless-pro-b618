@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 	"time"
 )
@@ -79,5 +80,35 @@ func TestQuotaState(t *testing.T) {
 func TestWanMsg(t *testing.T) {
 	if wanMsg("1.1.1.1", "2.2.2.2") == wanMsg("1.1.1.1", "1.1.1.1") || wanMsg("", "") == "" {
 		t.Fatal("mesej")
+	}
+}
+
+func TestAdblockRule(t *testing.T) {
+	d := t.TempDir()
+	home = d
+	xliteDir = d + "/x"
+	_ = os.MkdirAll(d+"/etc", 0700)
+	_ = os.MkdirAll(d+"/geo", 0700)
+	p, _ := parseLink("vless://11111111-1111-1111-1111-111111111111@h.example:443?security=tls&type=ws&path=/&host=h.example#n")
+	has := func() bool {
+		c := buildConfig([]*Parsed{p}, nil)
+		for _, r := range c["routing"].(map[string]any)["rules"].([]any) {
+			if m, ok := r.(map[string]any); ok && m["outboundTag"] == "block" {
+				return true
+			}
+		}
+		return false
+	}
+	_ = os.WriteFile(d+"/etc/adblock.json", []byte(`{"on":true}`), 0600)
+	if has() {
+		t.Fatal("tanpa geosite, peraturan tidak patut dimasukkan")
+	}
+	_ = os.WriteFile(d+"/geo/geosite.dat", make([]byte, 200000), 0600)
+	if !has() {
+		t.Fatal("peraturan sekat iklan tiada")
+	}
+	_ = os.WriteFile(d+"/etc/adblock.json", []byte(`{"on":false}`), 0600)
+	if has() {
+		t.Fatal("dimatikan")
 	}
 }
