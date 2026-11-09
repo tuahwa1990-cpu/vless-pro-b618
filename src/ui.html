@@ -11,7 +11,13 @@ nav div{flex:1;text-align:center;padding:9px 0 7px;color:var(--mu);font-size:13p
 nav div.on{color:var(--ac)}nav svg{display:block;margin:0 auto 3px;width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 #dr{position:fixed;top:0;bottom:0;left:0;width:78%;max-width:340px;background:var(--bar);transform:translateX(-102%);transition:.2s;z-index:9;overflow:auto}
 #dr.o{transform:none}#sc{position:fixed;inset:0;background:#0008;z-index:8;display:none}#sc.o{display:block}
-#dr h2{margin:0;padding:16px;font-size:22px;border-bottom:1px solid var(--bd)}#dr small{display:block;color:var(--mu);font-size:12px;letter-spacing:1px;padding:18px 16px 6px}
+#dr h2{margin:0;padding:16px;font-size:24px;font-weight:800;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid var(--bd)}
+#dr h2 span{display:inline-block;background:linear-gradient(100deg,var(--tx) 0%,var(--ac) 25%,var(--ac2) 50%,var(--ac) 75%,var(--tx) 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:vpShine 4s linear infinite,vpGlow 2.6s ease-in-out infinite}
+#dr h2 span i{font-style:normal;display:inline-block;animation:vpBob 2.6s ease-in-out infinite}
+@keyframes vpShine{to{background-position:-250% 0}}
+@keyframes vpGlow{0%,100%{filter:drop-shadow(0 0 0 transparent)}50%{filter:drop-shadow(0 0 7px var(--ac))}}
+@keyframes vpBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@media (prefers-reduced-motion:reduce){#dr h2 span,#dr h2 span i{animation:none}}#dr small{display:block;color:var(--mu);font-size:12px;letter-spacing:1px;padding:18px 16px 6px}
 #dr a{display:flex;gap:18px;align-items:center;padding:15px 16px;font-size:18px;cursor:pointer}#dr a svg{width:26px;height:26px;stroke:var(--ac);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #dr hr{border:0;border-top:1px solid var(--bd);margin:8px 14px}
 .c{background:var(--cd);border:1px solid var(--bd);border-radius:18px;padding:14px;margin-bottom:12px}
@@ -183,7 +189,7 @@ function login(){$('app').innerHTML='<div id="lg"><div class="c"><h2 style="marg
 var TT={plus:'Feature Plus',lang:'Bahasa',tema:'Tema',home:'VLESS Pro',status:'Status',prof:'Profil',logs:'Log',route:'Penghalaan',set:'Tetapan',sys:'Sistem',tema:'Tema',upd:'Kemas kini',about:'Perihal'};
 function shell(){$('app').innerHTML='<header><span id="mb">'+ic('menu')+'</span><span id="bk" style="display:none" title="Menu">'+ic('back')+'</span><span id="ti"></span></header><main id="mn"></main><nav>'+
  [['home','Utama','home'],['status','Status','pulse'],['prof','Profil','db']].map(function(x){return '<div id="n_'+x[0]+'">'+ic(x[2])+x[1]+'</div>'}).join('')+'</nav>'+
- '<div id="dr"><h2>vless pro</h2><small>NAVIGASI</small>'+[['logs','Log','logs'],['route','Penghalaan','route'],['set','Tetapan','set'],['sys','Sistem','sys'],['tema','Tema','pal'],['lang','Bahasa','lang'],['plus','Feature Plus','plus']].map(function(x){return '<a data-v="'+x[0]+'">'+ic(x[2])+x[1]+'</a>'}).join('')+'<hr><small>APLIKASI</small>'+
+ '<div id="dr"><h2><span>VLESS PRO</span></h2><small>NAVIGASI</small>'+[['logs','Log','logs'],['route','Penghalaan','route'],['set','Tetapan','set'],['sys','Sistem','sys'],['tema','Tema','pal'],['lang','Bahasa','lang'],['plus','Feature Plus','plus']].map(function(x){return '<a data-v="'+x[0]+'">'+ic(x[2])+x[1]+'</a>'}).join('')+'<hr><small>APLIKASI</small>'+
  [['upd','Kemas kini','upd'],['about','Perihal','inf']].map(function(x){return '<a data-v="'+x[0]+'">'+ic(x[2])+x[1]+'</a>'}).join('')+'<a id="lo">'+ic('out')+'Log Keluar</a></div>';
  $('mb').onclick=function(){dr(1)};$('bk').onclick=function(){dr(1)};$('sc').onclick=function(){dr(0)};
  ['home','status','prof'].forEach(function(v){$('n_'+v).onclick=function(){go(v)}});
