@@ -159,6 +159,9 @@ func regWan(mux *http.ServeMux, act func(string, func(*http.Request) (string, bo
 		jr(w, s)
 	})
 	act("/api/wanip/run", func(r *http.Request) (string, bool) {
+		if isB618() {
+			return "Ciri Tukar IP WAN belum disokong pada modem B618", false
+		}
 		wanMu.Lock()
 		if wanSt.State == "running" {
 			wanMu.Unlock()

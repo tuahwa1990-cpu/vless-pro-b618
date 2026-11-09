@@ -20,7 +20,26 @@ import (
 // Domain dalam senarai dijawab 0.0.0.0 / :: dan dikira; soalan lain dihantar semula tanpa perubahan
 // ke dnsmasq modem (atau ke dns-in xray jika etc/dnsredir wujud).
 
-const adPort = 10853
+// lanDev: br-lan (OpenWrt/AW1000) atau br0 (Huawei B618).
+func lanDev() string {
+	if _, err := os.Stat("/sys/class/net/br-lan"); err == nil {
+		return "br-lan"
+	}
+	if _, err := os.Stat("/sys/class/net/br0"); err == nil {
+		return "br0"
+	}
+	return "br-lan"
+}
+
+func isB618() bool { return lanDev() == "br0" }
+
+// adPortV: port penapis iklan. B618 guna 10855 kerana 10853 milik XLITE (skrip XLITE memadamnya).
+func adPortV() int {
+	if isB618() {
+		return 10855
+	}
+	return 10853
+}
 
 type AdCfg struct {
 	On    bool     `json:"on"`
@@ -417,7 +436,10 @@ func adUpstreams() []string {
 		return []string{"127.0.0.1:10854"}
 	}
 	u := []string{"127.0.0.1:53"}
-	if ip := ifaceIP("br-lan"); ip != "" {
+	if isB618() {
+		u = []string{"127.0.0.1:10854", "127.0.0.1:53"}
+	}
+	if ip := ifaceIP(lanDev()); ip != "" {
 		u = append(u, ip+":53")
 	}
 	return u
@@ -513,11 +535,11 @@ func (s *adServer) serveLN(ln net.Listener) {
 }
 
 func adStart() (*adServer, error) {
-	ip := ifaceIP("br-lan")
+	ip := ifaceIP(lanDev())
 	if ip == "" {
-		return nil, fmt.Errorf("br-lan tiada IP")
+		return nil, fmt.Errorf("antara muka LAN tiada IP")
 	}
-	addr := fmt.Sprintf("%s:%d", ip, adPort)
+	addr := fmt.Sprintf("%s:%d", ip, adPortV())
 	pc, err := net.ListenPacket("udp", addr)
 	if err != nil {
 		return nil, err
@@ -529,7 +551,7 @@ func adStart() (*adServer, error) {
 	}
 	s := &adServer{pcs: []net.PacketConn{pc}, lns: []net.Listener{ln}, sem: make(chan struct{}, 64)}
 	// IPv6 (telefon sering hantar soalan DNS melalui IPv6). Cuba terbaik; jika gagal, IPv4 sahaja.
-	a6 := fmt.Sprintf("[::]:%d", adPort)
+	a6 := fmt.Sprintf("[::]:%d", adPortV())
 	if pc6, e1 := net.ListenPacket("udp6", a6); e1 == nil {
 		if ln6, e2 := net.Listen("tcp6", a6); e2 == nil {
 			s.pcs = append(s.pcs, pc6)
@@ -616,7 +638,7 @@ func adTCP(c net.Conn) {
 // ---- iptables dan pengurusan ----
 
 func adRuleArgs(op, proto string) []string {
-	return []string{"-t", "nat", op, "PREROUTING", "-i", "br-lan", "-p", proto, "--dport", "53", "-j", "REDIRECT", "--to-ports", fmt.Sprint(adPort)}
+	return []string{"-t", "nat", op, "PREROUTING", "-i", lanDev(), "-p", proto, "--dport", "53", "-j", "REDIRECT", "--to-ports", fmt.Sprint(adPortV())}
 }
 
 func adRules(want bool) { adRules2(want, false) }
@@ -647,7 +669,7 @@ func adRules2(want, v6 bool) {
 
 // adHealthy: hantar soalan ujian kepada penapis sendiri.
 func adHealthy() bool {
-	ip := ifaceIP("br-lan")
+	ip := ifaceIP(lanDev())
 	if ip == "" {
 		return false
 	}
@@ -657,7 +679,7 @@ func adHealthy() bool {
 		q = append(q, p...)
 	}
 	q = append(q, 0, 0, 1, 0, 1)
-	c, err := net.DialTimeout("udp", fmt.Sprintf("%s:%d", ip, adPort), time.Second)
+	c, err := net.DialTimeout("udp", fmt.Sprintf("%s:%d", ip, adPortV()), time.Second)
 	if err != nil {
 		return false
 	}
