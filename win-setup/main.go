@@ -16,7 +16,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
+	"unsafe"
 )
 
 //go:embed payload
@@ -40,6 +42,62 @@ var devices = []device{
 	{"Arcadyan AW1000 Ultra", "192.168.1.1", "aw1000"},
 }
 
+// Kata laluan ditanya sekali sahaja, kemudian diberi kepada ssh/scp melalui SSH_ASKPASS
+// (fail .exe ini sendiri bertindak sebagai pembantu). Jika tidak berfungsi, ssh bertanya seperti biasa.
+var sshEnv []string
+
+var k32 = syscall.NewLazyDLL("kernel32.dll")
+
+func readSecret(prompt string) string {
+	fmt.Print(prompt)
+	h := os.Stdin.Fd()
+	var mode uint32
+	gm, sm := k32.NewProc("GetConsoleMode"), k32.NewProc("SetConsoleMode")
+	ok, _, _ := gm.Call(h, uintptr(unsafe.Pointer(&mode)))
+	if ok != 0 {
+		sm.Call(h, uintptr(mode&^0x0004)) // matikan ENABLE_ECHO_INPUT
+	}
+	s, _ := stdin.ReadString('\n')
+	if ok != 0 {
+		sm.Call(h, uintptr(mode))
+	}
+	fmt.Println()
+	return strings.TrimRight(s, "\r\n")
+}
+
+// shortPath mengelak masalah ruang (cth. "My Drive") pada laluan pembantu.
+func shortPath(p string) string {
+	b, err := syscall.UTF16PtrFromString(p)
+	if err != nil {
+		return p
+	}
+	buf := make([]uint16, 520)
+	n, _, _ := k32.NewProc("GetShortPathNameW").Call(uintptr(unsafe.Pointer(b)), uintptr(unsafe.Pointer(&buf[0])), uintptr(len(buf)))
+	if n == 0 || int(n) >= len(buf) {
+		return p
+	}
+	return syscall.UTF16ToString(buf[:n])
+}
+
+func setupAskpass() {
+	pw := readSecret("Kata laluan root modem (Enter jika tiada kata laluan): ")
+	if pw == "" {
+		return
+	}
+	self, err := os.Executable()
+	if err != nil {
+		return
+	}
+	helper := filepath.Join(os.TempDir(), "vpro-askpass.exe")
+	in, err := os.ReadFile(self)
+	if err != nil || os.WriteFile(helper, in, 0700) != nil {
+		return
+	}
+	sshEnv = append(os.Environ(), "SSH_ASKPASS="+shortPath(helper), "SSH_ASKPASS_REQUIRE=force", "VP_HELPER=1", "VP_PW="+pw, "DISPLAY=vpro")
+}
+
+func cleanupAskpass() { os.Remove(filepath.Join(os.TempDir(), "vpro-askpass.exe")) }
+
 func ask(prompt string) string {
 	fmt.Print(prompt)
 	s, _ := stdin.ReadString('\n')
@@ -56,12 +114,14 @@ func pause() {
 }
 
 func die(msg string) {
+	cleanupAskpass()
 	fmt.Println("\nGAGAL:", msg)
 	pause()
 	os.Exit(1)
 }
 
 func cancelled() {
+	cleanupAskpass()
 	fmt.Println("\nDibatalkan. Tiada apa diubah pada modem.")
 	pause()
 	os.Exit(0)
@@ -69,6 +129,7 @@ func cancelled() {
 
 func run(name string, args ...string) (string, error) {
 	cmd := exec.Command(name, args...)
+	cmd.Env = sshEnv
 	out, err := cmd.CombinedOutput()
 	return string(out), err
 }
@@ -76,6 +137,7 @@ func run(name string, args ...string) (string, error) {
 // sshLive menunjukkan output modem secara langsung (bukan selepas siap).
 func sshLive(cmd string) error {
 	c := exec.Command("ssh", append(append([]string{}, opts...), "root@"+ip, cmd)...)
+	c.Env = sshEnv
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 	return c.Run()
@@ -235,6 +297,11 @@ func checkModem() modemState {
 }
 
 func main() {
+	if os.Getenv("VP_HELPER") == "1" {
+		fmt.Println(os.Getenv("VP_PW"))
+		return
+	}
+	defer cleanupAskpass()
 	dev := device{"Huawei B618", ip, "b618"}
 	if len(os.Args) > 1 && os.Args[1] != "" {
 		ip = os.Args[1]
@@ -261,6 +328,7 @@ func main() {
 		die("scp tiada. Pasang 'OpenSSH Client' dalam Settings > Apps > Optional features.")
 	}
 
+	setupAskpass()
 	fmt.Println("\n[1/4] Menyemak modem ...")
 	if _, err := ssh("echo ok"); err != nil {
 		die("tidak dapat sambung SSH ke " + ip + ". Pastikan PC disambung ke WiFi modem dan SSH modem dihidupkan.")
