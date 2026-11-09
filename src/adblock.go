@@ -269,6 +269,12 @@ type adDay struct {
 	B int    `json:"b"`
 }
 
+type adHour struct {
+	H int64 `json:"h"` // unix/3600
+	Q int   `json:"q"`
+	B int   `json:"b"`
+}
+
 type adRecent struct {
 	T int64  `json:"t"`
 	D string `json:"d"`
@@ -278,6 +284,7 @@ type adStats struct {
 	AllQ   int            `json:"allq"`
 	AllB   int            `json:"allb"`
 	Days   []adDay        `json:"days"`
+	Hours  []adHour       `json:"hours"`
 	Top    map[string]int `json:"top"`
 	Recent []adRecent     `json:"recent"`
 }
@@ -321,6 +328,18 @@ func adCount(name string, blocked bool) {
 			stData.Days = stData.Days[len(stData.Days)-14:]
 		}
 	}
+	hr := time.Now().Unix() / 3600
+	if n := len(stData.Hours); n == 0 || stData.Hours[n-1].H != hr {
+		stData.Hours = append(stData.Hours, adHour{H: hr})
+		if len(stData.Hours) > 24 {
+			stData.Hours = stData.Hours[len(stData.Hours)-24:]
+		}
+	}
+	h := &stData.Hours[len(stData.Hours)-1]
+	h.Q++
+	if blocked {
+		h.B++
+	}
 	d := &stData.Days[len(stData.Days)-1]
 	d.Q++
 	stData.AllQ++
@@ -331,8 +350,8 @@ func adCount(name string, blocked bool) {
 			stData.Top[name]++
 		}
 		stData.Recent = append(stData.Recent, adRecent{T: time.Now().Unix(), D: name})
-		if len(stData.Recent) > 20 {
-			stData.Recent = stData.Recent[len(stData.Recent)-20:]
+		if len(stData.Recent) > 50 {
+			stData.Recent = stData.Recent[len(stData.Recent)-50:]
 		}
 	}
 	stDirty = true
@@ -778,8 +797,8 @@ func regAd(mux *http.ServeMux, act func(string, func(*http.Request) (string, boo
 			top = append(top, kv{d, n})
 		}
 		sort.Slice(top, func(i, j int) bool { return top[i].N > top[j].N })
-		if len(top) > 10 {
-			top = top[:10]
+		if len(top) > 30 {
+			top = top[:30]
 		}
 		recent := append([]adRecent{}, stData.Recent...)
 		for i, j := 0, len(recent)-1; i < j; i, j = i+1, j-1 {
@@ -789,7 +808,7 @@ func regAd(mux *http.ServeMux, act func(string, func(*http.Request) (string, boo
 		if n := len(stData.Days); n > 0 && stData.Days[n-1].D == today.D {
 			today = stData.Days[n-1]
 		}
-		st := map[string]any{"today": today, "allq": stData.AllQ, "allb": stData.AllB, "days": stData.Days, "top": top, "recent": recent}
+		st := map[string]any{"today": today, "allq": stData.AllQ, "allb": stData.AllB, "days": stData.Days, "hours": stData.Hours, "top": top, "recent": recent}
 		stMu.Unlock()
 		adUp.Lock()
 		run, msg := adUp.run, adUp.msg
