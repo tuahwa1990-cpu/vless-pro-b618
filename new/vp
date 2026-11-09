@@ -25,6 +25,8 @@ fw_off() {
   while $I -D PREROUTING -i br0 -p tcp -j VLESSPRO 2>/dev/null; do :; done
   while $I -D PREROUTING -i br0 -p udp --dport 53 -j REDIRECT --to-ports 10854 2>/dev/null; do :; done
   while $I -D PREROUTING -i br0 -p tcp --dport 53 -j REDIRECT --to-ports 10854 2>/dev/null; do :; done
+  while $I -D PREROUTING -i br0 -p udp --dport 53 -j REDIRECT --to-ports 10855 2>/dev/null; do :; done
+  while $I -D PREROUTING -i br0 -p tcp --dport 53 -j REDIRECT --to-ports 10855 2>/dev/null; do :; done
   $I -F VLESSPRO 2>/dev/null; $I -X VLESSPRO 2>/dev/null
 }
 fw_on() {
