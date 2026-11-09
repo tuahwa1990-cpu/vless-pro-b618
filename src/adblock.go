@@ -456,9 +456,41 @@ func adAnswer(q []byte) []byte {
 }
 
 type adServer struct {
-	pc  net.PacketConn
-	ln  net.Listener
+	pcs []net.PacketConn
+	lns []net.Listener
 	sem chan struct{}
+	v6  bool
+}
+
+func (s *adServer) servePC(pc net.PacketConn) {
+	buf := make([]byte, 4096)
+	for {
+		n, a, err := pc.ReadFrom(buf)
+		if err != nil {
+			return
+		}
+		q := append([]byte{}, buf[:n]...)
+		select {
+		case s.sem <- struct{}{}:
+			go func() {
+				defer func() { <-s.sem }()
+				if r := adAnswer(q); r != nil {
+					_, _ = pc.WriteTo(r, a)
+				}
+			}()
+		default:
+		}
+	}
+}
+
+func (s *adServer) serveLN(ln net.Listener) {
+	for {
+		c, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		go adTCP(c)
+	}
 }
 
 func adStart() (*adServer, error) {
@@ -476,43 +508,35 @@ func adStart() (*adServer, error) {
 		pc.Close()
 		return nil, err
 	}
-	s := &adServer{pc: pc, ln: ln, sem: make(chan struct{}, 64)}
-	go func() {
-		buf := make([]byte, 4096)
-		for {
-			n, a, err := pc.ReadFrom(buf)
-			if err != nil {
-				return
-			}
-			q := append([]byte{}, buf[:n]...)
-			select {
-			case s.sem <- struct{}{}:
-				go func() {
-					defer func() { <-s.sem }()
-					if r := adAnswer(q); r != nil {
-						_, _ = pc.WriteTo(r, a)
-					}
-				}()
-			default:
-			}
+	s := &adServer{pcs: []net.PacketConn{pc}, lns: []net.Listener{ln}, sem: make(chan struct{}, 64)}
+	// IPv6 (telefon sering hantar soalan DNS melalui IPv6). Cuba terbaik; jika gagal, IPv4 sahaja.
+	a6 := fmt.Sprintf("[::]:%d", adPort)
+	if pc6, e1 := net.ListenPacket("udp6", a6); e1 == nil {
+		if ln6, e2 := net.Listen("tcp6", a6); e2 == nil {
+			s.pcs = append(s.pcs, pc6)
+			s.lns = append(s.lns, ln6)
+			s.v6 = true
+		} else {
+			pc6.Close()
 		}
-	}()
-	go func() {
-		for {
-			c, err := ln.Accept()
-			if err != nil {
-				return
-			}
-			go adTCP(c)
-		}
-	}()
+	}
+	for _, p := range s.pcs {
+		go s.servePC(p)
+	}
+	for _, l := range s.lns {
+		go s.serveLN(l)
+	}
 	return s, nil
 }
 
 func (s *adServer) stop() {
 	if s != nil {
-		s.pc.Close()
-		s.ln.Close()
+		for _, p := range s.pcs {
+			p.Close()
+		}
+		for _, l := range s.lns {
+			l.Close()
+		}
 	}
 }
 
@@ -576,18 +600,25 @@ func adRuleArgs(op, proto string) []string {
 	return []string{"-t", "nat", op, "PREROUTING", "-i", "br-lan", "-p", proto, "--dport", "53", "-j", "REDIRECT", "--to-ports", fmt.Sprint(adPort)}
 }
 
-func adRules(want bool) {
+func adRules(want bool) { adRules2(want, false) }
+
+// adRules2: v6 = peraturan ip6tables (best-effort; abaikan jika kernel tidak menyokong).
+func adRules2(want, v6 bool) {
+	ipt := "iptables"
+	if v6 {
+		ipt = "ip6tables"
+	}
 	for _, p := range []string{"udp", "tcp"} {
-		_, err := run2("iptables", adRuleArgs("-C", p)...)
+		_, err := run2(ipt, adRuleArgs("-C", p)...)
 		has := err == nil
 		switch {
 		case want && !has:
 			a := adRuleArgs("-I", p)
 			a = append(a[:4], append([]string{"1"}, a[4:]...)...) // -t nat -I PREROUTING 1 ...
-			_, _ = run2("iptables", a...)
+			_, _ = run2(ipt, a...)
 		case !want && has:
 			for k := 0; k < 3; k++ {
-				if _, err := run2("iptables", adRuleArgs("-D", p)...); err != nil {
+				if _, err := run2(ipt, adRuleArgs("-D", p)...); err != nil {
 					break
 				}
 			}
@@ -649,6 +680,7 @@ func adManager() {
 		}
 		if !want && srv != nil {
 			adRules(false)
+			adRules2(false, true)
 			srv.stop()
 			srv = nil
 			debug.SetMemoryLimit(14 << 20)
@@ -656,6 +688,7 @@ func adManager() {
 		on := srv != nil && adHealthy()
 		if srv != nil {
 			adRules(on)
+			adRules2(on && srv.v6, true)
 		}
 		adActiveNow = on && srv != nil
 		if time.Since(lastSave) > 2*time.Minute {
