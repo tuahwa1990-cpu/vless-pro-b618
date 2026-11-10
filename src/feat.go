@@ -106,8 +106,11 @@ func pickAlt(pings []int, cur int) int {
 // wanDelta: bait diterima pada antara muka WAN sejak semakan pemantau sebelumnya (kira-kira 30 saat).
 var wanDelta atomic.Uint64
 
-// trafficFlowing benar jika data masuk yang ketara (>= 4 KB sejak semakan lalu) bukti nod berfungsi.
-func trafficFlowing() bool { return wanDelta.Load() >= 4<<10 }
+// trafficFlowing benar jika data masuk yang ketara (>= 64 KB sejak semakan lalu) bukti nod berfungsi.
+func trafficFlowing() bool { return wanDelta.Load() >= 64<<10 }
+
+// trafficWeak: ada sedikit data masuk (4-64 KB) - boleh jadi trafik latar modem, bukan bukti nod hidup.
+func trafficWeak() bool { return wanDelta.Load() >= 4<<10 }
 
 // lanHist: bait diterima daripada peranti LAN/WiFi dalam 3 semakan terakhir (kira-kira 90 saat).
 var lanHist [3]atomic.Uint64

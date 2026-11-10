@@ -161,8 +161,16 @@ func watchdog() {
 				fails++
 			}
 		}
-		foFails.Store(int32(fails))
-		if fails >= 3 {
+		fd := fails
+		if fd > 3 {
+			fd = 3
+		}
+		foFails.Store(int32(fd))
+		need := 3
+		if trafficWeak() {
+			need = 6 // ada sedikit data masuk (mungkin trafik latar): tunggu lebih lama sebelum menukar
+		}
+		if fails >= need {
 			_ = bad
 			fails = 0
 			last = time.Now()
