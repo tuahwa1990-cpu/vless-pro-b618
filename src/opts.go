@@ -79,6 +79,17 @@ func saveOpts(o Opts) error {
 	return os.WriteFile(home+"/etc/opts.json", b, 0600)
 }
 
+// proxyOK benar jika sambungan melalui nod benar-benar berfungsi. Jawapan 5xx (contohnya 503 daripada
+// Xray bila nod rosak) dikira gagal, bukan sihat.
+func proxyOK(u string, t time.Duration) bool {
+	r, err := proxyClient(t).Get(u)
+	if err != nil {
+		return false
+	}
+	r.Body.Close()
+	return r.StatusCode < 500
+}
+
 // Pemantau: sambung semula automatik bila xray mati atau ujian gagal 3 kali berturut.
 func watchdog() {
 	fails := 0
@@ -100,13 +111,10 @@ func watchdog() {
 			bad = true
 			fails = 3
 		} else {
-			cl := proxyClient(8 * time.Second)
-			r, err := cl.Get(o.PingURL)
-			if err != nil {
-				fails++
-			} else {
-				r.Body.Close()
+			if proxyOK(o.PingURL, 8*time.Second) {
 				fails = 0
+			} else {
+				fails++
 			}
 		}
 		foFails.Store(int32(fails))

@@ -157,8 +157,7 @@ func recoverVP() bool {
 		n := len(loadNodes())
 		for k := 0; k < n; k++ {
 			time.Sleep(7 * time.Second)
-			if r, err := proxyClient(8 * time.Second).Get(loadOpts().PingURL); err == nil {
-				r.Body.Close()
+			if proxyOK(loadOpts().PingURL, 8*time.Second) {
 				break
 			}
 			if !failoverSwitch() {
