@@ -508,6 +508,10 @@ func serve() {
 			jr(w, map[string]any{"ok": false, "msg": "Guna POST"})
 			return
 		}
+		// Muat naik pakej besar pada modem yang sibuk: lanjutkan had baca/tulis (lalai pelayan 15s/45s).
+		rc := http.NewResponseController(w)
+		rc.SetReadDeadline(time.Now().Add(5 * time.Minute))
+		rc.SetWriteDeadline(time.Now().Add(6 * time.Minute))
 		upMu.Lock()
 		busy := upRun
 		if !busy {
