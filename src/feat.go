@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -108,10 +110,68 @@ func pickAlt(pings []int, cur int) int {
 var wanDelta atomic.Uint64
 
 // trafficFlowing benar jika data masuk yang ketara (>= 64 KB sejak semakan lalu) bukti nod berfungsi.
-func trafficFlowing() bool { return wanDelta.Load() >= 64<<10 }
+func trafficFlowing() bool {
+	if statsOK.Load() {
+		return nodeDelta.Load() >= 32<<10 // bait sebenar melalui nod (statistik xray)
+	}
+	return wanDelta.Load() >= 64<<10
+}
 
 // trafficWeak: ada sedikit data masuk (4-64 KB) - boleh jadi trafik latar modem, bukan bukti nod hidup.
-func trafficWeak() bool { return wanDelta.Load() >= 4<<10 }
+// Dengan statistik xray, trafik latar sudah ditapis, jadi tidak perlu menunggu lebih lama.
+func trafficWeak() bool { return !statsOK.Load() && wanDelta.Load() >= 4<<10 }
+
+// nodeDelta: bait turun yang benar-benar melalui nod proksi (bukan direct) sejak semakan lalu.
+var nodeDelta atomic.Uint64
+var statsOK atomic.Bool
+var lastNodeDown uint64
+
+var reNodeDown = regexp.MustCompile(`outbound>>>([^>"]+)>>>traffic>>>downlink[^0-9]*?(\d+)`)
+
+// nodeDown membaca jumlah bait turun semua outbound proksi daripada API statistik xray.
+func nodeDown() (uint64, bool) {
+	xb := ""
+	for _, c := range []string{home + "/bin/xray", xliteDir + "/bin/xray", "/usr/bin/xray"} {
+		if st, err := os.Stat(c); err == nil && !st.IsDir() {
+			xb = c
+			break
+		}
+	}
+	if xb == "" {
+		return 0, false
+	}
+	out := runOut(4*time.Second, xb, "api", "statsquery", "-s", "127.0.0.1:10856", "-pattern", "outbound>>>")
+	var tot uint64
+	ok := false
+	for _, m := range reNodeDown.FindAllStringSubmatch(out, -1) {
+		ok = true
+		if m[1] == "direct" || m[1] == "block" {
+			continue
+		}
+		v, _ := strconv.ParseUint(m[2], 10, 64)
+		tot += v
+	}
+	return tot, ok
+}
+
+func statsTick() {
+	if !vlessUp() {
+		statsOK.Store(false)
+		return
+	}
+	t, ok := nodeDown()
+	if !ok {
+		statsOK.Store(false)
+		return
+	}
+	if statsOK.Load() && t >= lastNodeDown {
+		nodeDelta.Store(t - lastNodeDown)
+	} else {
+		nodeDelta.Store(0)
+	}
+	lastNodeDown = t
+	statsOK.Store(true)
+}
 
 // lanHist: bait diterima daripada peranti LAN/WiFi dalam 3 semakan terakhir (kira-kira 90 saat).
 var lanHist [3]atomic.Uint64

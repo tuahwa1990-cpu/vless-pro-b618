@@ -127,6 +127,7 @@ func watchdog() {
 			}
 			lastRx = rx
 		}
+		statsTick()
 		if lrx, _, ok := netBytes(lanDev()); ok {
 			if lastLan > 0 && lrx >= lastLan {
 				lanPush(lrx - lastLan)

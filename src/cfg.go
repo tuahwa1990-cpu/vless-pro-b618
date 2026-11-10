@@ -192,6 +192,7 @@ func buildConfig(ps []*Parsed, direct []string) map[string]any {
 		rules = append(rules, map[string]any{"type": "field", "ip": ips, "outboundTag": "direct"})
 	}
 	rules = append(rules, rule(map[string]any{"network": "tcp,udp"}))
+	rules = append([]any{map[string]any{"type": "field", "inboundTag": []any{"api"}, "outboundTag": "api"}}, rules...)
 	routing := map[string]any{"domainStrategy": rt.DS, "rules": rules}
 	cfg := map[string]any{
 		"log": map[string]any{"loglevel": o.LogLevel},
@@ -204,7 +205,12 @@ func buildConfig(ps []*Parsed, direct []string) map[string]any {
 				"settings": map[string]any{"address": orStr(o.DNS, "8.8.8.8"), "port": 53, "network": "tcp,udp"}},
 			map[string]any{"tag": "probe", "port": 10855, "listen": "127.0.0.1", "protocol": "http",
 				"settings": map[string]any{}},
+			map[string]any{"tag": "api", "port": 10856, "listen": "127.0.0.1", "protocol": "dokodemo-door",
+				"settings": map[string]any{"address": "127.0.0.1"}},
 		},
+		"stats":     map[string]any{},
+		"api":       map[string]any{"tag": "api", "services": []any{"StatsService"}},
+		"policy":    map[string]any{"system": map[string]any{"statsOutboundDownlink": true}},
 		"outbounds": outs,
 		"routing":   routing,
 	}
