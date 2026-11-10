@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -126,8 +125,6 @@ var nodeDelta atomic.Uint64
 var statsOK atomic.Bool
 var lastNodeDown uint64
 
-var reNodeDown = regexp.MustCompile(`outbound>>>([^>"]+)>>>traffic>>>downlink[^0-9]*?(\d+)`)
-
 // nodeDown membaca jumlah bait turun semua outbound proksi daripada API statistik xray.
 func nodeDown() (uint64, bool) {
 	xb := ""
@@ -141,17 +138,36 @@ func nodeDown() (uint64, bool) {
 		return 0, false
 	}
 	out := runOut(4*time.Second, xb, "api", "statsquery", "-s", "127.0.0.1:10856", "-pattern", "outbound>>>")
+	return parseNodeDown(out)
+}
+
+// parseNodeDown: jumlah bait turun semua outbound selain direct/block. Nilai kosong (0) tiada dalam JSON.
+func parseNodeDown(out string) (uint64, bool) {
+	var r struct {
+		Stat []struct {
+			Name  string `json:"name"`
+			Value any    `json:"value"`
+		} `json:"stat"`
+	}
+	i := strings.Index(out, "{")
+	if i < 0 || json.Unmarshal([]byte(out[i:]), &r) != nil {
+		return 0, false
+	}
 	var tot uint64
-	ok := false
-	for _, m := range reNodeDown.FindAllStringSubmatch(out, -1) {
-		ok = true
-		if m[1] == "direct" || m[1] == "block" {
+	for _, e := range r.Stat {
+		f := strings.Split(e.Name, ">>>")
+		if len(f) != 4 || f[0] != "outbound" || f[3] != "downlink" || f[1] == "direct" || f[1] == "block" {
 			continue
 		}
-		v, _ := strconv.ParseUint(m[2], 10, 64)
-		tot += v
+		switch v := e.Value.(type) {
+		case string:
+			n, _ := strconv.ParseUint(v, 10, 64)
+			tot += n
+		case float64:
+			tot += uint64(v)
+		}
 	}
-	return tot, ok
+	return tot, true
 }
 
 func statsTick() {
