@@ -116,7 +116,7 @@ func watchdog() {
 	fails := 0
 	var last time.Time
 	cool := 5 * time.Minute
-	var lastRx uint64
+	var lastRx, lastLan uint64
 	for {
 		time.Sleep(30 * time.Second)
 		if rx, _, ok := netBytes(wanIface()); ok {
@@ -127,6 +127,14 @@ func watchdog() {
 			}
 			lastRx = rx
 		}
+		if lrx, _, ok := netBytes(lanDev()); ok {
+			if lastLan > 0 && lrx >= lastLan {
+				lanPush(lrx - lastLan)
+			} else {
+				lanPush(0)
+			}
+			lastLan = lrx
+		}
 		o := loadOpts()
 		if !o.AutoRecon || readStr(home+"/etc/mode", "xlite") != "vless" || locked(readLic()) {
 			fails = 0
@@ -134,6 +142,12 @@ func watchdog() {
 			continue
 		}
 		if time.Since(last) < cool {
+			continue
+		}
+		if vlessUp() && !userDemand() {
+			// tiada pengguna aktif: tiada sebab menukar nod
+			fails = 0
+			foFails.Store(0)
 			continue
 		}
 		bad := false

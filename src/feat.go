@@ -109,6 +109,26 @@ var wanDelta atomic.Uint64
 // trafficFlowing benar jika data masuk yang ketara (>= 64 KB sejak semakan lalu) bukti nod berfungsi.
 func trafficFlowing() bool { return wanDelta.Load() >= 64<<10 }
 
+// lanHist: bait diterima daripada peranti LAN/WiFi dalam 3 semakan terakhir (kira-kira 90 saat).
+var lanHist [3]atomic.Uint64
+
+func lanPush(d uint64) {
+	lanHist[0].Store(lanHist[1].Load())
+	lanHist[1].Store(lanHist[2].Load())
+	lanHist[2].Store(d)
+}
+
+// userDemand benar jika ada peranti pengguna yang aktif menghantar data (>= 2 KB dalam 90 saat terakhir).
+// Tanpa pengguna, nod tidak perlu ditukar walaupun ujian dalaman gagal.
+func userDemand() bool {
+	for i := range lanHist {
+		if lanHist[i].Load() >= 2<<10 {
+			return true
+		}
+	}
+	return false
+}
+
 var foFails atomic.Int32 // kegagalan berturut dikesan pemantau (0-3)
 
 func pingAll(ns []Node) []int {
@@ -209,7 +229,7 @@ func aliveVia() bool {
 // recoverVP: dipanggil oleh pemantau bila sambungan gagal. Benar jika profil ditukar.
 func recoverVP() bool {
 	// pastikan benar-benar rosak: jangan tukar nod yang sebenarnya masih berfungsi
-	if vlessUp() && aliveVia() {
+	if vlessUp() && (aliveVia() || !userDemand()) {
 		return false
 	}
 	if loadFO().On && selGroup() < 0 && failoverSwitch() {
