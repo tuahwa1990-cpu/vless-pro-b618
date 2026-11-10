@@ -191,26 +191,33 @@ func extract(dir string) (string, error) {
 }
 
 func getXray(tmp, url string) error {
-	fmt.Println("Memuat turun Xray (sekitar 15 MB) ...")
-	c := &http.Client{Timeout: 5 * time.Minute}
-	resp, err := c.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("HTTP %d", resp.StatusCode)
-	}
 	zpath := filepath.Join(tmp, "x.zip")
-	f, err := os.Create(zpath)
-	if err != nil {
-		return err
+	if emb := filepath.Join(tmp, "xray-arm64.zip"); url == xrayURL64 {
+		if _, e := os.Stat(emb); e == nil {
+			zpath = emb // Xray arm64 sudah terbenam dalam program ini
+		}
 	}
-	if _, err := io.Copy(f, resp.Body); err != nil {
+	if zpath == filepath.Join(tmp, "x.zip") {
+		fmt.Println("Memuat turun Xray (sekitar 15 MB) ...")
+		c := &http.Client{Timeout: 5 * time.Minute}
+		resp, err := c.Get(url)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != 200 {
+			return fmt.Errorf("HTTP %d", resp.StatusCode)
+		}
+		f, err := os.Create(zpath)
+		if err != nil {
+			return err
+		}
+		if _, err := io.Copy(f, resp.Body); err != nil {
+			f.Close()
+			return err
+		}
 		f.Close()
-		return err
 	}
-	f.Close()
 	zr, err := zip.OpenReader(zpath)
 	if err != nil {
 		return err
@@ -481,7 +488,8 @@ func installAW1000() {
 			cancelled()
 		}
 	}
-	hasX := tok["vx"] || tok["xl"] || tok["ux"]
+	// /usr/bin/xray (OpenWrt 25.12) terlalu baharu: menolak nod VLESS tanpa TLS beralamat IP
+	hasX := tok["vx"] || tok["xl"]
 	fmt.Println("\nRingkasan sebelum pasang:")
 	fmt.Println("  Modem        :", ip, "(AW1000 Ultra, "+arch+")")
 	if tok["lama"] {
@@ -495,7 +503,7 @@ func installAW1000() {
 		fmt.Println("  XLITE        : tidak dijumpai")
 	}
 	if !hasX {
-		fmt.Println("  Xray         : akan dimuat turun dan dipasang bersama VLESS Pro")
+		fmt.Println("  Xray         : akan dipasang (sudah terbenam, tanpa muat turun) bersama VLESS Pro")
 	}
 	if !yes("\nTeruskan pemasangan?") {
 		cancelled()
