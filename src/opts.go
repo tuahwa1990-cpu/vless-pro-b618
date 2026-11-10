@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -82,12 +83,32 @@ func saveOpts(o Opts) error {
 // proxyOK benar jika sambungan melalui nod benar-benar berfungsi. Jawapan 5xx (contohnya 503 daripada
 // Xray bila nod rosak) dikira gagal, bukan sihat.
 func proxyOK(u string, t time.Duration) bool {
+	t0 := time.Now()
 	r, err := proxyClient(t).Get(u)
 	if err != nil {
+		probeLog(u, "ralat: "+shortErr(err), t0)
 		return false
 	}
 	r.Body.Close()
-	return r.StatusCode < 500
+	ok := r.StatusCode < 500
+	if !ok {
+		probeLog(u, "status "+strconv.Itoa(r.StatusCode), t0)
+	}
+	return ok
+}
+
+// probeLog merekod ujian yang gagal (hanya yang gagal) supaya punca boleh disemak: run/probe.log (had ~16 KB).
+func probeLog(u, why string, t0 time.Time) {
+	f := home + "/run/probe.log"
+	if st, err := os.Stat(f); err == nil && st.Size() > 16384 {
+		_ = os.Remove(f)
+	}
+	lf, err := os.OpenFile(f, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	if err != nil {
+		return
+	}
+	defer lf.Close()
+	fmt.Fprintf(lf, "%s %s %s (%dms)\n", time.Now().Format("15:04:05"), u, why, time.Since(t0).Milliseconds())
 }
 
 // Pemantau: sambung semula automatik bila xray mati atau ujian gagal 3 kali berturut.
