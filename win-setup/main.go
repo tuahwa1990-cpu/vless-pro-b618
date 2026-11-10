@@ -26,6 +26,9 @@ import (
 //go:embed payload
 var payload embed.FS
 
+// diisi semasa bina: -X main.edisi=aw3000t
+var edisi string
+
 const xrayURL64 = "https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-arm64-v8a.zip"
 const xrayURL = "https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-arm32-v7a.zip"
 
@@ -192,7 +195,7 @@ func extract(dir string) (string, error) {
 
 func getXray(tmp, url string) error {
 	zpath := filepath.Join(tmp, "x.zip")
-	if emb := filepath.Join(tmp, "xray-arm64.zip"); url == xrayURL64 {
+	if emb := filepath.Join(tmp, "xray-arm64.zip"); url == xrayURL64 && edisi == "aw3000t" {
 		if _, e := os.Stat(emb); e == nil {
 			zpath = emb // Xray arm64 sudah terbenam dalam program ini
 		}
@@ -488,8 +491,8 @@ func installAW1000() {
 			cancelled()
 		}
 	}
-	// /usr/bin/xray (OpenWrt 25.12) terlalu baharu: menolak nod VLESS tanpa TLS beralamat IP
-	hasX := tok["vx"] || tok["xl"]
+	// Edisi AW3000T: /usr/bin/xray (OpenWrt 25.12) terlalu baharu, menolak nod VLESS tanpa TLS beralamat IP
+	hasX := tok["vx"] || tok["xl"] || (edisi != "aw3000t" && tok["ux"])
 	fmt.Println("\nRingkasan sebelum pasang:")
 	fmt.Println("  Modem        :", ip, "(AW1000 Ultra, "+arch+")")
 	if tok["lama"] {
@@ -503,7 +506,7 @@ func installAW1000() {
 		fmt.Println("  XLITE        : tidak dijumpai")
 	}
 	if !hasX {
-		fmt.Println("  Xray         : akan dipasang (sudah terbenam, tanpa muat turun) bersama VLESS Pro")
+		fmt.Println("  Xray         : akan dimuat turun dan dipasang bersama VLESS Pro bersama VLESS Pro")
 	}
 	if !yes("\nTeruskan pemasangan?") {
 		cancelled()

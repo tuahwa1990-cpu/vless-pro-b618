@@ -8,9 +8,13 @@ cp -r vlesspro new upgrade.sh "$D/payload/"
 rm -f "$D/payload/new/vpro.gz"
 for f in "$D/payload/vlesspro/bin/vpro" "$D/payload/new/vpro"; do gzip -9n "$f"; done
 cp aw1000/install.tgz "$D/payload/aw1000.tgz"
-# Xray arm64 (v26.3.27) terbenam supaya pelanggan tidak perlu internet ke GitHub
-XZ=${XRAY_ZIP:-/tmp/xray-arm64.zip}
-[ -s "$XZ" ] || curl -fsSL -o "$XZ" https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-arm64-v8a.zip
-cp "$XZ" "$D/payload/xray-arm64.zip"
-cd "$D" && CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o "$OLDPWD/vless-pro-setup.exe" .
-echo "Dibina: vless-pro-setup.exe"
+# Edisi AW3000T sahaja (EDISI=aw3000t): Xray arm64 v26.3.27 terbenam, hasil vless-pro-setup-aw3000t.exe
+LF="-s -w"; OUT=vless-pro-setup.exe
+if [ "${EDISI:-}" = "aw3000t" ]; then
+  XZ=${XRAY_ZIP:-/tmp/xray-arm64.zip}
+  [ -s "$XZ" ] || curl -fsSL -o "$XZ" https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-arm64-v8a.zip
+  cp "$XZ" "$D/payload/xray-arm64.zip"
+  LF="-s -w -X main.edisi=aw3000t"; OUT=vless-pro-setup-aw3000t.exe
+fi
+cd "$D" && CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="$LF" -o "$OLDPWD/$OUT" .
+echo "Dibina: $OUT"
