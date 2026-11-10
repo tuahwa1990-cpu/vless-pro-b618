@@ -156,11 +156,13 @@ func recoverVP() bool {
 		// sahkan internet benar-benar ada pada profil baharu; jika tidak, terus cuba profil seterusnya
 		n := len(loadNodes())
 		for k := 0; k < n; k++ {
-			time.Sleep(7 * time.Second)
-			if proxyOK(loadOpts().PingURL, 8*time.Second) {
-				break
+			// beri masa Xray bersambung: cuba berkali-kali sehingga ~30 saat sebelum menolak profil
+			ok := false
+			for a := 0; a < 6 && !ok; a++ {
+				time.Sleep(5 * time.Second)
+				ok = proxyOK(loadOpts().PingURL, 6*time.Second)
 			}
-			if !failoverSwitch() {
+			if ok || !failoverSwitch() {
 				break
 			}
 		}

@@ -123,6 +123,7 @@ func watchdog() {
 			fails = 0
 			last = time.Now()
 			fmt.Fprintln(os.Stderr, "pemantau: sambung semula automatik")
+			foFails.Store(0) // jangan paparkan "gagal 3/3" lapuk selepas penukaran
 			if recoverVP() {
 				cool = 90 * time.Second // profil baharu: semak cepat, tukar lagi jika masih gagal
 			} else {
