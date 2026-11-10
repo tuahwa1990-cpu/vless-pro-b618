@@ -106,8 +106,8 @@ func pickAlt(pings []int, cur int) int {
 // wanDelta: bait diterima pada antara muka WAN sejak semakan pemantau sebelumnya (kira-kira 30 saat).
 var wanDelta atomic.Uint64
 
-// trafficFlowing benar jika data masuk yang ketara (>= 64 KB sejak semakan lalu) bukti nod berfungsi.
-func trafficFlowing() bool { return wanDelta.Load() >= 64<<10 }
+// trafficFlowing benar jika data masuk yang ketara (>= 4 KB sejak semakan lalu) bukti nod berfungsi.
+func trafficFlowing() bool { return wanDelta.Load() >= 4<<10 }
 
 // lanHist: bait diterima daripada peranti LAN/WiFi dalam 3 semakan terakhir (kira-kira 90 saat).
 var lanHist [3]atomic.Uint64
@@ -145,7 +145,7 @@ func pingAll(ns []Node) []int {
 		go func(i int, h string, pt int) {
 			defer wg.Done()
 			sem <- struct{}{}
-			res[i] = tcpPing(h, pt)
+			res[i] = tcpPingT(h, pt, 10*time.Second) // pautan perlahan (RTT 3 s+) jangan dikira mati
 			<-sem
 		}(i, p.Host, p.Port)
 	}

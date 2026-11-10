@@ -279,9 +279,11 @@ func prober() {
 	}
 }
 
-func tcpPing(host string, port int) int {
+func tcpPing(host string, port int) int { return tcpPingT(host, port, 3*time.Second) }
+
+func tcpPingT(host string, port int, to time.Duration) int {
 	t0 := time.Now()
-	c, err := net.DialTimeout("tcp", net.JoinHostPort(host, strconv.Itoa(port)), 3*time.Second)
+	c, err := net.DialTimeout("tcp", net.JoinHostPort(host, strconv.Itoa(port)), to)
 	if err != nil {
 		return -1
 	}
