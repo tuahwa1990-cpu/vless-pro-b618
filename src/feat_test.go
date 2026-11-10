@@ -209,3 +209,14 @@ func TestPickAlt(t *testing.T) {
 		t.Fatalf("got %d", got)
 	}
 }
+
+func TestMaskBad(t *testing.T) {
+	ns := []Node{{Link: "a"}, {Link: "b"}, {Link: "c"}}
+	foBad = map[string]time.Time{"b": time.Now(), "c": time.Now().Add(-2 * foBadTTL)}
+	p := []int{5, 6, 7}
+	maskBad(ns, p, 0)
+	if p[1] != -1 || p[2] != 7 || p[0] != 5 {
+		t.Fatalf("maskBad salah: %v", p)
+	}
+	foBad = map[string]time.Time{}
+}

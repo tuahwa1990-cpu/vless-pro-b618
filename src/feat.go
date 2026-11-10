@@ -27,7 +27,19 @@ type FOCfg struct {
 var (
 	foMu   sync.Mutex
 	foLast time.Time
+	foBad  = map[string]time.Time{} // profil yang baru gagal (kunci: pautan), dilangkau sementara
 )
+
+const foBadTTL = 10 * time.Minute
+
+// maskBad menandakan profil yang baru gagal sebagai tidak boleh dicapai (-1), kecuali profil semasa.
+func maskBad(ns []Node, pings []int, cur int) {
+	for i := range ns {
+		if t, ok := foBad[ns[i].Link]; ok && time.Since(t) < foBadTTL && i != cur && i < len(pings) {
+			pings[i] = -1
+		}
+	}
+}
 
 func loadFO() FOCfg {
 	var c FOCfg
@@ -126,9 +138,27 @@ func failoverSwitch() bool {
 	cur := selIdx()
 	pings := pingAll(ns)
 	rotate := !foLast.IsZero() && time.Since(foLast) < 15*time.Minute
+	// profil semasa baru disahkan gagal: ingat supaya tidak dicuba semula dalam beberapa minit
+	if cur >= 0 && cur < len(ns) {
+		foBad[ns[cur].Link] = time.Now()
+	}
+	raw := append([]int(nil), pings...)
+	maskBad(ns, pings, cur)
 	n := pickFailover(pings, cur, rotate)
 	if n < 0 {
 		n = pickAlt(pings, cur) // pemantau sudah mengesahkan sambungan gagal
+	}
+	if n < 0 && len(foBad) > 0 {
+		// semua calon pernah gagal baru-baru ini: lupakan ingatan dan cuba semula daripada awal
+		foBad = map[string]time.Time{}
+		if cur >= 0 && cur < len(ns) {
+			foBad[ns[cur].Link] = time.Now()
+		}
+		pings = raw
+		n = pickFailover(pings, cur, rotate)
+		if n < 0 {
+			n = pickAlt(pings, cur)
+		}
 	}
 	if n < 0 {
 		return false
