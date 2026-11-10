@@ -23,13 +23,12 @@ echo "Semakan fail OK. Memasang ..."
 [ -f "$D/vlesspro/run/ui.pid" ] && kill $(cat "$D/vlesspro/run/ui.pid") 2>/dev/null || true
 rm -f "$D/vlesspro/bin/vpro"
 mkdir -p "$D" && cd "$D" && tar xzf "$T/i.tgz"
-# Xray baharu (>= 26.10) di /usr/bin menolak nod VLESS tanpa TLS beralamat IP: guna salinan sendiri v26.3.27
-if [ ! -x "$D/vlesspro/bin/xray" ] && [ ! -x /opt/xlite/bin/xray ]; then
+if [ ! -x "$D/vlesspro/bin/xray" ] && [ ! -x /opt/xlite/bin/xray ] && [ ! -x /usr/bin/xray ]; then
   echo "Xray tidak dijumpai: memuat turun ..."
   if command -v unzip >/dev/null 2>&1 && get "https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-arm64-v8a.zip" "$T/x.zip"; then
     unzip -oq "$T/x.zip" xray -d "$T" && mkdir -p "$D/vlesspro/bin" && cp "$T/xray" "$D/vlesspro/bin/xray" && chmod 755 "$D/vlesspro/bin/xray" && echo "Xray dipasang." || echo "AMARAN: gagal memasang Xray."
   else
-    if [ -x /usr/bin/xray ]; then echo "AMARAN: tidak dapat muat turun Xray lama; guna /usr/bin/xray (nod tanpa TLS beralamat IP mungkin ditolak)."; else echo "AMARAN: tidak dapat memuat turun Xray di modem. Gunakan pemasang telefon (aw1000/pasang.sh) atau .exe."; fi
+    echo "AMARAN: tidak dapat memuat turun Xray di modem. Gunakan pemasang telefon (aw1000/pasang.sh) atau .exe."
   fi
 fi
 [ -n "$VP_NOINSTALL" ] && { echo "Ujian: langkau install.sh"; exit 0; }

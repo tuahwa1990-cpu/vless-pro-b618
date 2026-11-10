@@ -16,7 +16,7 @@ G=$(sha256sum "$T/i.tgz" | awk '{print $1}')
 S="ssh -o StrictHostKeyChecking=accept-new -o ControlMaster=auto -o ControlPath=$T/cm -o ControlPersist=120 root@$IP"
 echo "Menghubungi $IP (masukkan kata laluan router jika diminta) ..."
 $S '[ -f /data/vlesspro/run/ui.pid ] && kill $(cat /data/vlesspro/run/ui.pid) 2>/dev/null; rm -f /data/vlesspro/bin/vpro; mkdir -p /data && cd /data && tar xzf -' < "$T/i.tgz"
-X=$($S '[ -x /data/vlesspro/bin/xray ] || [ -x /opt/xlite/bin/xray ] || echo tiadaxray' </dev/null 2>/dev/null) || X=
+X=$($S '[ -x /data/vlesspro/bin/xray ] || [ -x /opt/xlite/bin/xray ] || [ -x /usr/bin/xray ] || echo tiadaxray' </dev/null 2>/dev/null) || X=
 case "$X" in *tiadaxray*)
   echo "Xray tidak dijumpai pada modem: dimuat turun dan dipasang bersama VLESS Pro."
   command -v curl >/dev/null && command -v unzip >/dev/null || { echo "Jalankan dahulu:  pkg install curl unzip"; exit 1; }
