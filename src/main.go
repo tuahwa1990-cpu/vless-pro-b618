@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-const version = "1.1.67"
+const version = "1.1.68"
 
 var home = func() string {
 	if h := os.Getenv("VP_HOME"); h != "" {

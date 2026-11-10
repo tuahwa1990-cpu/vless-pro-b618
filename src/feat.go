@@ -103,6 +103,12 @@ func pickAlt(pings []int, cur int) int {
 	return best
 }
 
+// wanDelta: bait diterima pada antara muka WAN sejak semakan pemantau sebelumnya (kira-kira 30 saat).
+var wanDelta atomic.Uint64
+
+// trafficFlowing benar jika data masuk yang ketara (>= 64 KB sejak semakan lalu) bukti nod berfungsi.
+func trafficFlowing() bool { return wanDelta.Load() >= 64<<10 }
+
 var foFails atomic.Int32 // kegagalan berturut dikesan pemantau (0-3)
 
 func pingAll(ns []Node) []int {
@@ -183,6 +189,9 @@ func failoverSwitch() bool {
 // recoverVP: dipanggil oleh pemantau bila sambungan gagal.
 // aliveVia benar jika mana-mana URL semakan berjaya melalui nod (lebih sabar daripada satu URL sahaja).
 func aliveVia() bool {
+	if trafficFlowing() {
+		return true // data sebenar sedang mengalir: nod berfungsi walaupun ujian gagal
+	}
 	urls := []string{loadOpts().PingURL, "http://www.youtube.com/generate_204", "http://cp.cloudflare.com/generate_204", "http://connectivitycheck.gstatic.com/generate_204"}
 	seen := map[string]bool{}
 	for _, u := range urls {

@@ -116,8 +116,17 @@ func watchdog() {
 	fails := 0
 	var last time.Time
 	cool := 5 * time.Minute
+	var lastRx uint64
 	for {
 		time.Sleep(30 * time.Second)
+		if rx, _, ok := netBytes(wanIface()); ok {
+			if lastRx > 0 && rx >= lastRx {
+				wanDelta.Store(rx - lastRx)
+			} else {
+				wanDelta.Store(0)
+			}
+			lastRx = rx
+		}
 		o := loadOpts()
 		if !o.AutoRecon || readStr(home+"/etc/mode", "xlite") != "vless" || locked(readLic()) {
 			fails = 0
