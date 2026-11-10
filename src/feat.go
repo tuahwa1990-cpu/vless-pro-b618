@@ -183,8 +183,13 @@ func failoverSwitch() bool {
 // recoverVP: dipanggil oleh pemantau bila sambungan gagal.
 // aliveVia benar jika mana-mana URL semakan berjaya melalui nod (lebih sabar daripada satu URL sahaja).
 func aliveVia() bool {
-	urls := []string{loadOpts().PingURL, "http://cp.cloudflare.com/generate_204", "http://connectivitycheck.gstatic.com/generate_204"}
+	urls := []string{loadOpts().PingURL, "http://www.youtube.com/generate_204", "http://cp.cloudflare.com/generate_204", "http://connectivitycheck.gstatic.com/generate_204"}
+	seen := map[string]bool{}
 	for _, u := range urls {
+		if seen[u] {
+			continue
+		}
+		seen[u] = true
 		if proxyOK(u, 8*time.Second) {
 			return true
 		}

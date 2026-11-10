@@ -34,7 +34,7 @@ type Opts struct {
 var optMu sync.Mutex
 
 func defOpts() Opts {
-	return Opts{AutoRecon: true, QS: "UseIP", PingURL: "http://www.gstatic.com/generate_204", LogLevel: "warning"}
+	return Opts{AutoRecon: true, QS: "UseIP", PingURL: "http://www.youtube.com/generate_204", LogLevel: "warning"}
 }
 
 func loadOpts() Opts {
@@ -132,7 +132,7 @@ func watchdog() {
 			bad = true
 			fails = 3
 		} else {
-			if proxyOK(o.PingURL, 8*time.Second) {
+			if aliveVia() {
 				fails = 0
 			} else {
 				fails++
