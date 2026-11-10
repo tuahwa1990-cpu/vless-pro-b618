@@ -5,6 +5,8 @@ package main
 import (
 	"archive/zip"
 	"bufio"
+	"bytes"
+	"compress/gzip"
 	"embed"
 	"fmt"
 	"io"
@@ -172,6 +174,16 @@ func extract(dir string) (string, error) {
 		b, err := payload.ReadFile(p)
 		if err != nil {
 			return err
+		}
+		if strings.HasSuffix(dst, ".gz") { // fail besar dimampatkan dalam .exe supaya kecil
+			zr, err := gzip.NewReader(bytes.NewReader(b))
+			if err != nil {
+				return err
+			}
+			if b, err = io.ReadAll(zr); err != nil {
+				return err
+			}
+			dst = strings.TrimSuffix(dst, ".gz")
 		}
 		return os.WriteFile(dst, b, 0755)
 	})
