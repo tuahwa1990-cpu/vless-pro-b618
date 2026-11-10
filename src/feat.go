@@ -324,12 +324,17 @@ func aliveVia() bool {
 	return false
 }
 
-// verifyNew mengesahkan nod yang baru dipilih dengan URL ujian pengguna (PingURL) sahaja, bukan mana-mana URL.
-// Nod yang hanya lulus ujian IP tetapi tidak boleh buka laman sebenar (cth. YouTube) ditinggalkan dalam ~40 saat.
+// verifyNew mengesahkan nod yang baru dipilih (~40 saat): data sebenar melalui nod (statistik xray) dianggap lulus;
+// jika tiada trafik, URL ujian pengguna (PingURL) mesti berjaya. Nod yang hanya lulus ujian IP tetapi tidak
+// membawa trafik sebenar (cth. YouTube tidak boleh dibuka) ditinggalkan dengan cepat.
 func verifyNew() bool {
 	u := loadOpts().PingURL
+	base, bok := nodeDown()
 	for a := 0; a < 3; a++ {
 		time.Sleep(5 * time.Second)
+		if cur, ok := nodeDown(); bok && ok && cur >= base && cur-base >= 16<<10 {
+			return true
+		}
 		if proxyOK(u, 8*time.Second) {
 			return true
 		}
