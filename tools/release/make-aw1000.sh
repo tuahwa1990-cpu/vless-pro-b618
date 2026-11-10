@@ -37,8 +37,9 @@ cp "$B/SHA256SUMS" "$P/SHA256SUMS"
 "$B/relsign" -seed "$RELEASE_SEED" -in "$P/SHA256SUMS" -out "$P/SHA256SUMS.sig"
 OUT="dist/$VER"; mkdir -p "$OUT" aw1000
 tar -C "$P" -czf "$OUT/vlesspro-$VER-aw1000.tgz" .
+tar -C "$P" --exclude=./vlesspro -czf "$OUT/vlesspro-$VER-aw1000-kemaskini.tgz" .
 tar -C "$I" -czf aw1000/install.tgz vlesspro
-cp openwrt/vp aw1000/vp; cp "$B/vpro" aw1000/vpro
+cp openwrt/vp aw1000/vp; cp "$B/vpro" aw1000/vpro; gzip -9nc "$B/vpro" > aw1000/vpro.gz
 echo "[5/5] Tulis fail repo ..."
 { sha256sum "$B/vpro" | sed 's#  .*#  vpro#'; sha256sum openwrt/vp | sed 's#  .*#  vp#'; sha256sum aw1000/install.tgz | sed 's#  .*#  install.tgz#'; } > aw1000-sha256.txt
 echo "$VER" > aw1000-latest.txt

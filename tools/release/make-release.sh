@@ -42,6 +42,7 @@ echo "[2/6] Bina vpro ARMv7 ($VER) ..."
 echo "[3/6] Segerakkan repo dan susun pakej ..."
 cp "$B/vpro" vlesspro/bin/vpro
 cp "$B/vpro" new/vpro
+gzip -9nc "$B/vpro" > new/vpro.gz
 cp vlesspro/vp new/vp
 P="$B/pkg"
 mkdir -p "$P/vlesspro/bin" "$P/new"
@@ -65,6 +66,8 @@ TGZ="vlesspro-$VER-armv7.tgz"
 
 echo "[5/6] Cipta $TGZ dan fail repo ..."
 tar -C "$P" -czf "$OUT/$TGZ" .
+# versi kecil (hanya fail kemas kini, tandatangan sama) untuk Pasang dari fail
+tar -C "$P" --exclude=./vlesspro -czf "$OUT/vlesspro-$VER-armv7-kemaskini.tgz" .
 ( cd "$P" && sha256sum vlesspro/bin/vpro vlesspro/vp ) | sed 's#vlesspro/bin/vpro#vpro#; s#vlesspro/vp#vp#' > "$OUT/b618-sha256.txt"
 echo "$VER" > "$OUT/b618-latest.txt"
 cp "$OUT/b618-sha256.txt" b618-sha256.txt

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
@@ -161,10 +163,24 @@ func doUpdate(force bool) {
 	_ = os.MkdirAll(home+"/new", 0755)
 	for _, f := range files {
 		upSet("run", "Memuat turun "+f.n+"...")
-		b, err := fetch(base+tdir+f.n, f.max, 5*time.Minute)
-		if err != nil {
-			upSet("err", "Muat turun "+f.n+" gagal: "+shortErr(err))
-			return
+		var b []byte
+		var err error
+		if f.n == "vpro" {
+			// versi mampat (.gz, kira-kira separuh saiz) dahulu; jika tiada atau rosak, guna fail penuh
+			if gb, e := fetch(base+tdir+"vpro.gz", 8<<20, 5*time.Minute); e == nil {
+				if zr, e := gzip.NewReader(bytes.NewReader(gb)); e == nil {
+					if ub, e := io.ReadAll(io.LimitReader(zr, f.max+1)); e == nil && int64(len(ub)) <= f.max {
+						b = ub
+					}
+				}
+			}
+		}
+		if b == nil {
+			b, err = fetch(base+tdir+f.n, f.max, 5*time.Minute)
+			if err != nil {
+				upSet("err", "Muat turun "+f.n+" gagal: "+shortErr(err))
+				return
+			}
 		}
 		h := sha256.Sum256(b)
 		if len(b) < f.min || hex.EncodeToString(h[:]) != sm[f.n] {
