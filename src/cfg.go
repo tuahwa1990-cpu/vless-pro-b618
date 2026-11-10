@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -142,15 +143,26 @@ func proxyOut(p *Parsed, tag string) map[string]any {
 		}
 		ss["httpupgradeSettings"] = h
 	}
+	addr := p.Host
+	if sec == "none" {
+		if ip := net.ParseIP(p.Host); ip != nil && !ip.IsPrivate() && !ip.IsLoopback() {
+			// Xray baharu menolak VLESS tanpa TLS beralamat IP awam: guna nama palsu + dns.hosts
+			addr = "n" + strings.NewReplacer(".", "-", ":", "-").Replace(p.Host) + ".vp"
+			ipHosts[addr] = p.Host
+		}
+	}
 	return map[string]any{
 		"tag": tag, "protocol": "vless",
 		"settings": map[string]any{"vnext": []any{map[string]any{
-			"address": p.Host, "port": p.Port, "users": []any{user}}}},
+			"address": addr, "port": p.Port, "users": []any{user}}}},
 		"streamSettings": ss,
 	}
 }
 
+var ipHosts = map[string]string{}
+
 func buildConfig(ps []*Parsed, direct []string) map[string]any {
+	ipHosts = map[string]string{}
 	o := loadOpts()
 	outs := []any{}
 	multi := len(ps) > 1
@@ -214,8 +226,20 @@ func buildConfig(ps []*Parsed, direct []string) map[string]any {
 		"outbounds": outs,
 		"routing":   routing,
 	}
-	if o.DNS != "" {
-		cfg["dns"] = map[string]any{"servers": []any{o.DNS}, "queryStrategy": o.QS}
+	if o.DNS != "" || len(ipHosts) > 0 {
+		d := map[string]any{}
+		if o.DNS != "" {
+			d["servers"] = []any{o.DNS}
+			d["queryStrategy"] = o.QS
+		}
+		if len(ipHosts) > 0 {
+			h := map[string]any{}
+			for k, v := range ipHosts {
+				h[k] = v
+			}
+			d["hosts"] = h
+		}
+		cfg["dns"] = d
 	}
 	if multi {
 		st := curStrat()
