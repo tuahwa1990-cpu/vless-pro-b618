@@ -176,21 +176,36 @@ func failoverSwitch() bool {
 	foLast = time.Now()
 	addFOLog(FOEv{T: time.Now().Unix(), From: from, To: ns[n].Name, Why: why})
 	fmt.Fprintln(os.Stderr, "failover:", from, "->", ns[n].Name, why)
-	runVP(true, "restart")
+	runVPWait(90*time.Second, "restart")
 	return true
 }
 
 // recoverVP: dipanggil oleh pemantau bila sambungan gagal.
+// aliveVia benar jika mana-mana URL semakan berjaya melalui nod (lebih sabar daripada satu URL sahaja).
+func aliveVia() bool {
+	urls := []string{loadOpts().PingURL, "http://cp.cloudflare.com/generate_204", "http://connectivitycheck.gstatic.com/generate_204"}
+	for _, u := range urls {
+		if proxyOK(u, 8*time.Second) {
+			return true
+		}
+	}
+	return false
+}
+
+// recoverVP: dipanggil oleh pemantau bila sambungan gagal. Benar jika profil ditukar.
 func recoverVP() bool {
+	// pastikan benar-benar rosak: jangan tukar nod yang sebenarnya masih berfungsi
+	if vlessUp() && aliveVia() {
+		return false
+	}
 	if loadFO().On && selGroup() < 0 && failoverSwitch() {
-		// sahkan internet benar-benar ada pada profil baharu; jika tidak, terus cuba profil seterusnya
+		// sahkan internet pada profil baharu; restart sudah selesai (ditunggu), beri masa Xray bersambung
 		n := len(loadNodes())
 		for k := 0; k < n; k++ {
-			// beri masa Xray bersambung: cuba berkali-kali sehingga ~30 saat sebelum menolak profil
 			ok := false
 			for a := 0; a < 6 && !ok; a++ {
 				time.Sleep(5 * time.Second)
-				ok = proxyOK(loadOpts().PingURL, 6*time.Second)
+				ok = aliveVia()
 			}
 			if ok || !failoverSwitch() {
 				break
@@ -198,7 +213,7 @@ func recoverVP() bool {
 		}
 		return true
 	}
-	runVP(true, "restart")
+	runVPWait(90*time.Second, "restart")
 	return false
 }
 

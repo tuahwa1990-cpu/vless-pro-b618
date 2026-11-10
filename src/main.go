@@ -11,9 +11,10 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 )
 
-const version = "1.1.63"
+const version = "1.1.64"
 
 var home = func() string {
 	if h := os.Getenv("VP_HOME"); h != "" {
@@ -155,6 +156,26 @@ func runVP(detach bool, args ...string) {
 				lf.Close()
 			}
 		}()
+	}
+}
+
+// runVPWait menjalankan vp dan menunggu ia selesai (had masa), supaya dua arahan restart tidak bertindih.
+func runVPWait(timeout time.Duration, args ...string) {
+	cmd := exec.Command("/bin/sh", append([]string{home + "/vp"}, args...)...)
+	lf, _ := os.OpenFile(home+"/run/vp.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	if lf != nil {
+		cmd.Stdout, cmd.Stderr = lf, lf
+		defer lf.Close()
+	}
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	if err := cmd.Start(); err != nil {
+		return
+	}
+	done := make(chan struct{})
+	go func() { _ = cmd.Wait(); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(timeout):
 	}
 }
 

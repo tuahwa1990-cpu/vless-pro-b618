@@ -39,7 +39,7 @@ fw_off() {
 }
 fw_on() {
   fw_off
-  $I -N VLESSPRO || return 1
+  $I -N VLESSPRO 2>/dev/null || $I -F VLESSPRO || return 1
   $I -A VLESSPRO -m mark --mark $MARK -j RETURN
   for n in 0.0.0.0/8 127.0.0.0/8 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 169.254.0.0/16 224.0.0.0/4 240.0.0.0/4; do
     $I -A VLESSPRO -d $n -j RETURN
