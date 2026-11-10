@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -129,7 +130,25 @@ func userDemand() bool {
 			return true
 		}
 	}
-	return false
+	// peranti masih tersambung (WiFi/LAN) walaupun telefon beralih ke data sendiri bila WiFi tiada internet
+	return lanClients() > 0
+}
+
+// lanClients mengira peranti dalam jadual ARP pada antara muka LAN (tanpa pintu masuk modem sendiri).
+func lanClients() int {
+	b, err := os.ReadFile("/proc/net/arp")
+	if err != nil {
+		return 0
+	}
+	dev := lanDev()
+	n := 0
+	for _, l := range strings.Split(string(b), "\n")[1:] {
+		f := strings.Fields(l)
+		if len(f) >= 6 && f[5] == dev && f[2] != "0x0" {
+			n++
+		}
+	}
+	return n
 }
 
 var foFails atomic.Int32 // kegagalan berturut dikesan pemantau (0-3)
