@@ -596,7 +596,7 @@ func serve() {
 			return "Menyambung VLESS Pro...", true
 		case "xlite":
 			runVP(true, "to-xlite")
-			return "Kembali ke XLITE...", true
+			return "Memutuskan sambungan...", true
 		}
 		return "Mod tidak sah", false
 	})
