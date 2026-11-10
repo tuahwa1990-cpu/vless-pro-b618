@@ -324,6 +324,19 @@ func aliveVia() bool {
 	return false
 }
 
+// verifyNew mengesahkan nod yang baru dipilih dengan URL ujian pengguna (PingURL) sahaja, bukan mana-mana URL.
+// Nod yang hanya lulus ujian IP tetapi tidak boleh buka laman sebenar (cth. YouTube) ditinggalkan dalam ~40 saat.
+func verifyNew() bool {
+	u := loadOpts().PingURL
+	for a := 0; a < 3; a++ {
+		time.Sleep(5 * time.Second)
+		if proxyOK(u, 8*time.Second) {
+			return true
+		}
+	}
+	return false
+}
+
 // recoverVP: dipanggil oleh pemantau bila sambungan gagal. Benar jika profil ditukar.
 func recoverVP() bool {
 	// pastikan benar-benar rosak: jangan tukar nod yang sebenarnya masih berfungsi
@@ -334,12 +347,7 @@ func recoverVP() bool {
 		// sahkan internet pada profil baharu; restart sudah selesai (ditunggu), beri masa Xray bersambung
 		n := len(loadNodes())
 		for k := 0; k < n; k++ {
-			ok := false
-			for a := 0; a < 6 && !ok; a++ {
-				time.Sleep(5 * time.Second)
-				ok = aliveVia()
-			}
-			if ok || !failoverSwitch() {
+			if verifyNew() || !failoverSwitch() {
 				break
 			}
 		}
