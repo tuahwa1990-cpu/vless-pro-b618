@@ -111,6 +111,21 @@ func probeLog(u, why string, t0 time.Time) {
 	fmt.Fprintf(lf, "%s %s %s (%dms)\n", time.Now().Format("15:04:05"), u, why, time.Since(t0).Milliseconds())
 }
 
+// wdTrace merekod keputusan pemantau setiap kitaran: run/wd.log (had ~8 KB) untuk semakan punca.
+func wdTrace(why string, fails int) {
+	f := home + "/run/wd.log"
+	if st, err := os.Stat(f); err == nil && st.Size() > 8192 {
+		_ = os.Remove(f)
+	}
+	lf, err := os.OpenFile(f, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	if err != nil {
+		return
+	}
+	defer lf.Close()
+	fmt.Fprintf(lf, "%s %s gagal=%d stat=%v nod=%d wan=%d lan=%d klien=%d up=%v\n", time.Now().Format("15:04:05"), why, fails,
+		statsOK.Load(), nodeDelta.Load(), wanDelta.Load(), lanHist[2].Load(), lanClients(), vlessUp())
+}
+
 // Pemantau: sambung semula automatik bila xray mati atau ujian gagal 3 kali berturut.
 func watchdog() {
 	fails := 0
@@ -143,10 +158,12 @@ func watchdog() {
 			continue
 		}
 		if time.Since(last) < cool {
+			wdTrace("cool", fails)
 			continue
 		}
 		if vlessUp() && !userDemand() {
 			// tiada pengguna aktif: tiada sebab menukar nod
+			wdTrace("tiada-pengguna", fails)
 			fails = 0
 			foFails.Store(0)
 			continue
@@ -162,6 +179,7 @@ func watchdog() {
 				fails++
 			}
 		}
+		wdTrace("ujian", fails)
 		fd := fails
 		if fd > 3 {
 			fd = 3
