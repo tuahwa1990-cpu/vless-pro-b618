@@ -33,6 +33,8 @@ fw_off() {
   while $I -D PREROUTING -i $LAN -p udp --dport 53 -j REDIRECT --to-ports 10853 2>/dev/null; do :; done
   while $I -D PREROUTING -i $LAN -p tcp --dport 53 -j REDIRECT --to-ports 10853 2>/dev/null; do :; done
   for P in udp tcp; do while ip6tables -t nat -D PREROUTING -i $LAN -p $P --dport 53 -j REDIRECT --to-ports 10853 2>/dev/null; do :; done; done
+  # QUIC (UDP 443) tidak melalui terowong; halangan dibuang supaya aplikasi jatuh ke TCP
+  for T in REJECT DROP; do while iptables -D FORWARD -i $LAN -p udp --dport 443 -j $T 2>/dev/null; do :; done; done
   $I -F VLESSPRO 2>/dev/null; $I -X VLESSPRO 2>/dev/null
 }
 fw_on() {
@@ -49,6 +51,11 @@ fw_on() {
     $I -A PREROUTING -i $LAN -p tcp --dport 53 -j REDIRECT --to-ports 10854
   fi
   $I -A PREROUTING -i $LAN -p tcp -j VLESSPRO
+  # UDP tidak dialihkan ke Xray: QUIC (UDP 443) dihalang supaya YouTube/Chrome terus guna TCP melalui nod.
+  # Matikan dengan fail etc/noquicblock.
+  if [ ! -f $H/etc/noquicblock ]; then
+    iptables -I FORWARD 1 -i $LAN -p udp --dport 443 -j REJECT --reject-with icmp-port-unreachable 2>/dev/null || iptables -I FORWARD 1 -i $LAN -p udp --dport 443 -j DROP
+  fi
 }
 # dipanggil bila firewall router dimuat semula
 fwcheck() {
