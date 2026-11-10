@@ -190,7 +190,7 @@ function shell(){$('app').innerHTML='<header><span id="mb">'+ic('menu')+'</span>
  [['home','Utama','home'],['status','Status','pulse'],['prof','Profil','db']].map(function(x){return '<div id="n_'+x[0]+'">'+ic(x[2])+x[1]+'</div>'}).join('')+'</nav>'+
  '<div id="dr"><h2><span>VLESS PRO</span></h2><small>NAVIGASI</small>'+[['logs','Log','logs'],['route','Penghalaan','route'],['set','Tetapan','set'],['sys','Sistem','sys'],['tema','Tema','pal'],['lang','Bahasa','lang'],['plus','Feature Plus','plus']].map(function(x){return '<a data-v="'+x[0]+'">'+ic(x[2])+x[1]+'</a>'}).join('')+'<hr><small>APLIKASI</small>'+
  [['upd','Kemas kini','upd'],['about','Perihal','inf']].map(function(x){return '<a data-v="'+x[0]+'">'+ic(x[2])+x[1]+'</a>'}).join('')+'<a id="lo">'+ic('out')+'Log Keluar</a></div>';
- $('mb').onclick=function(){dr(1)};$('bk').onclick=function(){dr(1)};$('sc').onclick=function(){dr(0)};
+ $('mb').onclick=function(){dr(1)};$('bk').onclick=function(){if(V=='plus'&&/^#plus\/\d/.test(location.hash)){clearTimeout(wanT);clearTimeout(adT);rPlus($('mn'))}else dr(1)};$('sc').onclick=function(){dr(0)};
  ['home','status','prof'].forEach(function(v){$('n_'+v).onclick=function(){go(v)}});
  [].forEach.call(document.querySelectorAll('#dr a[data-v]'),function(a){a.onclick=function(){dr(0);go(a.dataset.v)}});
  $('lo').onclick=function(){api('/api/logout',{}).then(function(){login()})}}
