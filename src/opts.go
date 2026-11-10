@@ -83,6 +83,7 @@ func saveOpts(o Opts) error {
 func watchdog() {
 	fails := 0
 	var last time.Time
+	cool := 5 * time.Minute
 	for {
 		time.Sleep(30 * time.Second)
 		o := loadOpts()
@@ -91,7 +92,7 @@ func watchdog() {
 			foFails.Store(0)
 			continue
 		}
-		if time.Since(last) < 5*time.Minute {
+		if time.Since(last) < cool {
 			continue
 		}
 		bad := false
@@ -114,7 +115,11 @@ func watchdog() {
 			fails = 0
 			last = time.Now()
 			fmt.Fprintln(os.Stderr, "pemantau: sambung semula automatik")
-			recoverVP()
+			if recoverVP() {
+				cool = 90 * time.Second // profil baharu: semak cepat, tukar lagi jika masih gagal
+			} else {
+				cool = 5 * time.Minute
+			}
 		}
 	}
 }

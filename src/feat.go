@@ -151,11 +151,24 @@ func failoverSwitch() bool {
 }
 
 // recoverVP: dipanggil oleh pemantau bila sambungan gagal.
-func recoverVP() {
+func recoverVP() bool {
 	if loadFO().On && selGroup() < 0 && failoverSwitch() {
-		return
+		// sahkan internet benar-benar ada pada profil baharu; jika tidak, terus cuba profil seterusnya
+		n := len(loadNodes())
+		for k := 0; k < n; k++ {
+			time.Sleep(7 * time.Second)
+			if r, err := proxyClient(8 * time.Second).Get(loadOpts().PingURL); err == nil {
+				r.Body.Close()
+				break
+			}
+			if !failoverSwitch() {
+				break
+			}
+		}
+		return true
 	}
 	runVP(true, "restart")
+	return false
 }
 
 // ===================== Kuota data =====================
