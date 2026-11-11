@@ -65,7 +65,9 @@ get "$B/g630v/vpro.gz" "$T/vpro.gz" || { echo "GAGAL muat turun vpro"; exit 1; }
 echo "Memuat turun xray (±13 MB) ..."
 get "$B/g630v/xray.gz" "$T/xray.gz" || { echo "GAGAL muat turun xray"; exit 1; }
 [ -f "$H/run/ui.pid" ] && kill $(cat "$H/run/ui.pid") 2>/dev/null
-gunzip -c "$T/vpro.gz" > "$H/bin/vpro" && gunzip -c "$T/xray.gz" > "$H/bin/xray" || { echo "GAGAL membuka fail"; exit 1; }
+gunzip -c "$T/vpro.gz" > "$H/bin/vpro.new" && gunzip -c "$T/xray.gz" > "$H/bin/xray.new" || { echo "GAGAL membuka fail"; exit 1; }
+chmod 755 "$H/bin/vpro.new" "$H/bin/xray.new"
+mv -f "$H/bin/vpro.new" "$H/bin/vpro" && mv -f "$H/bin/xray.new" "$H/bin/xray" || { echo "GAGAL menggantikan fail"; exit 1; }
 cp "$T/vp" "$T/install.sh" "$T/upgrade.sh" "$H/"
 chmod 755 "$H/vp" "$H/install.sh" "$H/upgrade.sh" "$H/bin/vpro" "$H/bin/xray"
 # Kemas kini dalam UI tidak sesuai untuk binari tanpa VFP: halakan ke fail yang tiada.
