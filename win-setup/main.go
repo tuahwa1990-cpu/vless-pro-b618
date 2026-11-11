@@ -506,7 +506,11 @@ func installAW1000() {
 		fmt.Println("  XLITE        : tidak dijumpai")
 	}
 	if !hasX {
-		fmt.Println("  Xray         : akan dimuat turun dan dipasang bersama VLESS Pro bersama VLESS Pro")
+		if edisi == "aw3000t" {
+			fmt.Println("  Xray         : akan dipasang (sudah terbenam dalam program ini)")
+		} else {
+			fmt.Println("  Xray         : akan dimuat turun dan dipasang bersama VLESS Pro")
+		}
 	}
 	if !yes("\nTeruskan pemasangan?") {
 		cancelled()
