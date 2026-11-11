@@ -491,12 +491,7 @@ func quotaBlock(on bool) {
 	}
 	if on {
 		dev := wanIface()
-		if dev == "" || dev == lanDev() {
-			return // jangan putuskan rangkaian LAN sendiri (contoh: hulu disambung melalui port LAN)
-		}
-		if useNft() {
-			quotaNft(true, dev)
-			qIface = dev
+		if dev == "" {
 			return
 		}
 		_, _ = run2("iptables", "-N", "VPQUOTA")
@@ -508,11 +503,6 @@ func quotaBlock(on bool) {
 			}
 		}
 		qIface = dev
-		return
-	}
-	if useNft() {
-		quotaNft(false, "")
-		qIface = ""
 		return
 	}
 	for _, ch := range []string{"FORWARD", "OUTPUT"} {

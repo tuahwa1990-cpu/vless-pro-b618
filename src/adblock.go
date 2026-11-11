@@ -645,10 +645,6 @@ func adRules(want bool) { adRules2(want, false) }
 
 // adRules2: v6 = peraturan ip6tables (best-effort; abaikan jika kernel tidak menyokong).
 func adRules2(want, v6 bool) {
-	if useNft() {
-		adNft(want, v6)
-		return
-	}
 	ipt := "iptables"
 	if v6 {
 		ipt = "ip6tables"
@@ -699,16 +695,8 @@ func adHealthy() bool {
 
 func memTotalMB() uint64 { t, _ := meminfo(); return t / 1024 }
 
-// adRAMok: sekat iklan perlukan 512 MB RAM; peranti nft sahaja (G630V, ±420 MB, RAM luas) cukup dengan 384 MB.
-func adRAMok() bool {
-	if useNft() {
-		return memTotalMB() >= 384
-	}
-	return memTotalMB() >= 512
-}
-
 func adWant() bool {
-	return loadAd().On && !locked(readLic()) && adRAMok() &&
+	return loadAd().On && !locked(readLic()) && memTotalMB() >= 512 &&
 		readStr(home+"/etc/mode", "xlite") == "vless" && vlessUp()
 }
 
@@ -776,7 +764,7 @@ func regAd(mux *http.ServeMux, act func(string, func(*http.Request) (string, boo
 				jr(w, map[string]any{"ok": false, "msg": "Data tidak sah"})
 				return
 			}
-			if c.On && !adRAMok() {
+			if c.On && memTotalMB() < 512 {
 				jr(w, map[string]any{"ok": false, "msg": "RAM peranti tidak mencukupi untuk sekat iklan"})
 				return
 			}
@@ -847,7 +835,7 @@ func regAd(mux *http.ServeMux, act func(string, func(*http.Request) (string, boo
 		adUp.Lock()
 		run, msg := adUp.run, adUp.msg
 		adUp.Unlock()
-		jr(w, map[string]any{"cfg": loadAd(), "active": adActive(), "ram": adRAMok(), "total": total,
+		jr(w, map[string]any{"cfg": loadAd(), "active": adActive(), "ram": memTotalMB() >= 512, "total": total,
 			"lists": lists, "run": run, "msg": msg, "stats": st,
 			"mode": readStr(home+"/etc/mode", "xlite") == "vless" && vlessUp()})
 	})
