@@ -4,6 +4,7 @@
 # Tetapan, nod dan lesen disimpan di flash: /etc/vlesspro-etc (kecil).
 # Guna:  sh pasang-ram.sh          (kali pertama)
 #        sh pasang-ram.sh boot     (dipanggil semasa but, tunggu internet)
+#        sh pasang-ram.sh hook     (pasang skrip auto-mula sahaja, tanpa muat turun fail besar)
 B=${VP_BASE:-https://raw.githubusercontent.com/tuahwa1990-cpu/vless-pro-b618/main}
 R=/tmp/vpdata
 H=/data/vlesspro
@@ -12,6 +13,14 @@ get() { # URL FAIL
   wget -qO "$2" "$1" 2>/dev/null && return 0
   uclient-fetch -qO "$2" "$1" 2>/dev/null
 }
+if [ "$1" = hook ]; then
+  cp "$0" /etc/vlesspro-boot.sh && chmod 755 /etc/vlesspro-boot.sh || { echo "GAGAL menyalin skrip"; exit 1; }
+  [ -f /etc/rc.local ] || { printf '#!/bin/sh\nexit 0\n' > /etc/rc.local; chmod 755 /etc/rc.local; }
+  if grep -q vlesspro-g630v /etc/rc.local; then echo "rc.local sudah ada"; else
+    awk '/^exit 0/&&!d{print "# vlesspro-g630v"; print "sh /etc/vlesspro-boot.sh boot >/tmp/vlesspro-boot.log 2>&1 &"; d=1} {print} END{if(!d){print "# vlesspro-g630v"; print "sh /etc/vlesspro-boot.sh boot >/tmp/vlesspro-boot.log 2>&1 &"}}' /etc/rc.local > /tmp/rc.tmp && cp /tmp/rc.tmp /etc/rc.local && chmod 755 /etc/rc.local || { echo "GAGAL mengubah rc.local"; exit 1; }
+  fi
+  echo "OK: auto-mula dipasang (skrip: /etc/vlesspro-boot.sh)"; exit 0
+fi
 if [ "$1" = boot ]; then
   n=0; while [ $n -lt 60 ]; do get "$B/g630v/vpro.gz" /tmp/.vp-probe 2>/dev/null && break; n=$((n+1)); sleep 5; done
   rm -f /tmp/.vp-probe
@@ -41,3 +50,4 @@ if [ "$1" = boot ]; then
   exit 0
 fi
 sh "$H/install.sh"
+echo "Pasang auto-mula selepas but: sh $0 hook"
