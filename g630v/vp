@@ -41,14 +41,14 @@ fw_on() {
   fi
   nft -f - <<NFT || return 1
 table inet vlesspro {
-  chain pre {
+  chain vp_pre {
     type nat hook prerouting priority dstnat; policy accept;
     $ND
     iifname "$LAN" meta l4proto tcp meta mark $MARK return
     iifname "$LAN" meta l4proto tcp ip daddr { 0.0.0.0/8, 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 224.0.0.0/4, 240.0.0.0/4 } return
     iifname "$LAN" meta l4proto tcp redirect to :12346
   }
-  chain fwd {
+  chain vp_fwd {
     type filter hook forward priority filter; policy accept;
     $NQ
   }
