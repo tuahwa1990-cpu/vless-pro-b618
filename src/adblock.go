@@ -645,6 +645,10 @@ func adRules(want bool) { adRules2(want, false) }
 
 // adRules2: v6 = peraturan ip6tables (best-effort; abaikan jika kernel tidak menyokong).
 func adRules2(want, v6 bool) {
+	if useNft() {
+		adNft(want, v6)
+		return
+	}
 	ipt := "iptables"
 	if v6 {
 		ipt = "ip6tables"
