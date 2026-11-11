@@ -22,7 +22,7 @@ ln -sfn "$R" /data
 ln -sfn /etc/vlesspro-etc "$H/etc"
 T=$(mktemp -d /tmp/vpg.XXXXXX); trap 'rm -rf "$T"' EXIT
 echo "Memuat turun fail kecil ..."
-for f in openwrt/vp openwrt/install.sh upgrade.sh; do
+for f in g630v/vp openwrt/install.sh upgrade.sh; do
   get "$B/$f" "$T/$(basename $f)" || { echo "GAGAL muat turun $f"; exit 1; }
 done
 echo "Memuat turun vpro ..."
