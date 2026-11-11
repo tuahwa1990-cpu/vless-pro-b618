@@ -8,10 +8,17 @@
 B=${VP_BASE:-https://raw.githubusercontent.com/tuahwa1990-cpu/vless-pro-b618/main}
 R=/tmp/vpdata
 H=/data/vlesspro
-get() { # URL FAIL
-  if command -v curl >/dev/null 2>&1; then curl -fsSL "$1" -o "$2" && return 0; fi
-  wget -qO "$2" "$1" 2>/dev/null && return 0
-  uclient-fetch -qO "$2" "$1" 2>/dev/null
+get() { # URL FAIL  (cuba semula + sambung semula jika terhenti)
+  i=0
+  while [ $i -lt 15 ]; do
+    if command -v curl >/dev/null 2>&1; then
+      curl -fsSL -C - --connect-timeout 15 --speed-time 20 --speed-limit 2000 -o "$2" "$1" && return 0
+    else
+      wget -c -T 20 -qO "$2" "$1" 2>/dev/null && return 0
+    fi
+    i=$((i+1)); sleep 3
+  done
+  return 1
 }
 if [ "$1" = hook ]; then
   cp "$0" /etc/vlesspro-boot.sh && chmod 755 /etc/vlesspro-boot.sh || { echo "GAGAL menyalin skrip"; exit 1; }
@@ -22,7 +29,7 @@ if [ "$1" = hook ]; then
   echo "OK: auto-mula dipasang (skrip: /etc/vlesspro-boot.sh)"; exit 0
 fi
 if [ "$1" = boot ]; then
-  n=0; while [ $n -lt 60 ]; do get "$B/g630v/vpro.gz" /tmp/.vp-probe 2>/dev/null && break; n=$((n+1)); sleep 5; done
+  n=0; while [ $n -lt 60 ]; do rm -f /tmp/.vp-probe; get "$B/g630v/vp" /tmp/.vp-probe 2>/dev/null && break; n=$((n+1)); sleep 5; done
   rm -f /tmp/.vp-probe
 fi
 mkdir -p "$R/vlesspro/bin" /etc/vlesspro-etc
