@@ -587,6 +587,12 @@ func installAW1000() {
 	if err := sshLive("sh /data/vlesspro/install.sh"); err != nil {
 		die("pemasangan di modem gagal (lihat mesej di atas)")
 	}
+	if edisi == "aw3000t" {
+		// auto-mula selepas reboot dipasang terus untuk pelanggan AW3000T
+		if err := sshLive("/data/vlesspro/vp hook-install"); err != nil {
+			fmt.Println("AMARAN: gagal memasang auto-mula; boleh dihidupkan di UI: Tetapan > Suis boot")
+		}
+	}
 	fmt.Println("\n[4/4] Siap.")
 	fmt.Println("Buka di pelayar: http://" + ip + ":8990")
 	fmt.Println("Log masuk dengan kata laluan awal: admin. Boleh ditukar di Tetapan.")
