@@ -131,8 +131,32 @@ func sums(b []byte) map[string]string {
 	return m
 }
 
+// G630V: binari dalam RAM; kemas kini = "vp update" (muat turun + semak SHA256 + ganti, tanpa reboot).
+func isG630V() bool {
+	_, err := os.Stat("/etc/vlesspro-boot.sh")
+	return err == nil
+}
+
+func doUpdateG630V() {
+	upSet("run", "Memuat turun dari GitHub...")
+	var out bytes.Buffer
+	cmd := exec.Command("/bin/sh", home+"/vp", "update")
+	cmd.Stdout, cmd.Stderr = &out, &out
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	if err := cmd.Run(); err != nil {
+		ls := strings.Split(strings.TrimSpace(out.String()), "\n")
+		upSet("err", ls[len(ls)-1])
+		return
+	}
+	upSet("done", "Dikemas kini, memulakan semula UI...")
+}
+
 func doUpdate(force bool) {
 	defer func() { upMu.Lock(); upRun = false; upMu.Unlock() }()
+	if isG630V() {
+		doUpdateG630V()
+		return
+	}
 	lv, err := latestVer()
 	if err != nil {
 		upSet("err", "Tidak dapat semak: "+shortErr(err))

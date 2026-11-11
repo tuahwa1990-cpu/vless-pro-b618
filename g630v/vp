@@ -193,6 +193,38 @@ hook_remove() {
   rm -f $HK
   echo "OK: dibuang"
 }
+# Kemas kini dari GitHub tanpa reboot: muat turun vp + vpro, semak SHA256, ganti, mula semula UI sahaja (xray tidak disentuh).
+dl() { # URL FAIL
+  i=0
+  while [ $i -lt 8 ]; do
+    if command -v curl >/dev/null 2>&1; then
+      curl -fsSL -C - --connect-timeout 15 --speed-time 20 --speed-limit 2000 -o "$2" "$1" && return 0
+    else
+      wget -c -T 20 -qO "$2" "$1" 2>/dev/null && return 0
+    fi
+    i=$((i+1)); sleep 3
+  done
+  return 1
+}
+update() {
+  BASE=${VP_BASE:-https://raw.githubusercontent.com/tuahwa1990-cpu/vless-pro-b618/main}
+  T=/tmp/vpu.$$; rm -rf $T; mkdir -p $T || { echo "GAGAL: tiada ruang sementara"; return 1; }
+  for f in g630v/vp g630v/vpro.gz g630v-sha256.txt; do
+    dl "$BASE/$f" "$T/$(basename $f)" || { echo "GAGAL muat turun $f"; rm -rf $T; return 1; }
+  done
+  for n in vp vpro.gz; do
+    want=$(awk -v n=$n '$2==n{print $1}' $T/g630v-sha256.txt)
+    have=$(sha256sum $T/$n | awk '{print $1}')
+    [ -n "$want" ] && [ "$want" = "$have" ] || { echo "GAGAL semakan $n (salinan GitHub mungkin belum dikemas kini, cuba lagi 5 minit)"; rm -rf $T; return 1; }
+  done
+  gunzip -c $T/vpro.gz > $T/vpro 2>/dev/null && [ "$(wc -c < $T/vpro)" -gt 1000000 ] || { echo "GAGAL membuka vpro"; rm -rf $T; return 1; }
+  ui_stop
+  cp $T/vpro $H/bin/vpro.new && chmod 755 $H/bin/vpro.new && mv -f $H/bin/vpro.new $H/bin/vpro || { echo "GAGAL menggantikan vpro"; start_ui; rm -rf $T; return 1; }
+  cp $T/vp $H/vp.new && chmod 755 $H/vp.new && mv -f $H/vp.new $H/vp
+  rm -rf $T
+  start_ui
+  echo "OK: dikemas kini"
+}
 doctor() {
   for c in mkdir cp mv rm chmod sleep kill ls awk sed grep nft netstat ifconfig; do
     command -v $c >/dev/null 2>&1 || echo "TIADA: $c"
@@ -211,6 +243,7 @@ status() {
 case "$1" in
   boot) boot;; to-vless) to_vless;; to-xlite) to_xlite;; restart) restart;; fwcheck) fwcheck;;
   ui-start) start_ui;; ui-restart) ui_stop; start_ui;; svc-restart) restart; ui_stop; start_ui;; hook-install) hook_install;; hook-remove) hook_remove;;
+  update) update;;
   doctor) doctor;; status) status;;
-  *) echo "vp: boot | to-vless | to-xlite | restart | fwcheck | ui-start | ui-restart | hook-install | hook-remove | doctor | status";;
+  *) echo "vp: boot | to-vless | to-xlite | restart | fwcheck | ui-start | ui-restart | hook-install | hook-remove | update | doctor | status";;
 esac
