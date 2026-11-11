@@ -346,7 +346,7 @@ func main() {
 		ip = "192.168.1.1"
 		fmt.Println("Pemasang VLESS Pro khas AW3000T")
 		for {
-			s := ask("IP router [192.168.1.1]: ")
+			s := ask("Tekan Enter jika IP router ialah 192.168.1.1.\nJika IP router lain, taip IP itu dan tekan Enter: ")
 			if s == "" {
 				break
 			}
