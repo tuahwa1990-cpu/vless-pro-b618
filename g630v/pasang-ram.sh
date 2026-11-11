@@ -2,7 +2,10 @@
 # VLESS Pro untuk G630V (AlphaWRT, ARMv7 tanpa VFP, flash kecil).
 # Fail besar (vpro, xray) disimpan di RAM (/tmp) dan dimuat turun semula setiap kali but.
 # Tetapan, nod dan lesen disimpan di flash: /etc/vlesspro-etc (kecil).
-# Guna:  sh pasang-ram.sh          (kali pertama)
+# Guna:  sh pasang-ram.sh pasang   (PELANGGAN: pasang penuh + auto-mula selepas but)
+#        sh pasang-ram.sh buang    (buang auto-mula dan pulihkan internet; tetapan dan lesen kekal)
+#        sh pasang-ram.sh buang semua (buang semuanya termasuk tetapan, nod dan lesen)
+#        sh pasang-ram.sh          (pasang tanpa auto-mula)
 #        sh pasang-ram.sh boot     (dipanggil semasa but, tunggu internet)
 #        sh pasang-ram.sh hook     (pasang skrip auto-mula sahaja, tanpa muat turun fail besar)
 B=${VP_BASE:-https://raw.githubusercontent.com/tuahwa1990-cpu/vless-pro-b618/main}
@@ -20,13 +23,29 @@ get() { # URL FAIL  (cuba semula + sambung semula jika terhenti)
   done
   return 1
 }
-if [ "$1" = hook ]; then
-  cp "$0" /etc/vlesspro-boot.sh && chmod 755 /etc/vlesspro-boot.sh || { echo "GAGAL menyalin skrip"; exit 1; }
+do_hook() {
+  cp "$0" /etc/vlesspro-boot.sh && chmod 755 /etc/vlesspro-boot.sh || { echo "GAGAL menyalin skrip"; return 1; }
   [ -f /etc/rc.local ] || { printf '#!/bin/sh\nexit 0\n' > /etc/rc.local; chmod 755 /etc/rc.local; }
   if grep -q vlesspro-g630v /etc/rc.local; then echo "rc.local sudah ada"; else
-    awk '/^exit 0/&&!d{print "# vlesspro-g630v"; print "sh /etc/vlesspro-boot.sh boot >/tmp/vlesspro-boot.log 2>&1 &"; d=1} {print} END{if(!d){print "# vlesspro-g630v"; print "sh /etc/vlesspro-boot.sh boot >/tmp/vlesspro-boot.log 2>&1 &"}}' /etc/rc.local > /tmp/rc.tmp && cp /tmp/rc.tmp /etc/rc.local && chmod 755 /etc/rc.local || { echo "GAGAL mengubah rc.local"; exit 1; }
+    awk '/^exit 0/&&!d{print "# vlesspro-g630v"; print "sh /etc/vlesspro-boot.sh boot >/tmp/vlesspro-boot.log 2>&1 &"; d=1} {print} END{if(!d){print "# vlesspro-g630v"; print "sh /etc/vlesspro-boot.sh boot >/tmp/vlesspro-boot.log 2>&1 &"}}' /etc/rc.local > /tmp/rc.tmp && cp /tmp/rc.tmp /etc/rc.local && chmod 755 /etc/rc.local || { echo "GAGAL mengubah rc.local"; return 1; }
   fi
-  echo "OK: auto-mula dipasang (skrip: /etc/vlesspro-boot.sh)"; exit 0
+  echo "OK: auto-mula dipasang (skrip: /etc/vlesspro-boot.sh)"
+}
+if [ "$1" = hook ]; then do_hook; exit $?; fi
+if [ "$1" = buang ]; then
+  [ -f $H/vp ] && sh $H/vp to-xlite >/dev/null 2>&1
+  [ -f $H/run/ui.pid ] && kill $(cat $H/run/ui.pid) 2>/dev/null
+  nft delete table ip vpad4 2>/dev/null; nft delete table ip6 vpad6 2>/dev/null; nft delete table inet vpquota 2>/dev/null; nft delete table inet vlesspro 2>/dev/null
+  if [ -f /etc/rc.local ]; then
+    awk '!/vlesspro-g630v/ && !/vlesspro-boot.sh/' /etc/rc.local > /tmp/rc.tmp && cp /tmp/rc.tmp /etc/rc.local && chmod 755 /etc/rc.local
+  fi
+  rm -f /etc/vlesspro-boot.sh
+  p=$(ps | awk '/vlesspro\/bin\/(vpro|xray)/ && !/awk/{print $1}'); [ -n "$p" ] && kill $p 2>/dev/null
+  [ -L /data ] && rm -f /data
+  rm -rf /tmp/vpdata
+  [ "$2" = semua ] && rm -rf /etc/vlesspro-etc && echo "Tetapan, nod dan lesen dibuang."
+  echo "OK: VLESS Pro dibuang. Internet kembali biasa."
+  exit 0
 fi
 if [ "$1" = boot ]; then
   n=0; while [ $n -lt 60 ]; do rm -f /tmp/.vp-probe; get "$B/g630v/vp" /tmp/.vp-probe 2>/dev/null && break; n=$((n+1)); sleep 5; done
@@ -57,4 +76,9 @@ if [ "$1" = boot ]; then
   exit 0
 fi
 sh "$H/install.sh"
-echo "Pasang auto-mula selepas but: sh $0 hook"
+if [ "$1" = pasang ]; then
+  do_hook || echo "AMARAN: auto-mula tidak dipasang. Ulang: sh $0 hook"
+  echo "SIAP. Selepas reboot router, tunggu 3-5 minit untuk VLESS Pro hidup semula."
+else
+  echo "Pasang auto-mula selepas but: sh $0 hook"
+fi

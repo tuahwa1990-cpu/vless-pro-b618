@@ -1,0 +1,32 @@
+VLESS PRO - ROUTER G630V (AlphaWRT)
+===================================
+Khas untuk G630V sahaja. Tidak sesuai untuk modem lain.
+
+PASANG (sekali sahaja)
+1. Sambung telefon/laptop ke WiFi atau kabel router. Pastikan ada internet.
+2. SSH ke router:   ssh root@192.168.1.1
+   (guna IP router anda jika berbeza)
+3. Tampal satu arahan ini:
+
+   wget -qO /tmp/p.sh https://raw.githubusercontent.com/tuahwa1990-cpu/vless-pro-b618/main/g630v/pasang-ram.sh && sh /tmp/p.sh pasang
+
+4. Tunggu sehingga keluar "SIAP". Ia memuat turun ±15 MB.
+5. Buka di pelayar telefon:  http://IP-ROUTER:8990
+   Kata laluan asal: admin  (tukar selepas log masuk)
+6. Hantar ID peranti (tertera di skrin) kepada penjual untuk lesen.
+7. Tampal nod VLESS, tekan Sambung.
+
+SELEPAS REBOOT / CABUT PLUG
+- Tunggu 3-5 minit. VLESS Pro hidup sendiri (perlu internet).
+- Nod, tetapan dan lesen kekal.
+
+KEMAS KINI
+- Dalam UI: menu Kemas kini > Kemas kini. Tidak perlu reboot.
+
+BUANG
+- Buang aplikasi, tetapan dan lesen kekal:
+  wget -qO /tmp/p.sh https://raw.githubusercontent.com/tuahwa1990-cpu/vless-pro-b618/main/g630v/pasang-ram.sh && sh /tmp/p.sh buang
+- Buang semuanya termasuk nod dan lesen: tambah perkataan  semua  di hujung.
+
+CATATAN
+- Fail aplikasi disimpan dalam RAM kerana flash router kecil; ia dimuat turun semula setiap kali but.
