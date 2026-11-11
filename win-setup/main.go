@@ -320,6 +320,11 @@ func checkModem() modemState {
 }
 
 func main() {
+	if edisi == "aw3000t" {
+		// router mungkin berkongsi IP dengan modem lain yang pernah disambung (kunci hos lama)
+		// ssh guna nilai pertama: letak di hadapan
+		opts = append([]string{"-o", "UserKnownHostsFile=NUL", "-o", "StrictHostKeyChecking=no", "-o", "LogLevel=ERROR"}, opts...)
+	}
 	if os.Getenv("VP_HELPER") == "1" {
 		fmt.Println(os.Getenv("VP_PW"))
 		return
@@ -337,6 +342,21 @@ func main() {
 				dev = d
 			}
 		}
+	} else if edisi == "aw3000t" {
+		ip = "192.168.1.1"
+		fmt.Println("Pemasang VLESS Pro khas AW3000T")
+		for {
+			s := ask("IP router [192.168.1.1]: ")
+			if s == "" {
+				break
+			}
+			if net.ParseIP(s) != nil {
+				ip = s
+				break
+			}
+			fmt.Println("IP tidak sah.")
+		}
+		dev = device{"AW3000T", ip, "aw1000"}
 	} else {
 		dev = pickDevice()
 		ip = dev.ip
@@ -494,7 +514,11 @@ func installAW1000() {
 	// Edisi AW3000T: /usr/bin/xray (OpenWrt 25.12) terlalu baharu, menolak nod VLESS tanpa TLS beralamat IP
 	hasX := tok["vx"] || tok["xl"] || (edisi != "aw3000t" && tok["ux"])
 	fmt.Println("\nRingkasan sebelum pasang:")
-	fmt.Println("  Modem        :", ip, "(AW1000 Ultra, "+arch+")")
+	mn := "AW1000 Ultra"
+	if edisi == "aw3000t" {
+		mn = "AW3000T"
+	}
+	fmt.Println("  Modem        :", ip, "("+mn+", "+arch+")")
 	if tok["lama"] {
 		fmt.Println("  Tindakan     : naik taraf VLESS Pro (tetapan, lesen dan nod dikekalkan)")
 	} else {
