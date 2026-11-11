@@ -146,12 +146,17 @@ restart() {
 }
 lan_ip() {
   l=; [ -f $H/etc/listen ] && read l < $H/etc/listen
-  echo "${l%:*}"
+  a=${l%:*}
+  if [ -z "$a" ] || ! ip -4 addr show $LAN 2>/dev/null | grep -q "inet $a/"; then
+    n=$(ip -4 addr show $LAN 2>/dev/null | awk '/inet /{sub(/\/.*/,"",$2);print $2;exit}')
+    [ -n "$n" ] && { a=$n; echo "$a:8990" > $H/etc/listen; }
+  fi
+  echo "$a"
 }
 start_ui() {
   p=; [ -f $R/ui.pid ] && read p < $R/ui.pid
   alive "$p" && return 0
-  ip=$(lan_ip); ip=${ip:-192.168.2.1}
+  ip=$(lan_ip); ip=${ip:-192.168.1.1}
   n=0
   while [ $n -lt 60 ]; do
     ifconfig $LAN 2>/dev/null | grep -q "addr:$ip " && break
