@@ -86,7 +86,11 @@ func shortPath(p string) string {
 }
 
 func setupAskpass() {
-	pw := readSecret("Kata laluan root modem (Enter jika tiada kata laluan): ")
+	prompt := "Kata laluan root modem (Enter jika tiada kata laluan): "
+	if edisi == "aw3000t" {
+		prompt = "Taip kata laluan root router, kemudian tekan Enter.\n(Huruf tidak akan dipaparkan semasa anda menaip; ini normal.)\nJika router tiada kata laluan, tekan Enter sahaja: "
+	}
+	pw := readSecret(prompt)
 	if pw == "" {
 		return
 	}
