@@ -1,15 +1,28 @@
 {
-  "version": "1.1.79",
+  "version": "1.1.80",
   "date": "2026-11-15",
   "size": 0,
-  "title": "Halaman Kemas kini baharu",
+  "title": "Sokongan SSH dan WireGuard",
   "items": [
-    "Kad kemas kini baharu: versi terbaru, tarikh keluar, saiz fail dan nota perubahan.",
-    "Kemas kini automatik: pilih Beritahu saya, Pasang automatik atau Tutup. VLESS Pro menyemak sekali sehari.",
-    "Loceng di bahagian atas muncul apabila versi baharu tersedia.",
-    "Butang Semak sekarang dan masa semakan terakhir.",
-    "Pelayan kemas kini dipaparkan dan boleh ditukar.",
-    "Kemas kini dalam talian kini disemak dengan tandatangan digital, selain SHA-256."
+    "Tambah profil SSH: WebSocket + payload, SSL/TLS (stunnel) atau SSL + payload, dengan SNI, payload dan proksi.",
+    "Tambah profil WireGuard: tampal konfigurasi .conf atau pautan wireguard://.",
+    "Pautan ssh:// dan wireguard:// juga boleh ditampal bersama pautan vless:// dan dalam langganan.",
+    "Profil SSH dan WireGuard boleh disunting, dipilih dan dimasukkan ke dalam Kumpulan seperti VLESS.",
+    "Uji semua: profil WireGuard ditanda UDP kerana tidak boleh diuji dengan ping TCP."
   ],
-  "history": []
+  "history": [
+    {
+      "version": "1.1.79",
+      "date": "2026-11-15",
+      "title": "Halaman Kemas kini baharu",
+      "items": [
+        "Kad kemas kini baharu: versi terbaru, tarikh keluar, saiz fail dan nota perubahan.",
+        "Kemas kini automatik: pilih Beritahu saya, Pasang automatik atau Tutup. VLESS Pro menyemak sekali sehari.",
+        "Loceng di bahagian atas muncul apabila versi baharu tersedia.",
+        "Butang Semak sekarang dan masa semakan terakhir.",
+        "Pelayan kemas kini dipaparkan dan boleh ditukar.",
+        "Kemas kini dalam talian kini disemak dengan tandatangan digital, selain SHA-256."
+      ]
+    }
+  ]
 }

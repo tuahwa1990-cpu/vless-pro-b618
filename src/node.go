@@ -21,6 +21,10 @@ type Parsed struct {
 	Name, Host, UUID, Net, Sec, SNI, HHost, Path, FP, Flow, PBK, SID, SPX, Service, Mode, ALPN string
 	Port                                                                                       int
 	Insecure                                                                                   bool
+	// Proto: "" (vless), "wg" (WireGuard) atau "ssh"
+	Proto string
+	WG    *wgCfg
+	SSH   *sshCfg
 }
 
 func nodesFile() string { return home + "/etc/nodes.json" }
@@ -58,8 +62,14 @@ func setSel(i int) error {
 
 func parseLink(link string) (*Parsed, error) {
 	link = strings.TrimSpace(link)
+	switch {
+	case strings.HasPrefix(link, "wireguard://"), strings.HasPrefix(link, "wg://"):
+		return parseWG(link)
+	case strings.HasPrefix(link, "ssh://"):
+		return parseSSH(link)
+	}
 	if !strings.HasPrefix(link, "vless://") {
-		return nil, errors.New("hanya pautan vless:// disokong")
+		return nil, errors.New("hanya pautan vless://, wireguard:// atau ssh:// disokong")
 	}
 	u, err := url.Parse(link)
 	if err != nil || u.User == nil {

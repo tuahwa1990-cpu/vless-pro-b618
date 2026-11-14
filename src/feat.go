@@ -239,13 +239,18 @@ func pingAll(ns []Node) []int {
 			res[i] = -1
 			continue
 		}
+		h, pt, ok := pingTarget(p)
+		if !ok {
+			res[i] = -2 // WireGuard (UDP) tidak boleh diuji: tidak dipilih oleh failover
+			continue
+		}
 		wg.Add(1)
 		go func(i int, h string, pt int) {
 			defer wg.Done()
 			sem <- struct{}{}
 			res[i] = tcpPingT(h, pt, 10*time.Second) // pautan perlahan (RTT 3 s+) jangan dikira mati
 			<-sem
-		}(i, p.Host, p.Port)
+		}(i, h, pt)
 	}
 	wg.Wait()
 	return res

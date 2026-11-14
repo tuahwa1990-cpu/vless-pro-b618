@@ -127,6 +127,7 @@ func serve() {
 	go adManager()
 	go rebootSched()
 	go updLoop()
+	go sshLoop()
 	mux := http.NewServeMux()
 	ui, _ := uiFS.ReadFile("ui.html")
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -147,7 +148,7 @@ func serve() {
 		mu.Unlock()
 		jr(w, map[string]any{"mustchange": mustChange(), "version": version, "mode": readStr(home+"/etc/mode", "xlite"),
 			"vless": vlessUp(), "xlite": xliteRunning(), "hasx": xliteInstalled(), "node": name, "lic": l, "locked": locked(l),
-			"since": since, "now": time.Now().Unix(), "rx": rx, "tx": tx, "upd": updMode() != "off" && updNewer(getUpdCache())})
+			"since": since, "now": time.Now().Unix(), "rx": rx, "tx": tx, "ssh": sshStatus(), "upd": updMode() != "off" && updNewer(getUpdCache())})
 	})
 	mux.HandleFunc("/api/ip", func(w http.ResponseWriter, r *http.Request) {
 		jr(w, probeIP(r.URL.Query().Get("force") == "1"))
@@ -202,13 +203,18 @@ func serve() {
 				res[i] = -1
 				continue
 			}
+			h, pt, ok := pingTarget(p)
+			if !ok {
+				res[i] = -2 // UDP (WireGuard): tidak boleh diuji dengan TCP
+				continue
+			}
 			wg.Add(1)
 			go func(i int, h string, pt int) {
 				defer wg.Done()
 				sem <- struct{}{}
 				res[i] = tcpPing(h, pt)
 				<-sem
-			}(i, p.Host, p.Port)
+			}(i, h, pt)
 		}
 		wg.Wait()
 		jr(w, res)
@@ -230,7 +236,19 @@ func serve() {
 	act("/api/node/add", func(r *http.Request) (string, bool) {
 		var added, bad int
 		ns := loadNodes()
-		for _, ln := range strings.Fields(string(body(r, 65536))) {
+		raw := string(body(r, 65536))
+		var lines []string
+		if strings.Contains(raw, "[Interface]") || strings.Contains(raw, "[interface]") {
+			// konfigurasi WireGuard (.conf): tukar kepada pautan wireguard://
+			ln, err := confToWG(raw)
+			if err != nil {
+				return "Konfigurasi WireGuard tidak sah: " + err.Error(), false
+			}
+			lines = []string{ln}
+		} else {
+			lines = strings.Fields(raw)
+		}
+		for _, ln := range lines {
 			if p, err := parseLink(ln); err == nil {
 				ns = append(ns, Node{Name: p.Name, Link: ln})
 				added++

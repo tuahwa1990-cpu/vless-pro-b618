@@ -76,6 +76,9 @@ func directList() []string {
 }
 
 func proxyOut(p *Parsed, tag string) map[string]any {
+	if p.Proto == "wg" {
+		return wgOut(p, tag)
+	}
 	user := map[string]any{"id": p.UUID, "encryption": "none"}
 	if p.Flow != "" {
 		user["flow"] = p.Flow
@@ -154,12 +157,18 @@ func buildConfig(ps []*Parsed, direct []string) map[string]any {
 	o := loadOpts()
 	outs := []any{}
 	multi := len(ps) > 1
+	hasSSH := false
 	for i, p := range ps {
 		tag := "proxy"
 		if multi {
 			tag = "px-" + strconv.Itoa(i)
 		}
-		outs = append(outs, proxyOut(p, tag))
+		if p.Proto == "ssh" {
+			outs = append(outs, sshOut(i, tag))
+			hasSSH = true
+		} else {
+			outs = append(outs, proxyOut(p, tag))
+		}
 	}
 	outs = append(outs,
 		map[string]any{"tag": "direct", "protocol": "freedom",
@@ -175,6 +184,12 @@ func buildConfig(ps []*Parsed, direct []string) map[string]any {
 		return m
 	}
 	rules := []any{rule(map[string]any{"inboundTag": []any{"dns-in", "probe"}})}
+	if hasSSH {
+		// Terowong SSH hanya membawa TCP: DNS (dns-in) ikut TCP melalui SSH, UDP lain terus.
+		rules = []any{rule(map[string]any{"inboundTag": []any{"probe"}}),
+			rule(map[string]any{"inboundTag": []any{"dns-in"}, "network": "tcp"}),
+			map[string]any{"type": "field", "network": "udp", "outboundTag": "direct"}}
+	}
 	rt := loadRoutes()
 	rules = append(rules, routeRules(rt, rule)...)
 	var doms, ips []any
