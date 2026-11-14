@@ -126,6 +126,7 @@ func serve() {
 	go quotaLoop()
 	go adManager()
 	go rebootSched()
+	go updLoop()
 	mux := http.NewServeMux()
 	ui, _ := uiFS.ReadFile("ui.html")
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -146,7 +147,7 @@ func serve() {
 		mu.Unlock()
 		jr(w, map[string]any{"mustchange": mustChange(), "version": version, "mode": readStr(home+"/etc/mode", "xlite"),
 			"vless": vlessUp(), "xlite": xliteRunning(), "hasx": xliteInstalled(), "node": name, "lic": l, "locked": locked(l),
-			"since": since, "now": time.Now().Unix(), "rx": rx, "tx": tx})
+			"since": since, "now": time.Now().Unix(), "rx": rx, "tx": tx, "upd": updMode() != "off" && updNewer(getUpdCache())})
 	})
 	mux.HandleFunc("/api/ip", func(w http.ResponseWriter, r *http.Request) {
 		jr(w, probeIP(r.URL.Query().Get("force") == "1"))
@@ -496,12 +497,55 @@ func serve() {
 			"xray": vlessUp(), "xlite": xliteRunning(), "arch": runtime.GOARCH})
 	})
 	mux.HandleFunc("/api/update", func(w http.ResponseWriter, r *http.Request) {
-		lv, err := latestVer()
-		if err != nil {
-			jr(w, map[string]any{"ok": false, "cur": version, "msg": "Tidak dapat semak: " + shortErr(err)})
+		// c=1: cache sahaja (tanpa rangkaian); f=1: semak sekarang; lalai: semak jika cache lebih 10 minit.
+		q := r.URL.Query()
+		c := getUpdCache()
+		if q.Get("f") == "1" || (q.Get("c") != "1" && (c.At == 0 || time.Now().Unix()-c.At > 600)) {
+			c = checkUpdate()
+		}
+		lv := c.Ver
+		m := map[string]any{"ok": c.Err == "" && lv != "", "cur": version, "latest": lv, "newer": updNewer(c),
+			"older": lv != "" && verCmp(lv, version) < 0, "st": upGet(), "prev": hasRollback(), "checked": c.At, "now": time.Now().Unix(),
+			"mode": updMode(), "server": updHost(), "url": updURL(), "msg": c.Err}
+		if c.Info != nil && c.Info.Version == lv {
+			m["info"] = c.Info
+		}
+		jr(w, m)
+	})
+	mux.HandleFunc("/api/update/cfg", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			jr(w, map[string]any{"ok": false, "msg": "Guna POST"})
 			return
 		}
-		jr(w, map[string]any{"ok": true, "cur": version, "latest": lv, "newer": lv != "" && verCmp(lv, version) > 0, "older": lv != "" && verCmp(lv, version) < 0, "st": upGet(), "prev": hasRollback()})
+		var in struct {
+			Mode   *string `json:"mode"`
+			Server *string `json:"server"`
+		}
+		if json.Unmarshal(body(r, 1024), &in) != nil {
+			jr(w, map[string]any{"ok": false, "msg": "Permintaan tidak sah"})
+			return
+		}
+		if in.Mode != nil {
+			switch *in.Mode {
+			case "notify", "auto", "off":
+				_ = os.WriteFile(home+"/etc/autoupd", []byte(*in.Mode+"\n"), 0600)
+			default:
+				jr(w, map[string]any{"ok": false, "msg": "Pilihan tidak sah"})
+				return
+			}
+		}
+		if in.Server != nil {
+			s := strings.TrimSpace(*in.Server)
+			if !validUpdURL(s) {
+				jr(w, map[string]any{"ok": false, "msg": "Alamat mesti bermula https:// dan berakhir -latest.txt"})
+				return
+			}
+			_ = os.WriteFile(home+"/etc/update_url", []byte(s+"\n"), 0600)
+			ckMu.Lock()
+			ck = updCache{}
+			ckMu.Unlock()
+		}
+		jr(w, map[string]any{"ok": true, "msg": "Disimpan", "mode": updMode(), "server": updHost(), "url": updURL()})
 	})
 	mux.HandleFunc("/api/update/upload", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {

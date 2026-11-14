@@ -154,6 +154,10 @@ func doUpdate(force bool) {
 		upSet("err", "Senarai semak gagal: "+shortErr(err))
 		return
 	}
+	if err := verifySums(base+tag+"-sha256.txt.sig", sb); err != nil {
+		upSet("err", err.Error())
+		return
+	}
 	sm := sums(sb)
 	files := []struct {
 		n   string

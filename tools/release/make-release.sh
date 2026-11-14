@@ -72,6 +72,9 @@ tar -C "$P" --exclude=./vlesspro -czf "$OUT/vlesspro-$VER-armv7-kemaskini.tgz" .
 echo "$VER" > "$OUT/b618-latest.txt"
 cp "$OUT/b618-sha256.txt" b618-sha256.txt
 cp "$OUT/b618-latest.txt" b618-latest.txt
+# Tandatangan senarai semak dalam talian dan nota keluaran (halaman Kemas kini)
+"$B/relsign" -seed "$RELEASE_SEED" -in b618-sha256.txt -out b618-sha256.txt.sig
+sh tools/release/notes.sh "$VER" new/vpro.gz > b618-notes.json
 
 echo "[6/6] Tulis CAPTION.txt ..."
 cat > "$OUT/CAPTION.txt" <<CAP

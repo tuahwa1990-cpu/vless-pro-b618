@@ -13,4 +13,7 @@ cp g630v/overlay/*.go "$W/src/"
   go build -trimpath -ldflags "-s -w -X main.pubkey=$PUB" -o "$W/vpro" .)
 gzip -9nc "$W/vpro" > g630v/vpro.gz
 (cd g630v && printf '%s  vp\n%s  vpro.gz\n' "$(sha256sum vp|cut -d' ' -f1)" "$(sha256sum vpro.gz|cut -d' ' -f1)") > g630v-sha256.txt
-echo "OK: g630v/vpro.gz dan g630v-sha256.txt dijana"
+VER=$(sed -n 's/^const version = "\(.*\)"/\1/p' src/main.go)
+echo "$VER" > g630v-latest.txt
+sh tools/release/notes.sh "$VER" g630v/vpro.gz > g630v-notes.json
+echo "OK: g630v/vpro.gz, g630v-sha256.txt, g630v-latest.txt ($VER) dan g630v-notes.json dijana"

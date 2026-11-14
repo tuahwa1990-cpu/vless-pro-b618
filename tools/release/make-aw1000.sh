@@ -43,4 +43,6 @@ cp openwrt/vp aw1000/vp; cp "$B/vpro" aw1000/vpro; gzip -9nc "$B/vpro" > aw1000/
 echo "[5/5] Tulis fail repo ..."
 { sha256sum "$B/vpro" | sed 's#  .*#  vpro#'; sha256sum openwrt/vp | sed 's#  .*#  vp#'; sha256sum aw1000/install.tgz | sed 's#  .*#  install.tgz#'; } > aw1000-sha256.txt
 echo "$VER" > aw1000-latest.txt
+"$B/relsign" -seed "$RELEASE_SEED" -in aw1000-sha256.txt -out aw1000-sha256.txt.sig
+sh tools/release/notes.sh "$VER" aw1000/vpro.gz > aw1000-notes.json
 echo "Selesai: $OUT/vlesspro-$VER-aw1000.tgz"
