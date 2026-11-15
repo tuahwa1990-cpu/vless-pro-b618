@@ -1,16 +1,24 @@
 {
-  "version": "1.1.81",
+  "version": "1.1.82",
   "date": "2026-11-15",
   "size": 0,
-  "title": "Mod VPN: Redirect, TProxy dan TUN",
+  "title": "Susunan Tetapan baharu",
   "items": [
-    "Tetapan > Penyambungan: pilihan Mod VPN baharu (Redirect, TProxy atau TUN).",
-    "TProxy dan TUN membawa TCP dan UDP (permainan, panggilan) melalui nod; Redirect kekal lalai dan hanya TCP.",
-    "VLESS Pro menyemak sendiri sama ada modem menyokong TProxy/TUN; pilihan yang tidak disokong dimatikan.",
-    "Jika mod dipilih gagal dihidupkan, VLESS Pro jatuh ke Redirect secara automatik supaya internet tidak terputus.",
-    "Mod yang sedang digunakan dipaparkan di bawah pilihan."
+    "Halaman Tetapan kini bermula dengan Penyambungan, diikuti Mula automatik, kemudian Lesen dan Kata laluan."
   ],
   "history": [
+    {
+      "version": "1.1.81",
+      "date": "2026-11-15",
+      "title": "Mod VPN: Redirect, TProxy dan TUN",
+      "items": [
+        "Tetapan > Penyambungan: pilihan Mod VPN baharu (Redirect, TProxy atau TUN).",
+        "TProxy dan TUN membawa TCP dan UDP (permainan, panggilan) melalui nod; Redirect kekal lalai dan hanya TCP.",
+        "VLESS Pro menyemak sendiri sama ada modem menyokong TProxy/TUN; pilihan yang tidak disokong dimatikan.",
+        "Jika mod dipilih gagal dihidupkan, VLESS Pro jatuh ke Redirect secara automatik supaya internet tidak terputus.",
+        "Mod yang sedang digunakan dipaparkan di bawah pilihan."
+      ]
+    },
     {
       "version": "1.1.80",
       "date": "2026-11-15",
