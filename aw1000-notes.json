@@ -1,16 +1,28 @@
 {
-  "version": "1.1.80",
+  "version": "1.1.81",
   "date": "2026-11-15",
-  "size": 3108448,
-  "title": "Sokongan SSH dan WireGuard",
+  "size": 3111276,
+  "title": "Mod VPN: Redirect, TProxy dan TUN",
   "items": [
-    "Tambah profil SSH: WebSocket + payload, SSL/TLS (stunnel) atau SSL + payload, dengan SNI, payload dan proksi.",
-    "Tambah profil WireGuard: tampal konfigurasi .conf atau pautan wireguard://.",
-    "Pautan ssh:// dan wireguard:// juga boleh ditampal bersama pautan vless:// dan dalam langganan.",
-    "Profil SSH dan WireGuard boleh disunting, dipilih dan dimasukkan ke dalam Kumpulan seperti VLESS.",
-    "Uji semua: profil WireGuard ditanda UDP kerana tidak boleh diuji dengan ping TCP."
+    "Tetapan > Penyambungan: pilihan Mod VPN baharu (Redirect, TProxy atau TUN).",
+    "TProxy dan TUN membawa TCP dan UDP (permainan, panggilan) melalui nod; Redirect kekal lalai dan hanya TCP.",
+    "VLESS Pro menyemak sendiri sama ada modem menyokong TProxy/TUN; pilihan yang tidak disokong dimatikan.",
+    "Jika mod dipilih gagal dihidupkan, VLESS Pro jatuh ke Redirect secara automatik supaya internet tidak terputus.",
+    "Mod yang sedang digunakan dipaparkan di bawah pilihan."
   ],
   "history": [
+    {
+      "version": "1.1.80",
+      "date": "2026-11-15",
+      "title": "Sokongan SSH dan WireGuard",
+      "items": [
+        "Tambah profil SSH: WebSocket + payload, SSL/TLS (stunnel) atau SSL + payload, dengan SNI, payload dan proksi.",
+        "Tambah profil WireGuard: tampal konfigurasi .conf atau pautan wireguard://.",
+        "Pautan ssh:// dan wireguard:// juga boleh ditampal bersama pautan vless:// dan dalam langganan.",
+        "Profil SSH dan WireGuard boleh disunting, dipilih dan dimasukkan ke dalam Kumpulan seperti VLESS.",
+        "Uji semua: profil WireGuard ditanda UDP kerana tidak boleh diuji dengan ping TCP."
+      ]
+    },
     {
       "version": "1.1.79",
       "date": "2026-11-15",

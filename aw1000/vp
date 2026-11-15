@@ -25,6 +25,130 @@ pids_exe() {
   done
 }
 alive() { [ -n "$1" ] && [ -d /proc/$1 ]; }
+VLAN=$LAN
+# --- Mod VPN: redirect (TCP, lalai) | tproxy (TCP+UDP) | tun (TCP+UDP) ---
+# Mod dipilih di Tetapan (etc/opts.json). Jika peranti tidak menyokong, vp jatuh ke redirect secara automatik.
+TPM=122; TPT=122; TUT=123; TUN=vpro0
+PRIV="0.0.0.0/8 127.0.0.0/8 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 169.254.0.0/16 224.0.0.0/4 240.0.0.0/4"
+vmode() {
+  v=$(sed -n 's/.*"vpnmode":"\([a-z]*\)".*/\1/p' $H/etc/opts.json 2>/dev/null)
+  case "$v" in tproxy|tun) echo $v;; *) echo redirect;; esac
+}
+emode() { v=; [ -f $R/vpnmode ] && read v < $R/vpnmode; echo "${v:-redirect}"; }
+has_iprule() { command -v ip >/dev/null 2>&1 && ip rule list >/dev/null 2>&1; }
+can_tun() {
+  has_iprule || return 1
+  [ -c /dev/net/tun ] || modprobe tun 2>/dev/null || insmod tun 2>/dev/null
+  if [ ! -c /dev/net/tun ] && grep -qw tun /proc/misc 2>/dev/null; then mkdir -p /dev/net; mknod /dev/net/tun c 10 200 2>/dev/null; fi
+  [ -c /dev/net/tun ] || return 1
+  XB=$(xbin); [ -n "$XB" ] || return 1
+  printf '{"inbounds":[{"protocol":"tun","settings":{"name":"vptest0"}}],"outbounds":[{"protocol":"freedom"}]}' > $R/tuntest.json
+  "$XB" run -test -c $R/tuntest.json >/dev/null 2>&1; r=$?
+  rm -f $R/tuntest.json
+  return $r
+}
+caps() {
+  can_tproxy && echo tproxy=1 || echo tproxy=0
+  can_tun && echo tun=1 || echo tun=0
+}
+pick_mode() {
+  m=$(vmode)
+  case "$m" in
+    tproxy) can_tproxy || { echo "TProxy tidak disokong peranti ini, guna Redirect"; m=redirect; };;
+    tun) can_tun || { echo "TUN tidak disokong peranti ini, guna Redirect"; m=redirect; };;
+  esac
+  echo $m > $R/vpnmode
+}
+ipr_off() {
+  has_iprule || return 0
+  for p in 9122 9123 9124; do n=0; while [ $n -lt 20 ] && ip rule del pref $p 2>/dev/null; do n=$((n+1)); done; done
+  ip route flush table $TPT 2>/dev/null; ip route flush table $TUT 2>/dev/null
+  return 0
+}
+# fw4 (nftables OpenWrt): trafik LAN -> vpro0 mesti dibenarkan dalam rantai forward fw4 sendiri.
+fw4_tun() {
+  nft list chain inet fw4 forward >/dev/null 2>&1 || return 0
+  for h in $(nft -a list chain inet fw4 forward 2>/dev/null | awk '/vlesspro/{print $NF}'); do
+    nft delete rule inet fw4 forward handle $h 2>/dev/null
+  done
+  [ "$1" = on ] && nft insert rule inet fw4 forward iifname "$VLAN" oifname "$TUN" counter accept comment '"vlesspro"'
+  return 0
+}
+tun_on() {
+  n=0
+  while [ ! -d /sys/class/net/$TUN ]; do
+    n=$((n+1)); [ $n -gt 10 ] && { echo "$TUN tidak dicipta xray"; return 1; }; sleep 1
+  done
+  ip link set $TUN up 2>/dev/null
+  ip addr add 172.31.254.1/30 dev $TUN 2>/dev/null
+  # rp_filter longgar pada vpro0 sahaja (jawapan internet masuk melalui vpro0); tetapan "all" tidak diubah
+  echo 2 > /proc/sys/net/ipv4/conf/$TUN/rp_filter 2>/dev/null
+  ip route replace default dev $TUN table $TUT || return 1
+  for n in $PRIV; do ip rule add iif $VLAN to $n lookup main pref 9123 || return 1; done
+  ip rule add iif $VLAN lookup $TUT pref 9124 || return 1
+  tun_fw on
+}
+# go_up: hidupkan xray + peraturan mengikut mod; jika TProxy/TUN gagal, cuba semula dengan Redirect.
+go_up() {
+  pick_mode
+  start_xray && fw_on && { echo "Mod VPN: $(emode)"; return 0; }
+  [ "$(emode)" = redirect ] && return 1
+  echo "Mod $(emode) gagal, jatuh ke Redirect"
+  fw_off; stop_xray
+  echo redirect > $R/vpnmode
+  start_xray && fw_on && echo "Mod VPN: redirect"
+}
+can_tproxy() {
+  has_iprule || return 1
+  iptables -t mangle -N VPTPTEST 2>/dev/null || iptables -t mangle -F VPTPTEST 2>/dev/null || return 1
+  iptables -t mangle -A VPTPTEST -p tcp -j TPROXY --on-port 12347 --tproxy-mark $TPM 2>/dev/null; r=$?
+  iptables -t mangle -F VPTPTEST 2>/dev/null; iptables -t mangle -X VPTPTEST 2>/dev/null
+  return $r
+}
+tp_on() {
+  ip rule add fwmark $TPM lookup $TPT pref 9122 || return 1
+  ip route replace local 0.0.0.0/0 dev lo table $TPT || return 1
+  M="iptables -t mangle"
+  $M -N VLESSPRO_TP 2>/dev/null || $M -F VLESSPRO_TP || return 1
+  $M -A VLESSPRO_TP -m mark --mark $MARK -j RETURN
+  for n in $PRIV; do $M -A VLESSPRO_TP -d $n -j RETURN; done
+  # QUIC dihalang (lalai): UDP 443 tidak ditangkap supaya peraturan FORWARD menolaknya dan aplikasi guna TCP
+  [ -f $H/etc/noquicblock ] || $M -A VLESSPRO_TP -p udp --dport 443 -j RETURN
+  $M -A VLESSPRO_TP -p tcp -j TPROXY --on-port 12347 --tproxy-mark $TPM || return 1
+  $M -A VLESSPRO_TP -p udp -j TPROXY --on-port 12347 --tproxy-mark $TPM || return 1
+  $M -A PREROUTING -i $VLAN -j VLESSPRO_TP
+}
+tun_fw() {
+  while iptables -D FORWARD -i $VLAN -o $TUN -j ACCEPT 2>/dev/null; do :; done
+  while iptables -D FORWARD -i $TUN -o $VLAN -j ACCEPT 2>/dev/null; do :; done
+  if [ "$1" = on ]; then
+    iptables -I FORWARD 1 -i $TUN -o $VLAN -j ACCEPT
+    iptables -I FORWARD 1 -i $VLAN -o $TUN -j ACCEPT
+  fi
+  fw4_tun "$1"
+}
+vpn_off() {
+  while iptables -t mangle -D PREROUTING -i $VLAN -j VLESSPRO_TP 2>/dev/null; do :; done
+  iptables -t mangle -F VLESSPRO_TP 2>/dev/null; iptables -t mangle -X VLESSPRO_TP 2>/dev/null
+  tun_fw off
+  ipr_off
+}
+# peraturan mod semasa masih ada? (digunakan fwcheck selepas firewall dimuat semula)
+vpn_present() {
+  case "$(emode)" in
+    tproxy) iptables -t mangle -C PREROUTING -i $VLAN -j VLESSPRO_TP 2>/dev/null && ip rule list 2>/dev/null | grep -q "lookup $TPT";;
+    tun) iptables -C FORWARD -i $VLAN -o $TUN -j ACCEPT 2>/dev/null && ip rule list 2>/dev/null | grep -q "lookup $TUT" &&
+         { ! nft list chain inet fw4 forward >/dev/null 2>&1 || nft list chain inet fw4 forward 2>/dev/null | grep -q vlesspro; };;
+    *) $I -C PREROUTING -i $VLAN -p tcp -j VLESSPRO 2>/dev/null;;
+  esac
+}
+vpn_rules() {
+  case "$(emode)" in
+    tproxy) tp_on || return 1;;
+    tun) tun_on || return 1;;
+    *) $I -A PREROUTING -i $VLAN -p tcp -j VLESSPRO;;
+  esac
+}
 
 fw_off() {
   while $I -D PREROUTING -i $LAN -p tcp -j VLESSPRO 2>/dev/null; do :; done
@@ -36,6 +160,7 @@ fw_off() {
   # QUIC (UDP 443) tidak melalui terowong; halangan dibuang supaya aplikasi jatuh ke TCP
   for T in REJECT DROP; do while iptables -D FORWARD -i $LAN -p udp --dport 443 -j $T 2>/dev/null; do :; done; done
   $I -F VLESSPRO 2>/dev/null; $I -X VLESSPRO 2>/dev/null
+  vpn_off
 }
 fw_on() {
   fw_off
@@ -50,7 +175,7 @@ fw_on() {
     $I -A PREROUTING -i $LAN -p udp --dport 53 -j REDIRECT --to-ports 10854
     $I -A PREROUTING -i $LAN -p tcp --dport 53 -j REDIRECT --to-ports 10854
   fi
-  $I -A PREROUTING -i $LAN -p tcp -j VLESSPRO
+  vpn_rules || return 1
   # UDP tidak dialihkan ke Xray: QUIC (UDP 443) dihalang supaya YouTube/Chrome terus guna TCP melalui nod.
   # Matikan dengan fail etc/noquicblock.
   if [ ! -f $H/etc/noquicblock ]; then
@@ -60,7 +185,7 @@ fw_on() {
 # dipanggil bila firewall router dimuat semula
 fwcheck() {
   [ "$(mode)" = vless ] || return 0
-  $I -C PREROUTING -i $LAN -p tcp -j VLESSPRO 2>/dev/null && return 0
+  vpn_present && return 0
   sleep 2
   fw_on && echo "peraturan dipasang semula"
 }
@@ -108,7 +233,7 @@ stop_xray() {
 start_xray() {
   X=$(xbin)
   [ -n "$X" ] || { echo "xray tiada"; return 1; }
-  $VPRO gen || return 1
+  VP_VPNMODE=$(emode) $VPRO gen || return 1
   [ -d $H/geo ] && export XRAY_LOCATION_ASSET=$H/geo
   "$X" run -test -c $R/xray.json >$R/test.out 2>&1 || { echo "konfigurasi ditolak xray"; return 1; }
   stop_xray
@@ -127,7 +252,7 @@ to_vless() {
   [ -s $H/etc/nodes.json ] || { echo "tiada nod"; return 4; }
   $I -S > $H/backup/nat.before 2>/dev/null
   xlite_stop
-  if start_xray && fw_on; then
+  if go_up; then
     echo vless > $H/etc/mode; echo "OK: VLESS Manager Pro aktif"
   else
     echo "GAGAL: memulihkan keadaan asal"
@@ -144,7 +269,7 @@ to_xlite() {
 restart() {
   [ "$(mode)" = vless ] || return 0
   fw_off; stop_xray
-  if start_xray && fw_on; then echo "OK"; else echo "GAGAL: memulihkan"; fw_off; stop_xray; start_xlite; echo xlite > $H/etc/mode; return 1; fi
+  if go_up; then echo "OK"; else echo "GAGAL: memulihkan"; fw_off; stop_xray; start_xlite; echo xlite > $H/etc/mode; return 1; fi
 }
 lan_ip() {
   l=; [ -f $H/etc/listen ] && read l < $H/etc/listen
@@ -191,7 +316,7 @@ hook_remove() {
   echo "OK: dibuang"
 }
 doctor() {
-  for c in mkdir cp mv rm chmod sleep kill ls awk sed grep iptables netstat ifconfig; do
+  for c in mkdir cp mv rm chmod sleep kill ls awk sed grep iptables netstat ifconfig ip; do
     command -v $c >/dev/null 2>&1 || echo "TIADA: $c"
   done
   [ -n "$(xbin)" ] && echo "xray: $(xbin)" || echo "TIADA: xray"
@@ -208,6 +333,6 @@ status() {
 case "$1" in
   boot) boot;; to-vless) to_vless;; to-xlite) to_xlite;; restart) restart;; fwcheck) fwcheck;;
   ui-start) start_ui;; ui-restart) ui_stop; start_ui;; svc-restart) restart; ui_stop; start_ui;; hook-install) hook_install;; hook-remove) hook_remove;;
-  doctor) doctor;; status) status;;
-  *) echo "vp: boot | to-vless | to-xlite | restart | fwcheck | ui-start | ui-restart | hook-install | hook-remove | doctor | status";;
+  doctor) doctor;; status) status;; caps) caps;;
+  *) echo "vp: boot | to-vless | to-xlite | restart | fwcheck | ui-start | ui-restart | hook-install | hook-remove | doctor | status | caps";;
 esac

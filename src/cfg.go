@@ -209,20 +209,34 @@ func buildConfig(ps []*Parsed, direct []string) map[string]any {
 	rules = append(rules, rule(map[string]any{"network": "tcp,udp"}))
 	rules = append([]any{map[string]any{"type": "field", "inboundTag": []any{"api"}, "outboundTag": "api"}}, rules...)
 	routing := map[string]any{"domainStrategy": rt.DS, "rules": rules}
+	sniff := map[string]any{"enabled": true, "destOverride": []any{"http", "tls"}}
+	inbs := []any{
+		map[string]any{"tag": "redir", "port": 12346, "listen": "0.0.0.0", "protocol": "dokodemo-door",
+			"settings":       map[string]any{"network": "tcp", "followRedirect": true},
+			"sniffing":       sniff,
+			"streamSettings": map[string]any{"sockopt": map[string]any{"tproxy": "redirect"}}},
+		map[string]any{"tag": "dns-in", "port": 10854, "listen": "0.0.0.0", "protocol": "dokodemo-door",
+			"settings": map[string]any{"address": orStr(o.DNS, "8.8.8.8"), "port": 53, "network": "tcp,udp"}},
+		map[string]any{"tag": "probe", "port": 10855, "listen": "127.0.0.1", "protocol": "http",
+			"settings": map[string]any{}},
+		map[string]any{"tag": "api", "port": 10856, "listen": "127.0.0.1", "protocol": "dokodemo-door",
+			"settings": map[string]any{"address": "127.0.0.1"}},
+	}
+	// Mod VPN: inbound redir (12346) sentiasa ada; TProxy/TUN ditambah mengikut mod yang dipilih vp.
+	switch vpnMode(o) {
+	case "tproxy":
+		inbs = append(inbs, map[string]any{"tag": "tproxy", "port": 12347, "listen": "0.0.0.0", "protocol": "dokodemo-door",
+			"settings":       map[string]any{"network": "tcp,udp", "followRedirect": true},
+			"sniffing":       sniff,
+			"streamSettings": map[string]any{"sockopt": map[string]any{"tproxy": "tproxy"}}})
+	case "tun":
+		inbs = append(inbs, map[string]any{"tag": "tun", "protocol": "tun",
+			"settings": map[string]any{"name": "vpro0", "MTU": 1500, "userLevel": 0},
+			"sniffing": sniff})
+	}
 	cfg := map[string]any{
-		"log": map[string]any{"loglevel": o.LogLevel},
-		"inbounds": []any{
-			map[string]any{"tag": "redir", "port": 12346, "listen": "0.0.0.0", "protocol": "dokodemo-door",
-				"settings":       map[string]any{"network": "tcp", "followRedirect": true},
-				"sniffing":       map[string]any{"enabled": true, "destOverride": []any{"http", "tls"}},
-				"streamSettings": map[string]any{"sockopt": map[string]any{"tproxy": "redirect"}}},
-			map[string]any{"tag": "dns-in", "port": 10854, "listen": "0.0.0.0", "protocol": "dokodemo-door",
-				"settings": map[string]any{"address": orStr(o.DNS, "8.8.8.8"), "port": 53, "network": "tcp,udp"}},
-			map[string]any{"tag": "probe", "port": 10855, "listen": "127.0.0.1", "protocol": "http",
-				"settings": map[string]any{}},
-			map[string]any{"tag": "api", "port": 10856, "listen": "127.0.0.1", "protocol": "dokodemo-door",
-				"settings": map[string]any{"address": "127.0.0.1"}},
-		},
+		"log":       map[string]any{"loglevel": o.LogLevel},
+		"inbounds":  inbs,
 		"stats":     map[string]any{},
 		"api":       map[string]any{"tag": "api", "services": []any{"StatsService"}},
 		"policy":    map[string]any{"system": map[string]any{"statsOutboundDownlink": true}},
@@ -287,4 +301,13 @@ func genConfig() error {
 	b, _ := json.MarshalIndent(buildConfig(ps, directList()), "", " ")
 	_ = os.MkdirAll(home+"/run", 0700)
 	return os.WriteFile(home+"/run/xray.json", b, 0600)
+}
+
+// vpnMode: VP_VPNMODE (ditetapkan vp, contohnya bila jatuh ke redirect) mengatasi tetapan.
+func vpnMode(o Opts) string {
+	switch m := os.Getenv("VP_VPNMODE"); m {
+	case "redirect", "tproxy", "tun":
+		return m
+	}
+	return o.VPNMode
 }

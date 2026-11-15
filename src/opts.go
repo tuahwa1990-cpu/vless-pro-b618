@@ -28,13 +28,14 @@ type Opts struct {
 	QS        string `json:"qs"`      // UseIP | UseIPv4 | UseIPv6
 	PingURL   string `json:"pingurl"` // URL ujian sambungan
 	LogLevel  string `json:"loglevel"`
-	Reboot    string `json:"reboot"` // HH:MM atau kosong
+	Reboot    string `json:"reboot"`  // HH:MM atau kosong
+	VPNMode   string `json:"vpnmode"` // redirect | tproxy | tun
 }
 
 var optMu sync.Mutex
 
 func defOpts() Opts {
-	return Opts{AutoRecon: true, QS: "UseIP", PingURL: "http://www.youtube.com/generate_204", LogLevel: "warning"}
+	return Opts{AutoRecon: true, QS: "UseIP", PingURL: "http://www.youtube.com/generate_204", LogLevel: "warning", VPNMode: "redirect"}
 }
 
 func loadOpts() Opts {
@@ -69,6 +70,11 @@ func normOpts(o Opts) Opts {
 	}
 	if !hhmm.MatchString(o.Reboot) {
 		o.Reboot = ""
+	}
+	switch o.VPNMode {
+	case "redirect", "tproxy", "tun":
+	default:
+		o.VPNMode = d.VPNMode
 	}
 	return o
 }
@@ -344,7 +350,7 @@ func regOpts(mux *http.ServeMux, act func(string, func(*http.Request) (string, b
 			jr(w, map[string]any{"ok": true, "msg": "Disimpan"})
 			return
 		}
-		jr(w, loadOpts())
+		jr(w, optsView(loadOpts()))
 	})
 	mux.HandleFunc("/api/log", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -386,4 +392,56 @@ func regOpts(mux *http.ServeMux, act func(string, func(*http.Request) (string, b
 		go func() { time.Sleep(2 * time.Second); doReboot() }()
 		return "Modem akan reboot sebentar lagi", true
 	})
+}
+
+// vpnCaps: sokongan TProxy/TUN pada peranti ini, disemak oleh "vp caps" (sekali, disimpan dalam memori).
+var (
+	capMu   sync.Mutex
+	capDone bool
+	capTP   bool
+	capTUN  bool
+)
+
+func vpnCaps() (tp, tun bool) {
+	capMu.Lock()
+	defer capMu.Unlock()
+	if !capDone {
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		out, err := exec.CommandContext(ctx, "/bin/sh", home+"/vp", "caps").Output()
+		cancel()
+		if err == nil {
+			capTP, capTUN = parseCaps(string(out))
+			capDone = true
+		}
+	}
+	return capTP, capTUN
+}
+
+func parseCaps(s string) (tp, tun bool) {
+	for _, l := range strings.Split(s, "\n") {
+		switch strings.TrimSpace(l) {
+		case "tproxy=1":
+			tp = true
+		case "tun=1":
+			tun = true
+		}
+	}
+	return
+}
+
+// vpnModeEff: mod yang sebenarnya digunakan sekarang (vp menulis run/vpnmode; boleh jatuh ke redirect).
+func vpnModeEff() string {
+	if readStr(home+"/etc/mode", "xlite") != "vless" || !vlessUp() {
+		return ""
+	}
+	return readStr(home+"/run/vpnmode", "redirect")
+}
+
+func optsView(o Opts) map[string]any {
+	tp, tun := vpnCaps()
+	m := map[string]any{}
+	b, _ := json.Marshal(o)
+	_ = json.Unmarshal(b, &m)
+	m["cap_tproxy"], m["cap_tun"], m["vpnmode_eff"] = tp, tun, vpnModeEff()
+	return m
 }
