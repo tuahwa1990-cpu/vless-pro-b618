@@ -243,7 +243,7 @@ func sh(name string, args ...string) string {
 func diagText() string {
 	var b strings.Builder
 	sec := func(t, s string) { fmt.Fprintf(&b, "\n===== %s =====\n%s\n", t, strings.TrimSpace(s)) }
-	sec("VLESS Pro", fmt.Sprintf("versi %s\narch %s\nID %s\nMAC %s\nmod %s\nxray %v\nxlite %v\nmasa %s",
+	sec("VLESS Pro", fmt.Sprintf("versi %s\narch %s\nID %s\nMAC %s\nmod %s\nxray %v\nasal %v\nmasa %s",
 		version, runtime.GOARCH, hyph(devID20()), macAddr(), readStr(home+"/etc/mode", "xlite"), vlessUp(), xliteRunning(), time.Now().Format(time.RFC3339)))
 	o, _ := json.Marshal(loadOpts())
 	sec("Tetapan", string(o))

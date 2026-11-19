@@ -1,5 +1,5 @@
 #!/bin/sh
-# Naik taraf VLESS Pro (B618). Tetapan, lesen, nod dan XLITE tidak diubah.
+# Naik taraf VLESS Pro (B618). Tetapan, lesen, nod dan VPN asal tidak diubah.
 H=${VP_HOME:-/online/vlesspro}
 N=$H/new
 [ -f $N/vpro ] || { echo "Fail baharu tiada di $N"; exit 1; }

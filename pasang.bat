@@ -11,7 +11,7 @@ ssh %O% root@%IP% "echo ok" >nul 2>&1 || (echo GAGAL: tidak dapat sambung SSH ke
 set NOX=0
 ssh %O% root@%IP% "[ -f /online/xlite/bin/xray ] || [ -f /online/vlesspro/bin/xray ]"
 if not %errorlevel%==0 set NOX=1
-if %NOX%==1 echo XLITE tidak dijumpai: Xray akan dimuat turun dan dipasang bersama VLESS Pro.
+if %NOX%==1 echo VPN asal tidak dijumpai: Xray akan dimuat turun dan dipasang bersama VLESS Pro.
 ssh %O% root@%IP% "[ -d /online/vlesspro/etc ]"
 if %errorlevel%==0 goto naik
 echo [2/4] Menghantar fail ...

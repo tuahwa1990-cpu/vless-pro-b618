@@ -1,14 +1,26 @@
 {
-  "version": "1.1.86",
-  "date": "2026-11-19",
-  "size": 3123657,
-  "title": "Rupa apl yang lebih ketara",
+  "version": "1.1.87",
+  "date": "2026-11-20",
+  "size": 3122765,
+  "title": "Pilihan antara muka dan ketepatan masa",
   "items": [
-    "Dalam apl VLESS Pro (Android), rupa kini jelas berbeza daripada pelayar: tema Aurora dengan latar bergerak lembut, cincin sambungan berputar, ucapan di skrin Utama dan butang kuasa di tengah menu bawah.",
-    "Tema dalam apl kini tidak lagi terkunci pada tema lama; pilihan tema anda masih dihormati.",
-    "Pelayar kekal dengan rupa asal. Semua fungsi sama."
+    "Pilihan baharu: guna apl VLESS Pro sahaja atau apl bersama Chrome. Antara muka web boleh dimatikan dari apl (Lagi > Tetapan) dan VLESS Pro terus berfungsi seperti biasa.",
+    "Tarikh dan masa dalam VLESS Pro kini mengikut waktu Malaysia, jadi tempoh percubaan dan tarikh tamat tepat pada tengah malam waktu Malaysia.",
+    "Status dikemas kini setiap jam supaya paparan sentiasa terkini.",
+    "Istilah dalam paparan diseragamkan: sambungan lama kini dipanggil \"VPN asal\".",
+    "Penambahbaikan dalaman. Semua fungsi sama."
   ],
   "history": [
+    {
+      "version": "1.1.86",
+      "date": "2026-11-19",
+      "title": "Rupa apl yang lebih ketara",
+      "items": [
+        "Dalam apl VLESS Pro (Android), rupa kini jelas berbeza daripada pelayar: tema Aurora dengan latar bergerak lembut, cincin sambungan berputar, ucapan di skrin Utama dan butang kuasa di tengah menu bawah.",
+        "Tema dalam apl kini tidak lagi terkunci pada tema lama; pilihan tema anda masih dihormati.",
+        "Pelayar kekal dengan rupa asal. Semua fungsi sama."
+      ]
+    },
     {
       "version": "1.1.85",
       "date": "2026-11-19",

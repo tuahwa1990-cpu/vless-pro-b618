@@ -1,5 +1,5 @@
 #!/bin/sh
-# Pemasang VLESS Manager Pro (B618). Tidak menyentuh XLITE, mod, atau /system.
+# Pemasang VLESS Manager Pro (B618). Tidak menyentuh VPN asal, mod, atau /system.
 H=/online/vlesspro
 [ -d $H ] || { echo "Folder $H tiada. Hantar folder vlesspro ke /online dahulu."; exit 1; }
 mount -o remount,rw /online 2>/dev/null
@@ -30,4 +30,4 @@ LS=$(cat $H/etc/listen 2>/dev/null); LS=${LS:-192.168.8.1:8990}
 $H/vp ui-start
 sleep 2
 echo "Buka di telefon: http://$LS  (kata laluan awal: admin)"
-echo "XLITE tidak diubah. Mod semasa: $($H/vp status | awk -F= '$1=="mod"{print $2}')"
+echo "VPN asal tidak diubah. Mod semasa: $($H/vp status | awk -F= '$1=="mod"{print $2}')"

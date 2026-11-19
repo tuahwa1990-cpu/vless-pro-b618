@@ -2,7 +2,7 @@
 # Pasang VLESS Pro terus DI DALAM modem AW1000 Ultra (ConnectBot / Termius / SSH).
 # Tampal pada terminal modem (selepas log masuk root):
 #   wget -qO /tmp/pm.sh https://raw.githubusercontent.com/tuahwa1990-cpu/vless-pro-b618/main/aw1000/pasang-modem.sh || curl -fsSL -o /tmp/pm.sh https://raw.githubusercontent.com/tuahwa1990-cpu/vless-pro-b618/main/aw1000/pasang-modem.sh; sh /tmp/pm.sh
-# Tidak menyentuh XLITE atau tetapan, lesen dan nod sedia ada. Fail disemak sha256 sebelum dipasang.
+# Tidak menyentuh VPN asal atau tetapan, lesen dan nod sedia ada. Fail disemak sha256 sebelum dipasang.
 set -e
 B=${VP_BASE:-https://raw.githubusercontent.com/tuahwa1990-cpu/vless-pro-b618/main}
 D=${VP_DEST:-/data}

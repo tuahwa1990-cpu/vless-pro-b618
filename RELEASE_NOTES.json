@@ -2,10 +2,12 @@
   "version": "1.1.87",
   "date": "2026-11-20",
   "size": 0,
-  "title": "Penambahbaikan ketepatan masa",
+  "title": "Pilihan antara muka dan ketepatan masa",
   "items": [
+    "Pilihan baharu: guna apl VLESS Pro sahaja atau apl bersama Chrome. Antara muka web boleh dimatikan dari apl (Lagi > Tetapan) dan VLESS Pro terus berfungsi seperti biasa.",
     "Tarikh dan masa dalam VLESS Pro kini mengikut waktu Malaysia, jadi tempoh percubaan dan tarikh tamat tepat pada tengah malam waktu Malaysia.",
     "Status dikemas kini setiap jam supaya paparan sentiasa terkini.",
+    "Istilah dalam paparan diseragamkan: sambungan lama kini dipanggil \"VPN asal\".",
     "Penambahbaikan dalaman. Semua fungsi sama."
   ],
   "history": [

@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
-	"embed"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
@@ -105,9 +104,6 @@ func hookOn() bool {
 	return strings.Contains(string(b), "vlesspro-hook")
 }
 
-//go:embed ui.html
-var uiFS embed.FS
-
 func serve() {
 	runtime.GOMAXPROCS(1)
 	debug.SetGCPercent(40)
@@ -130,10 +126,14 @@ func serve() {
 	go sshLoop()
 	go licLoop()
 	mux := http.NewServeMux()
-	ui, _ := uiFS.ReadFile("ui.html")
+	ui := uiBytes()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-store")
+		if !webOn() {
+			_, _ = w.Write([]byte(webOffPage))
+			return
+		}
 		_, _ = w.Write(ui)
 	})
 	body := func(r *http.Request, n int64) []byte { b, _ := io.ReadAll(io.LimitReader(r.Body, n)); return b }
@@ -460,7 +460,21 @@ func serve() {
 		jr(w, map[string]any{"text": strings.Join(directList(), "\n")})
 	})
 	mux.HandleFunc("/api/settings", func(w http.ResponseWriter, r *http.Request) {
-		jr(w, map[string]any{"hook": hookOn(), "version": version, "arch": runtime.GOARCH, "edisi": edisiNama, "mac": macAddr(), "xrayhave": true, "id": hyph(devID20())})
+		jr(w, map[string]any{"web": webOn(), "webtetap": aplSahaja, "hook": hookOn(), "version": version, "arch": runtime.GOARCH, "edisi": edisiNama, "mac": macAddr(), "xrayhave": true, "id": hyph(devID20())})
+	})
+	act("/api/web", func(r *http.Request) (string, bool) {
+		if aplSahaja {
+			return "Edisi apl sahaja: antara muka web tiada dalam pakej ini", false
+		}
+		if strings.TrimSpace(string(body(r, 16))) == "on" {
+			_ = os.Remove(home + "/etc/noweb")
+			return "Antara muka web dihidupkan", true
+		}
+		_ = os.MkdirAll(home+"/etc", 0755)
+		if os.WriteFile(home+"/etc/noweb", []byte("1\n"), 0644) != nil {
+			return "Gagal menyimpan tetapan", false
+		}
+		return "Antara muka web dimatikan. Guna apl VLESS Pro.", true
 	})
 	act("/api/hook", func(r *http.Request) (string, bool) {
 		if strings.TrimSpace(string(body(r, 16))) == "on" {
@@ -715,3 +729,14 @@ func serve() {
 		os.Exit(1)
 	}
 }
+
+// webOn: antara muka web (pelayar) hidup melainkan fail etc/noweb wujud. API kekal berfungsi untuk apl.
+func webOn() bool {
+	if aplSahaja {
+		return false
+	}
+	_, err := os.Stat(home + "/etc/noweb")
+	return err != nil
+}
+
+const webOffPage = `<!doctype html><html lang="ms"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VLESS Pro</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0e1a;color:#e8ecf8;font-family:system-ui,sans-serif;text-align:center;padding:24px}h1{margin:0 0 8px;font-size:24px}p{color:#9aa3c0;line-height:1.5}</style></head><body><div><h1>VLESS Pro</h1><p>Antara muka web dimatikan.<br>Sila guna apl VLESS Pro pada telefon anda.</p></div></body></html>`

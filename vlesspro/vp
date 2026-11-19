@@ -1,5 +1,5 @@
 #!/bin/sh
-# VLESS Manager Pro (edisi B618) - kawalan. XLITE tidak diubah.
+# VLESS Manager Pro (edisi B618) - kawalan. VPN asal tidak diubah.
 H=/online/vlesspro
 VPRO=$H/bin/vpro
 R=$H/run
@@ -205,7 +205,7 @@ stop_xray() {
   if alive "$p"; then
     case "$(ls -l /proc/$p/exe 2>/dev/null)" in *xray*) kill $p; sleep 1; alive "$p" && kill -9 $p;; esac
   fi
-  # Xray VLESS Pro yang tertinggal (fail PID hilang/tidak sepadan): matikan ikut binari sendiri sahaja, bukan Xray XLITE
+  # Xray VLESS Pro yang tertinggal (fail PID hilang/tidak sepadan): matikan ikut binari sendiri sahaja, bukan Xray VPN asal
   for q in $(pids_exe $H/bin/xray); do kill $q; done
   sleep 1
   for q in $(pids_exe $H/bin/xray); do kill -9 $q; done
@@ -235,7 +235,7 @@ to_vless() {
   if go_up; then
     echo vless > $H/etc/mode; echo "OK: VLESS Manager Pro aktif"
   else
-    echo "GAGAL: memulihkan XLITE"
+    echo "GAGAL: memulihkan VPN asal"
     stop_xray; fw_off; start_xlite; echo xlite > $H/etc/mode
     return 1
   fi
@@ -244,12 +244,12 @@ to_xlite() {
   stop_xray; fw_off
   start_xlite
   echo xlite > $H/etc/mode
-  echo "OK: XLITE"
+  echo "OK: VPN asal"
 }
 restart() {
   [ "$(mode)" = vless ] || return 0
   fw_off; stop_xray
-  if go_up; then echo "OK"; else echo "GAGAL: memulihkan XLITE"; fw_off; stop_xray; start_xlite; echo xlite > $H/etc/mode; return 1; fi
+  if go_up; then echo "OK"; else echo "GAGAL: memulihkan VPN asal"; fw_off; stop_xray; start_xlite; echo xlite > $H/etc/mode; return 1; fi
 }
 start_ui() {
   p=; [ -f $R/ui.pid ] && read p < $R/ui.pid

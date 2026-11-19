@@ -2,7 +2,7 @@
 # Pasang VLESS Pro pada AW1000 Ultra dari telefon (Termux). Guna:
 #   curl -fsSL https://raw.githubusercontent.com/tuahwa1990-cpu/vless-pro-b618/main/aw1000/pasang.sh | sh
 # Alamat lain: ... | sh -s 192.168.2.1   (jika IP modem sudah ditukar)
-# Tidak menyentuh XLITE atau tetapan, lesen dan nod sedia ada.
+# Tidak menyentuh VPN asal atau tetapan, lesen dan nod sedia ada.
 set -e
 IP=${1:-192.168.1.1}
 B=https://raw.githubusercontent.com/tuahwa1990-cpu/vless-pro-b618/main

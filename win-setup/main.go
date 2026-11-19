@@ -415,9 +415,9 @@ func main() {
 	fmt.Println("\nRingkasan sebelum pasang:")
 	fmt.Println("  Modem        :", ip, "("+st.arch+")")
 	if st.xlite {
-		fmt.Println("  XLITE        : dijumpai (tidak diubah)")
+		fmt.Println("  VPN asal     : dijumpai (tidak diubah)")
 	} else {
-		fmt.Println("  XLITE        : tidak dijumpai")
+		fmt.Println("  VPN asal     : tidak dijumpai")
 	}
 	switch mode {
 	case "baiki":
@@ -491,13 +491,13 @@ func main() {
 	fmt.Println("Lesen: jika belum ada, hantar ID Peranti (di atas) kepada penjual.")
 	fmt.Println("Simpan kunci lesen anda. Jika modem direset, pasang semula dan tampal kunci yang sama.")
 	if st.xlite {
-		fmt.Println("XLITE tidak diubah dan boleh ditukar semula bila-bila masa.")
+		fmt.Println("VPN asal tidak diubah dan boleh ditukar semula bila-bila masa.")
 	}
 	pause()
 }
 
 // installAW1000 memasang/menaik taraf VLESS Pro pada Arcadyan AW1000 Ultra (arm64, OpenWrt).
-// Sama seperti aw1000/pasang.sh: tetapan, lesen dan nod sedia ada tidak diubah, XLITE tidak disentuh.
+// Sama seperti aw1000/pasang.sh: tetapan, lesen dan nod sedia ada tidak diubah, VPN asal tidak disentuh.
 func installAW1000() {
 	out, _ := ssh("echo A=$(uname -m); [ -d /data/vlesspro/etc ] && echo lama; [ -x /data/vlesspro/bin/xray ] && echo vx; [ -x /opt/xlite/bin/xray ] && echo xl; [ -x /usr/bin/xray ] && echo ux; true")
 	tok := map[string]bool{}
@@ -529,9 +529,9 @@ func installAW1000() {
 		fmt.Println("  Tindakan     : pemasangan baharu")
 	}
 	if tok["xl"] {
-		fmt.Println("  XLITE        : dijumpai (tidak diubah)")
+		fmt.Println("  VPN asal     : dijumpai (tidak diubah)")
 	} else {
-		fmt.Println("  XLITE        : tidak dijumpai")
+		fmt.Println("  VPN asal     : tidak dijumpai")
 	}
 	if !hasX {
 		if edisi == "aw3000t" {

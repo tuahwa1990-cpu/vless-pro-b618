@@ -1,5 +1,5 @@
 #!/bin/sh
-# Pemasang VLESS Manager Pro (OpenWrt / AW1000 Ultra). Tidak menyentuh XLITE atau firmware.
+# Pemasang VLESS Manager Pro (OpenWrt / AW1000 Ultra). Tidak menyentuh VPN asal atau firmware.
 H=/data/vlesspro
 [ -d $H ] || { echo "Folder $H tiada."; exit 1; }
 chmod 755 $H/vp $H/install.sh $H/bin/vpro 2>/dev/null

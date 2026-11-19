@@ -27,7 +27,7 @@ command -v ssh >/dev/null && command -v scp >/dev/null || { echo "ssh/scp tiada.
 echo "[1/4] Menyemak modem $IP ..."
 X=$($SSH '[ -f /online/xlite/bin/xray ] && echo ada; [ -d /online/vlesspro/etc ] && echo lama; [ -f /online/vlesspro/bin/xray ] && echo vx; true' 2>/dev/null) || { echo "GAGAL: tidak dapat sambung SSH ke $IP. Pastikan telefon disambung ke WiFi modem dan SSH modem dihidupkan."; exit 1; }
 NOX=0
-case "$X" in *ada*|*vx*) ;; *) NOX=1; echo "XLITE tidak dijumpai: Xray akan dimuat turun dan dipasang bersama VLESS Pro.";; esac
+case "$X" in *ada*|*vx*) ;; *) NOX=1; echo "VPN asal tidak dijumpai: Xray akan dimuat turun dan dipasang bersama VLESS Pro.";; esac
 getx() {
   [ "$NOX" = 1 ] || return 0
   command -v curl >/dev/null && command -v unzip >/dev/null || { echo "Jalankan dahulu:  pkg install curl unzip"; exit 1; }
@@ -56,4 +56,4 @@ esac
 echo "[4/4] Siap."
 echo "Buka di Chrome: http://$IP:8990"
 echo "Hantar ID Peranti (di atas) kepada penjual untuk mendapatkan kunci lesen."
-case "$X" in *ada*) echo "XLITE tidak diubah dan boleh ditukar semula bila-bila masa.";; esac
+case "$X" in *ada*) echo "VPN asal tidak diubah dan boleh ditukar semula bila-bila masa.";; esac

@@ -1,13 +1,13 @@
 #!/bin/sh
-# VLESS Manager Pro (edisi OpenWrt / AW1000 Ultra). Berfungsi dengan atau tanpa XLITE.
+# VLESS Manager Pro (edisi OpenWrt / AW1000 Ultra). Berfungsi dengan atau tanpa VPN asal.
 H=${VP_HOME:-/data/vlesspro}
-XL=${VP_XLITE:-/opt/xlite}
+XL=${VP_VPN asal:-/opt/xlite}
 LAN=br-lan
 VPRO=$H/bin/vpro
 R=$H/run
 MARK=254
 I="iptables -t nat"
-export VP_HOME=$H VP_XLITE=$XL VP_AUTORUN=/etc/rc.local
+export VP_HOME=$H VP_VPN asal=$XL VP_AUTORUN=/etc/rc.local
 mkdir -p $R $H/etc $H/backup 2>/dev/null
 
 mode() { m=; [ -f $H/etc/mode ] && read m < $H/etc/mode; echo "${m:-xlite}"; }
@@ -196,7 +196,7 @@ xlite_active() {
   done
   return 1
 }
-# XLITE tidak disentuh melainkan sedang menyambung (xray/tunnel aktif)
+# VPN asal tidak disentuh melainkan sedang menyambung (xray/tunnel aktif)
 xlite_stop() {
   has_xlite || return 0
   xlite_active || { rm -f $R/xlite.stopped; return 0; }
@@ -264,7 +264,7 @@ to_xlite() {
   stop_xray; fw_off
   start_xlite
   echo xlite > $H/etc/mode
-  echo "OK: XLITE"
+  echo "OK: VPN asal"
 }
 restart() {
   [ "$(mode)" = vless ] || return 0
@@ -320,7 +320,7 @@ doctor() {
     command -v $c >/dev/null 2>&1 || echo "TIADA: $c"
   done
   [ -n "$(xbin)" ] && echo "xray: $(xbin)" || echo "TIADA: xray"
-  has_xlite && echo "XLITE: ada ($XL)" || echo "XLITE: tiada (mod sendiri)"
+  has_xlite && echo "VPN asal: ada ($XL)" || echo "VPN asal: tiada (mod sendiri)"
   echo "doctor selesai"
 }
 status() {
