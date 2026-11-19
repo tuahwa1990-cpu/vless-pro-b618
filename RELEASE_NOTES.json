@@ -1,12 +1,24 @@
 {
-  "version": "1.1.84",
+  "version": "1.1.85",
   "date": "2026-11-19",
   "size": 0,
-  "title": "Penambahbaikan dalaman",
+  "title": "Antara muka baharu yang lebih moden",
   "items": [
-    "Penambahbaikan dalaman."
+    "Menu bawah kini 4 tab: Utama, Profil, Statistik dan Lagi.",
+    "Halaman Lagi baharu mengumpulkan Feature Plus, Penghalaan, Log, Tetapan, Sistem, Kemas kini, Tema, Bahasa dan Perihal dalam kad yang mudah disentuh.",
+    "Dalam apl VLESS Pro (Android), rupa tersendiri: tema Aurora, butang kuasa besar di tengah menu bawah, dan chip ringkas untuk lesen, mod dan nod. Pelayar tetap dengan rupa asal.",
+    "Rupa lebih moden: butang sambung bergradien dan bercahaya, kad berlapis, menu bawah terapung dan peralihan halaman yang lembut.",
+    "Semua fungsi sedia ada dikekalkan."
   ],
   "history": [
+    {
+      "version": "1.1.84",
+      "date": "2026-11-19",
+      "title": "Penambahbaikan dalaman",
+      "items": [
+        "Penambahbaikan dalaman."
+      ]
+    },
     {
       "version": "1.1.83",
       "date": "2026-11-19",
