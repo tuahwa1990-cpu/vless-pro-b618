@@ -10,7 +10,7 @@ cp -r src "$W/src"
 (cd "$W" && patch -p1 < "$ROOT/g630v/g630v.patch") >/dev/null
 cp g630v/overlay/*.go "$W/src/"
 (cd "$W/src" && go test . >/dev/null && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=5 \
-  go build -trimpath -ldflags "-s -w -X main.pubkey=$PUB" -o "$W/vpro" .)
+  go build -trimpath -ldflags "-s -w -X main.pubkey=$PUB -X 'main.edisiNama=G630V (AlphaWRT)'" -o "$W/vpro" .)
 gzip -9nc "$W/vpro" > g630v/vpro.gz
 (cd g630v && printf '%s  vp\n%s  vpro.gz\n' "$(sha256sum vp|cut -d' ' -f1)" "$(sha256sum vpro.gz|cut -d' ' -f1)") > g630v-sha256.txt
 VER=$(sed -n 's/^const version = "\(.*\)"/\1/p' src/main.go)
