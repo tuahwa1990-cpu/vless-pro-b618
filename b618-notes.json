@@ -1,16 +1,26 @@
 {
-  "version": "1.1.85",
+  "version": "1.1.86",
   "date": "2026-11-19",
-  "size": 3248785,
-  "title": "Antara muka baharu yang lebih moden",
+  "size": 3252931,
+  "title": "Rupa apl yang lebih ketara",
   "items": [
-    "Menu bawah kini 4 tab: Utama, Profil, Statistik dan Lagi.",
-    "Halaman Lagi baharu mengumpulkan Feature Plus, Penghalaan, Log, Tetapan, Sistem, Kemas kini, Tema, Bahasa dan Perihal dalam kad yang mudah disentuh.",
-    "Dalam apl VLESS Pro (Android), rupa tersendiri: tema Aurora, butang kuasa besar di tengah menu bawah, dan chip ringkas untuk lesen, mod dan nod. Pelayar tetap dengan rupa asal.",
-    "Rupa lebih moden: butang sambung bergradien dan bercahaya, kad berlapis, menu bawah terapung dan peralihan halaman yang lembut.",
-    "Semua fungsi sedia ada dikekalkan."
+    "Dalam apl VLESS Pro (Android), rupa kini jelas berbeza daripada pelayar: tema Aurora dengan latar bergerak lembut, cincin sambungan berputar, ucapan di skrin Utama dan butang kuasa di tengah menu bawah.",
+    "Tema dalam apl kini tidak lagi terkunci pada tema lama; pilihan tema anda masih dihormati.",
+    "Pelayar kekal dengan rupa asal. Semua fungsi sama."
   ],
   "history": [
+    {
+      "version": "1.1.85",
+      "date": "2026-11-19",
+      "title": "Antara muka baharu yang lebih moden",
+      "items": [
+        "Menu bawah kini 4 tab: Utama, Profil, Statistik dan Lagi.",
+        "Halaman Lagi baharu mengumpulkan Feature Plus, Penghalaan, Log, Tetapan, Sistem, Kemas kini, Tema, Bahasa dan Perihal dalam kad yang mudah disentuh.",
+        "Dalam apl VLESS Pro (Android), rupa tersendiri: tema Aurora, butang kuasa besar di tengah menu bawah, dan chip ringkas untuk lesen, mod dan nod. Pelayar tetap dengan rupa asal.",
+        "Rupa lebih moden: butang sambung bergradien dan bercahaya, kad berlapis, menu bawah terapung dan peralihan halaman yang lembut.",
+        "Semua fungsi sedia ada dikekalkan."
+      ]
+    },
     {
       "version": "1.1.84",
       "date": "2026-11-19",

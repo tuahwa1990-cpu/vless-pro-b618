@@ -87,10 +87,24 @@ body.app nav div.cpw.on{background:radial-gradient(circle at 30% 22%,color-mix(i
 body.app nav div.cpw.busy{opacity:.6}
 body.app .fab{bottom:112px}
 body.app .mg{gap:14px}
+
+body.app::before{content:'';position:fixed;inset:-20%;z-index:-1;pointer-events:none;background:radial-gradient(40% 30% at 18% 14%,color-mix(in srgb,var(--ac2) 38%,transparent),transparent 70%),radial-gradient(36% 30% at 88% 38%,color-mix(in srgb,var(--ac) 30%,transparent),transparent 70%),radial-gradient(40% 30% at 30% 90%,color-mix(in srgb,var(--ac2) 22%,transparent),transparent 70%);animation:aur 14s ease-in-out infinite alternate}
+@keyframes aur{to{transform:translate3d(4%,6%,0) scale(1.12)}}
+@media (prefers-reduced-motion:reduce){body.app::before,body.app .pw::after{animation:none!important}}
+body.app .hi{color:var(--mu);font-size:14px;letter-spacing:.5px;text-align:left;margin:2px 4px 6px}
+body.app .home h2{text-align:left;font-size:30px;line-height:1.15;margin:0 4px}
+body.app #h2{text-align:left;margin-left:4px}
+body.app .pw:not(.off)::after{content:'';position:absolute;inset:4px;border-radius:50%;background:conic-gradient(from 0deg,transparent 0 55%,var(--ac) 100%);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));animation:spn 3.2s linear infinite}
+body.app .pw.busy::after{animation-duration:.9s}
+@keyframes spn{to{transform:rotate(360deg)}}
+body.app .c,body.app .pf,body.app .sp2,body.app .ses,body.app .tt,body.app .mt{background:linear-gradient(155deg,color-mix(in srgb,var(--cd),#fff 7%) 0,color-mix(in srgb,var(--cd) 78%,transparent) 100%);border:1px solid color-mix(in srgb,var(--ac2) 28%,var(--bd));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+body.app .sp2 b{background:linear-gradient(90deg,var(--tx),var(--ac));-webkit-background-clip:text;background-clip:text;color:transparent}
+body.app nav div.on{background:linear-gradient(145deg,color-mix(in srgb,var(--ac) 28%,transparent),color-mix(in srgb,var(--ac2) 18%,transparent))}
+body.app .mt .ic,body.app .pf .ic{border-radius:50%}
 </style></head><body>
 <div id="app"></div><div id="sc"></div>
 <script>
-var APP=/; wv\)|VLESSProApp/.test(navigator.userAgent)||/[?&]app=1/.test(location.search);try{document.body.classList.toggle('app',APP)}catch(e){}
+var APP=/; wv\)|VLESSProApp|Android.*Version\/\d/.test(navigator.userAgent)||/[?&]app=1/.test(location.search);try{document.body.classList.toggle('app',APP)}catch(e){}
 var S=null,V='home',T={pro:'p',st:'o',now:0},P={},busy=false,tmr=null,since=0,off=0;
 var IC={wifi:'<path d="M5 12.5a10 10 0 0114 0"/><path d="M8.5 16a5 5 0 017 0"/><path d="M12 19.5h.01"/>',bell:'<path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 003.4 0"/>',upa:'<circle cx="12" cy="12" r="9"/><path d="M12 16.5V7.5m-4.5 4.5L12 7.5l4.5 4.5"/>',plus:'<path d="M12 3l2.600 5.600 6.100.700-4.500 4.200 1.200 6L12 16.500 6.600 19.500l1.200-6L3.300 9.300l6.100-.700z"/>',lang:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',back:'<path d="M15 5l-7 7 7 7"/>',pal:'<path d="M12 3a9 9 0 100 18c1.500 0 2-1 1.500-2.200-.500-1.200.300-2.300 1.600-2.300H17a4 4 0 004-4c0-4.900-4-9.500-9-9.500z"/><circle cx="7.500" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.500" r="1"/>',menu:'<path d="M3 6h18M3 12h18M3 18h18"/>',logs:'<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 10l3 2-3 2M12 15h5"/>',route:'<circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="9" r="2"/><path d="M6 7v10M18 11c0 4-6 3-12 6"/>',set:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',sys:'<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',upd:'<path d="M7 18a5 5 0 010-10 6 6 0 0111 2 4 4 0 010 8h-2M12 12v8m-3-3l3 3 3-3"/>',inf:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',out:'<path d="M9 4H5a2 2 0 00-2 2v12a2 2 0 002 2h4M16 8l4 4-4 4M20 12H9"/>',home:'<path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/>',pulse:'<path d="M2 12h5l3-8 4 16 3-8h5"/>',db:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',pwr:'<path d="M12 3v9M6.3 6.5a8 8 0 1011.4 0"/>',stk:'<path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5"/>'};
 
@@ -106,15 +120,16 @@ var THEMES=[
 {id:'emas',n:'Emas Hitam',ff:"cursive,'Brush Script MT','Palatino Linotype',serif",v:{bg:'#000000',bar:'#0d0b06',cd:'#14110a',bd:'#3a2f12',tx:'#f6ecd0',mu:'#a8975f',ac:'#facc15',ac2:'#f59e0b',on:'#1c1500',ib:'#2d2408',in:'#0a0804'}},
 {id:'karbon',n:'Karbon',ff:"sans-serif-smallcaps,'Century Gothic',Verdana,sans-serif",v:{bg:'#121212',bar:'#1e1e1e',cd:'#242424',bd:'#3a3a3a',tx:'#f0f0f0',mu:'#9a9a9a',ac:'#ff4d4d',ac2:'#ffb020',on:'#ffffff',ib:'#3a1f1f',in:'#181818'}},
 {id:'aurora',n:'Aurora',ff:"system-ui,Roboto,sans-serif",v:{bg:'#080b1a',bar:'#0e1328',cd:'#121935',bd:'#222c55',tx:'#eaf0ff',mu:'#8591b8',ac:'#22d3ee',ac2:'#a78bfa',on:'#03212b',ib:'#12315a',in:'#0b1024'}}];
-function tema(id){var t=THEMES.filter(function(x){return x.id==id})[0]||THEMES[0],r=document.documentElement.style;
+var TK=APP?'vptemaA':'vptema';
+function tema(id,pick){var t=THEMES.filter(function(x){return x.id==id})[0]||THEMES[0],r=document.documentElement.style;
  Object.keys(t.v).forEach(function(k){r.setProperty('--'+k,t.v[k])});r.setProperty('--ff',t.ff);
  var m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',t.v.bar);
  r.setProperty('--bad',t.light?'#dc2626':'#f87171');r.setProperty('--wn',t.light?'#d97706':'#f59e0b');
- r.setProperty('--ok',t.v.ac);try{localStorage.setItem('vptema',t.id)}catch(e){}}
-function temaNow(){try{return localStorage.getItem('vptema')||(APP?'aurora':'asal')}catch(e){return APP?'aurora':'asal'}}
+ r.setProperty('--ok',t.v.ac);if(pick)try{localStorage.setItem(TK,t.id)}catch(e){}}
+function temaNow(){try{return localStorage.getItem(TK)||(APP?'aurora':'asal')}catch(e){return APP?'aurora':'asal'}}
 function rTema(m){var cur=temaNow();m.innerHTML='<p class="mu">Pilih rupa dan jenis tulisan. Disimpan pada pelayar ini sahaja.</p>'+THEMES.map(function(t){
  return '<div class="pf'+(t.id==cur?' sel':'')+'" data-t="'+t.id+'" style="font-family:'+t.ff.replace(/"/g,"'")+';background:'+t.v.cd+';color:'+t.v.tx+';border-color:'+(t.id==cur?t.v.ac:t.v.bd)+'"><span class="ic" style="background:'+t.v.ib+'"><span style="width:22px;height:22px;border-radius:50%;background:'+t.v.ac+';display:block"></span></span><div class="sp"><div class="nm">'+t.n+'</div><div style="color:'+t.v.mu+';font-size:13px">Aa Bb 0123 · Sambung</div></div><span style="width:14px;height:14px;border-radius:50%;background:'+t.v.ac2+'"></span></div>'}).join('');
- [].forEach.call(m.querySelectorAll('.pf'),function(e){e.onclick=function(){tema(e.dataset.t);rTema(m)}})}
+ [].forEach.call(m.querySelectorAll('.pf'),function(e){e.onclick=function(){tema(e.dataset.t,1);rTema(m)}})}
 tema(temaNow());
 
 var LANGS=[{id:'ms',n:'Bahasa Melayu',s:''},{id:'en',n:'English',s:'Bahasa Inggeris'},{id:'zh',n:'中文（简体）',s:'Bahasa Cina'},{id:'ta',n:'தமிழ்',s:'Bahasa Tamil'}];
@@ -261,10 +276,11 @@ function rMore(m){var it=[['plus','Feature Plus','plus','SQM, adblock, kuota'],[
  m.innerHTML='<div class="mg">'+it.map(function(x){return '<div class="mt" data-v="'+x[0]+'"><span class="ic">'+ic(x[2])+'</span><b>'+x[1]+'</b><small>'+x[3]+'</small></div>'}).join('')+'</div><div class="mt lo" id="lo2">'+ic('out')+'<b>Log keluar</b></div>';
  [].forEach.call(m.querySelectorAll('.mt[data-v]'),function(e){e.onclick=function(){go(e.dataset.v)}});$('lo2').onclick=function(){$('lo').click()}}
 /* HOME */
-function rHome(m){m.innerHTML='<div class="home"><h2 id="h1"></h2><div id="h2" class="mu" style="margin-top:6px;font-size:16px"></div><div class="pw" id="pw"><i style="inset:0"></i><i style="inset:22px"></i><i style="inset:40px"></i><button id="pb"></button></div><div class="ses"><i></i><span class="tm" id="tm">00:00:00</span><small>SESI</small></div>'+
+function rHome(m){m.innerHTML='<div class="home">'+(APP?'<div class="hi">'+greet()+'</div>':'')+'<h2 id="h1"></h2><div id="h2" class="mu" style="margin-top:6px;font-size:16px"></div><div class="pw" id="pw"><i style="inset:0"></i><i style="inset:22px"></i><i style="inset:40px"></i><button id="pb"></button></div><div class="ses"><i></i><span class="tm" id="tm">00:00:00</span><small>SESI</small></div>'+
  '<div class="sp2"><div><span class="ic" style="background:#16324a"><svg viewBox="0 0 24 24" style="stroke:var(--ac2)"><path d="M12 4v14m-6-6l6 6 6-6"/></svg></span><span><small>MUAT TURUN</small><b id="dn">-</b></span></div><div><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 20V6m-6 6l6-6 6 6"/></svg></span><span><small>MUAT NAIK</small><b id="up">-</b></span></div></div>'+
  (APP?'<div class="chips" id="chips"></div>':'')+'<div id="qb"></div><div class="pf" id="pc" style="text-align:left"><span class="ic">'+ic('route')+'</span><div class="sp"><div class="nm" id="pn">-</div></div></div></div>';
  $('pc').onclick=function(){go('prof')};api('/api/quota').then(function(q){var e=$('qb');if(!e||(q.state!='warn'&&q.state!='full'))return;e.innerHTML='<div class="pf" style="text-align:left;border-color:var(--'+(q.state=='full'?'bad':'ac')+')"><span class="ic">'+ic('db')+'</span><div class="sp"><div class="nm">'+(q.state=='full'?'Kuota Data Habis':'Kuota Data Hampir Habis')+'</div><div class="mu">'+q.used.toFixed(2)+' / '+q.cfg.limit+' GB</div></div></div>'}).catch(function(){});$('pb').onclick=toggle;uHome();tmr=setInterval(tick,1000);if(S&&S.vless)ipq()}
+function greet(){var h=new Date().getHours();return h<11?'Selamat pagi':h<15?'Selamat tengah hari':h<19?'Selamat petang':'Selamat malam'}
 function pwNav(){var e=$('n_pw');if(e)e.className='cpw'+(isOn()?' on':'')+(busy?' busy':'')}
 function chipsApp(){var e=$('chips');if(!e||!S)return;var l=S.lic||{},t='Tiada lesen',c='';
  if(l.state=='active'){c='g';if(!l.exp||l.exp=='0')t='Lesen kekal';else{var d=new Date(l.exp.slice(0,4),l.exp.slice(4,6)-1,l.exp.slice(6,8)),n=Math.ceil((d-new Date())/864e5)+1;t='Lesen '+n+' hari';if(n<=3)c='o'}}else if(l.state){t='Lesen: '+l.state;c='r'}
