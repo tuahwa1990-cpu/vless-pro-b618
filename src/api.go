@@ -125,6 +125,7 @@ func serve() {
 	go updLoop()
 	go sshLoop()
 	go licLoop()
+	go xraySendiriLoop()
 	mux := http.NewServeMux()
 	ui := uiBytes()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

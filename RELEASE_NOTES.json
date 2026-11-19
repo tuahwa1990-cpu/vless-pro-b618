@@ -1,13 +1,22 @@
 {
-  "version": "1.1.88",
+  "version": "1.1.89",
   "date": "2026-11-20",
   "size": 0,
-  "title": "Pembetulan untuk AW1000 dan AW1000 Ultra",
+  "title": "Enjin Xray sendiri",
   "items": [
-    "Pembetulan pemasangan dan kemas kini pada AW1000 dan AW1000 Ultra supaya berjalan seperti biasa.",
+    "VLESS Pro kini memasang enjin Xray sendiri secara automatik apabila modem bersambung ke internet, jadi ia berfungsi dengan baik walaupun modem tiada VPN asal.",
     "Penambahbaikan dalaman. Semua fungsi sama."
   ],
   "history": [
+    {
+      "version": "1.1.88",
+      "date": "2026-11-20",
+      "title": "Pembetulan untuk AW1000 dan AW1000 Ultra",
+      "items": [
+        "Pembetulan pemasangan dan kemas kini pada AW1000 dan AW1000 Ultra supaya berjalan seperti biasa.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
     {
       "version": "1.1.87",
       "date": "2026-11-20",
