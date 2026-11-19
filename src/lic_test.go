@@ -232,24 +232,50 @@ func TestJamSalahDanUndur(t *testing.T) {
 		t.Errorf("jam pulih: %s", s)
 	}
 
-	// jam diundur selepas tarikh binaan tetapi lebih awal daripada lastseen
-	_ = os.WriteFile(home+"/etc/lastseen", []byte("1795176000\n"), 0600) // 2026-11-20 12:00 UTC
+	// jam diundur jauh (lebih 24 jam) selepas tarikh binaan: ditolak untuk lesen bertempoh sahaja
+	const L = 1795348800 // 2026-11-22 12:00 UTC
+	_ = os.WriteFile(home+"/etc/lastseen", []byte("1795348800\n"), 0600)
 	fixClock(t, d(11, 19, 20))
 	if s := readLic().State; s != "clock" {
-		t.Errorf("jam diundur: %s", s)
+		t.Errorf("jam diundur jauh: %s", s)
 	}
 	if s := checkKey(mkKey("0")).State; s != "active" {
 		t.Errorf("lifetime jam diundur: %s", s)
 	}
-	// laras kecil (dalam 10 minit) dibenarkan
-	fixClock(t, time.Unix(1795176000-300, 0))
+	fixClock(t, time.Unix(L-25*3600, 0))
+	if s := checkKey(mkKey("20271231")).State; s != "clock" {
+		t.Errorf("undur 25 jam: %s", s)
+	}
+	// kes B618: lastseen tercatat 7 jam lebih awal kerana jam modem pernah 8 jam terlalu awal, kemudian betul semula
+	fixClock(t, time.Unix(L-7*3600-8*60, 0))
 	if s := checkKey(mkKey("20271231")).State; s != "active" {
-		t.Errorf("laras kecil: %s", s)
+		t.Errorf("jam pulih selepas terlalu awal: %s", s)
+	}
+	fixClock(t, time.Unix(L-23*3600, 0))
+	if s := checkKey(mkKey("20271231")).State; s != "active" {
+		t.Errorf("undur 23 jam: %s", s)
+	}
+	// lastseen tidak boleh diundurkan oleh touchSeen
+	seenMu.Lock()
+	seenAt = time.Time{}
+	seenMu.Unlock()
+	touchSeen()
+	if lastSeen().Unix() != L {
+		t.Errorf("lastseen diundurkan: %v", lastSeen().Unix())
+	}
+	// ... tetapi bergerak ke hadapan
+	fixClock(t, time.Unix(L+3600, 0))
+	seenMu.Lock()
+	seenAt = time.Time{}
+	seenMu.Unlock()
+	touchSeen()
+	if lastSeen().Unix() != L+3600 {
+		t.Errorf("lastseen tidak maju: %v", lastSeen().Unix())
 	}
 	// touchSeen tidak menulis semasa jam tidak dipercayai
 	fixClock(t, time.Unix(86400, 0))
 	touchSeen()
-	if lastSeen().Unix() != 1795176000 {
+	if lastSeen().Unix() != L+3600 {
 		t.Errorf("lastseen diubah semasa jam salah: %v", lastSeen())
 	}
 }

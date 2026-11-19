@@ -112,8 +112,10 @@ var nowFn = time.Now
 var buildClock = time.Date(2026, 11, 19, 0, 0, 0, 0, time.UTC)
 
 const (
-	clockSlack = 10 * time.Minute // had undur yang dibenarkan (laras NTP)
-	seenEvery  = time.Hour        // paling kerap fail lastseen ditulis (jimat flash)
+	// Had undur yang dibenarkan. B618 pernah mencatat jam 8 jam terlalu awal (masa tempatan dianggap UTC) sebelum
+	// disegerak semula; jam yang betul selepas itu bukan jam diundur. Undur lebih besar daripada ini ditolak.
+	clockSlack = 24 * time.Hour
+	seenEvery  = time.Hour // paling kerap fail lastseen ditulis (jimat flash)
 )
 
 func lastSeen() time.Time {
@@ -125,7 +127,7 @@ func lastSeen() time.Time {
 	return time.Unix(n, 0)
 }
 
-// clockTrusted: jam tidak sebelum tarikh binaan dan tidak lebih awal daripada "masa terakhir dilihat".
+// clockTrusted: jam tidak sebelum tarikh binaan dan tidak lebih awal (melebihi clockSlack) daripada "masa terakhir dilihat".
 func clockTrusted() bool {
 	now := nowFn()
 	if now.Before(buildClock) {
@@ -152,6 +154,9 @@ func touchSeen() {
 	defer seenMu.Unlock()
 	if !seenAt.IsZero() && now.After(seenAt) && now.Sub(seenAt) < seenEvery {
 		return
+	}
+	if ls := lastSeen(); !ls.IsZero() && !now.After(ls) {
+		return // lastseen hanya bergerak ke hadapan, jadi undur kecil berulang tidak boleh menyorong had
 	}
 	_ = os.MkdirAll(home+"/etc", 0700)
 	if os.WriteFile(home+"/etc/lastseen", []byte(strconv.FormatInt(now.Unix(), 10)+"\n"), 0600) == nil {
