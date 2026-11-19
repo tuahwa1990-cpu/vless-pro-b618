@@ -38,7 +38,7 @@ func target() (tag, dir string) {
 
 var defUpd = func() string {
 	t, _ := target()
-	return "https://raw.githubusercontent.com/tuahwa1990-cpu/vless-pro-b618/main/" + t + "-latest.txt"
+	return "https://raw.githubusercontent.com/tuahwa1990-cpu/vless-pro-b618/main/" + updSub + t + "-latest.txt"
 }()
 
 func updURL() string { return readStr(home+"/etc/update_url", defUpd) }

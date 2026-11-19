@@ -1,0 +1,100 @@
+{
+  "version": "1.1.87",
+  "date": "2026-11-20",
+  "size": 3185081,
+  "title": "Pilihan antara muka dan ketepatan masa",
+  "items": [
+    "Pilihan baharu: guna apl VLESS Pro sahaja atau apl bersama Chrome. Antara muka web boleh dimatikan dari apl (Lagi > Tetapan) dan VLESS Pro terus berfungsi seperti biasa.",
+    "Tarikh dan masa dalam VLESS Pro kini mengikut waktu Malaysia, jadi tempoh percubaan dan tarikh tamat tepat pada tengah malam waktu Malaysia.",
+    "Status dikemas kini setiap jam supaya paparan sentiasa terkini.",
+    "Istilah dalam paparan diseragamkan: sambungan lama kini dipanggil \"VPN asal\".",
+    "Penambahbaikan dalaman. Semua fungsi sama."
+  ],
+  "history": [
+    {
+      "version": "1.1.86",
+      "date": "2026-11-19",
+      "title": "Rupa apl yang lebih ketara",
+      "items": [
+        "Dalam apl VLESS Pro (Android), rupa kini jelas berbeza daripada pelayar: tema Aurora dengan latar bergerak lembut, cincin sambungan berputar, ucapan di skrin Utama dan butang kuasa di tengah menu bawah.",
+        "Tema dalam apl kini tidak lagi terkunci pada tema lama; pilihan tema anda masih dihormati.",
+        "Pelayar kekal dengan rupa asal. Semua fungsi sama."
+      ]
+    },
+    {
+      "version": "1.1.85",
+      "date": "2026-11-19",
+      "title": "Antara muka baharu yang lebih moden",
+      "items": [
+        "Menu bawah kini 4 tab: Utama, Profil, Statistik dan Lagi.",
+        "Halaman Lagi baharu mengumpulkan Feature Plus, Penghalaan, Log, Tetapan, Sistem, Kemas kini, Tema, Bahasa dan Perihal dalam kad yang mudah disentuh.",
+        "Dalam apl VLESS Pro (Android), rupa tersendiri: tema Aurora, butang kuasa besar di tengah menu bawah, dan chip ringkas untuk lesen, mod dan nod. Pelayar tetap dengan rupa asal.",
+        "Rupa lebih moden: butang sambung bergradien dan bercahaya, kad berlapis, menu bawah terapung dan peralihan halaman yang lembut.",
+        "Semua fungsi sedia ada dikekalkan."
+      ]
+    },
+    {
+      "version": "1.1.84",
+      "date": "2026-11-19",
+      "title": "Penambahbaikan dalaman",
+      "items": [
+        "Penambahbaikan dalaman."
+      ]
+    },
+    {
+      "version": "1.1.83",
+      "date": "2026-11-19",
+      "title": "Peranti Disambung dan nama edisi",
+      "items": [
+        "Ciri baharu Peranti Disambung (Feature Plus): lihat siapa menggunakan WiFi modem, dengan IP dan MAC, dan beri nama pada setiap peranti.",
+        "Nama edisi dipaparkan jelas: armv7 (B618-65D) dan arm64 (AW1000 dan AW1000 Ultra).",
+        "Penambahbaikan dalaman."
+      ]
+    },
+    {
+      "version": "1.1.82",
+      "date": "2026-11-15",
+      "title": "Susunan Tetapan baharu",
+      "items": [
+        "Halaman Tetapan kini bermula dengan Penyambungan, diikuti Mula automatik, kemudian Lesen dan Kata laluan."
+      ]
+    },
+    {
+      "version": "1.1.81",
+      "date": "2026-11-15",
+      "title": "Mod VPN: Redirect, TProxy dan TUN",
+      "items": [
+        "Tetapan > Penyambungan: pilihan Mod VPN baharu (Redirect, TProxy atau TUN).",
+        "TProxy dan TUN membawa TCP dan UDP (permainan, panggilan) melalui nod; Redirect kekal lalai dan hanya TCP.",
+        "VLESS Pro menyemak sendiri sama ada modem menyokong TProxy/TUN; pilihan yang tidak disokong dimatikan.",
+        "Jika mod dipilih gagal dihidupkan, VLESS Pro jatuh ke Redirect secara automatik supaya internet tidak terputus.",
+        "Mod yang sedang digunakan dipaparkan di bawah pilihan."
+      ]
+    },
+    {
+      "version": "1.1.80",
+      "date": "2026-11-15",
+      "title": "Sokongan SSH dan WireGuard",
+      "items": [
+        "Tambah profil SSH: WebSocket + payload, SSL/TLS (stunnel) atau SSL + payload, dengan SNI, payload dan proksi.",
+        "Tambah profil WireGuard: tampal konfigurasi .conf atau pautan wireguard://.",
+        "Pautan ssh:// dan wireguard:// juga boleh ditampal bersama pautan vless:// dan dalam langganan.",
+        "Profil SSH dan WireGuard boleh disunting, dipilih dan dimasukkan ke dalam Kumpulan seperti VLESS.",
+        "Uji semua: profil WireGuard ditanda UDP kerana tidak boleh diuji dengan ping TCP."
+      ]
+    },
+    {
+      "version": "1.1.79",
+      "date": "2026-11-15",
+      "title": "Halaman Kemas kini baharu",
+      "items": [
+        "Kad kemas kini baharu: versi terbaru, tarikh keluar, saiz fail dan nota perubahan.",
+        "Kemas kini automatik: pilih Beritahu saya, Pasang automatik atau Tutup. VLESS Pro menyemak sekali sehari.",
+        "Loceng di bahagian atas muncul apabila versi baharu tersedia.",
+        "Butang Semak sekarang dan masa semakan terakhir.",
+        "Pelayan kemas kini dipaparkan dan boleh ditukar.",
+        "Kemas kini dalam talian kini disemak dengan tandatangan digital, selain SHA-256."
+      ]
+    }
+  ]
+}

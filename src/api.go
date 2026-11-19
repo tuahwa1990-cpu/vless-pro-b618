@@ -131,6 +131,10 @@ func serve() {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-store")
 		if !webOn() {
+			if aplSahaja {
+				http.NotFound(w, r) // edisi apl sahaja: tiada halaman langsung
+				return
+			}
 			_, _ = w.Write([]byte(webOffPage))
 			return
 		}
