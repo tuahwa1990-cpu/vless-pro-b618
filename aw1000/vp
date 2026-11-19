@@ -1,13 +1,13 @@
 #!/bin/sh
 # VLESS Manager Pro (edisi OpenWrt / AW1000 Ultra). Berfungsi dengan atau tanpa VPN asal.
 H=${VP_HOME:-/data/vlesspro}
-XL=${VP_VPN asal:-/opt/xlite}
+XL=${VP_XLITE:-/opt/xlite}
 LAN=br-lan
 VPRO=$H/bin/vpro
 R=$H/run
 MARK=254
 I="iptables -t nat"
-export VP_HOME=$H VP_VPN asal=$XL VP_AUTORUN=/etc/rc.local
+export VP_HOME=$H VP_XLITE=$XL VP_AUTORUN=/etc/rc.local
 mkdir -p $R $H/etc $H/backup 2>/dev/null
 
 mode() { m=; [ -f $H/etc/mode ] && read m < $H/etc/mode; echo "${m:-xlite}"; }
