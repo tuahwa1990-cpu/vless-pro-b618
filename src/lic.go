@@ -108,6 +108,9 @@ func kunciDisekat(kunci string) bool {
 // Jam. Modem tanpa RTC boleh bermula dengan jam salah sehingga NTP menyegerak.
 var nowFn = time.Now
 
+// Waktu Malaysia (UTC+8): lesen bertempoh tamat tepat tengah malam di sini, bukan mengikut zon modem.
+var myt = time.FixedZone("MYT", 8*3600)
+
 // Jam sebelum tarikh binaan ini dianggap salah. Lesen bertempoh sahaja ditolak (lesen seumur hidup tidak terjejas).
 var buildClock = time.Date(2026, 11, 19, 0, 0, 0, 0, time.UTC)
 
@@ -209,7 +212,7 @@ func checkKey(key string) Lic {
 		case !clockTrusted():
 			l.State = "clock" // jam salah atau diundur: tolak, tetapi jangan padam lesen
 		default:
-			today, _ := strconv.Atoi(now.Format("20060102"))
+			today, _ := strconv.Atoi(now.In(myt).Format("20060102")) // tarikh ikut waktu Malaysia
 			if e, err := strconv.Atoi(l.Exp); err != nil || e < today {
 				l.State = "expired"
 			}
@@ -256,7 +259,7 @@ func locked(l Lic) bool { return l.State != "active" }
 
 var licPrev string
 
-// licSweep: semak semula lesen tersimpan (startup dan setiap 24 jam).
+// licSweep: semak semula lesen tersimpan (startup dan setiap jam).
 // revoked atau expired: sekat fungsi VPN dan putuskan VPN yang sedang berjalan.
 // clock: tiada tindakan memutuskan; jika kemudian jam betul dan lesen aktif, pulihkan VPN yang gagal naik semasa boot.
 func licSweep() {
@@ -276,7 +279,7 @@ func licSweep() {
 func licLoop() {
 	for {
 		licSweep()
-		d := 24 * time.Hour
+		d := time.Hour
 		if licPrev == "clock" {
 			d = 2 * time.Minute
 		}
