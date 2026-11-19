@@ -248,7 +248,7 @@ start_xray() {
 }
 to_vless() {
   st=$(licstate)
-  case "$st" in active|expired) ;; *) echo "lesen: $st"; return 3;; esac
+  case "$st" in active) ;; *) echo "lesen: $st"; return 3;; esac
   [ -s $H/etc/nodes.json ] || { echo "tiada nod"; return 4; }
   $I -S > $H/backup/nat.before 2>/dev/null
   xlite_stop

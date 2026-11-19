@@ -1,12 +1,24 @@
 {
-  "version": "1.1.82",
-  "date": "2026-11-15",
-  "size": 3111266,
-  "title": "Susunan Tetapan baharu",
+  "version": "1.1.83",
+  "date": "2026-11-19",
+  "size": 3120678,
+  "title": "Peranti Disambung dan semakan lesen diperkemas",
   "items": [
-    "Halaman Tetapan kini bermula dengan Penyambungan, diikuti Mula automatik, kemudian Lesen dan Kata laluan."
+    "Ciri baharu Peranti Disambung (Feature Plus): lihat siapa menggunakan WiFi modem, dengan IP dan MAC, dan beri nama pada setiap peranti.",
+    "Nama edisi dipaparkan jelas: armv7 (B618-65D) dan arm64 (AW1000 dan AW1000 Ultra).",
+    "Lesen bertempoh yang telah tamat kini disekat dengan betul, dan VPN yang sedang berjalan diputuskan.",
+    "Lesen disemak semula setiap hari. Jam modem yang salah atau diundur ditolak untuk lesen bertempoh sahaja.",
+    "Lesen seumur hidup tidak berubah."
   ],
   "history": [
+    {
+      "version": "1.1.82",
+      "date": "2026-11-15",
+      "title": "Susunan Tetapan baharu",
+      "items": [
+        "Halaman Tetapan kini bermula dengan Penyambungan, diikuti Mula automatik, kemudian Lesen dan Kata laluan."
+      ]
+    },
     {
       "version": "1.1.81",
       "date": "2026-11-15",

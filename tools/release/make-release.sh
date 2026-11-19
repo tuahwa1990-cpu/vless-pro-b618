@@ -8,7 +8,7 @@
 #   RELEASE_SEED=~/keys/vpro-release.seed RELEASE_PUB=BASE64 sh tools/release/make-release.sh
 #
 # Hasil dalam dist/<versi>/:
-#   vlesspro-<versi>-armv7.tgz  -> pakej: fail pemasang + SHA256SUMS + SHA256SUMS.sig
+#   vlesspro-<versi>-armv7-B618-65D.tgz  -> pakej: fail pemasang + SHA256SUMS + SHA256SUMS.sig
 #   b618-sha256.txt, b618-latest.txt -> untuk repo (kemas kini dari GitHub)
 #   CAPTION.txt                 -> teks siaran ke pelanggan
 # Fail dalam repo (vlesspro/, new/, upgrade.sh, src/upgrade.sh) juga disegerakkan.
@@ -37,7 +37,7 @@ echo "[1/6] Ujian unit ..."
 
 echo "[2/6] Bina vpro ARMv7 ($VER) ..."
 (cd src && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 \
-  go build -trimpath -ldflags "-s -w -X main.pubkey=$PUB -X main.relpub=$RELEASE_PUB" -o "$B/vpro" .)
+  go build -trimpath -ldflags "-s -w -X main.pubkey=$PUB -X main.relpub=$RELEASE_PUB -X 'main.edisiNama=armv7 (B618-65D)'" -o "$B/vpro" .)
 
 echo "[3/6] Segerakkan repo dan susun pakej ..."
 cp "$B/vpro" vlesspro/bin/vpro
@@ -62,12 +62,12 @@ cp "$B/SHA256SUMS" "$P/SHA256SUMS"
 
 OUT="dist/$VER"
 mkdir -p "$OUT"
-TGZ="vlesspro-$VER-armv7.tgz"
+TGZ="vlesspro-$VER-armv7-B618-65D.tgz"
 
 echo "[5/6] Cipta $TGZ dan fail repo ..."
 tar -C "$P" -czf "$OUT/$TGZ" .
 # versi kecil (hanya fail kemas kini, tandatangan sama) untuk Pasang dari fail
-tar -C "$P" --exclude=./vlesspro -czf "$OUT/vlesspro-$VER-armv7-kemaskini.tgz" .
+tar -C "$P" --exclude=./vlesspro -czf "$OUT/vlesspro-$VER-armv7-B618-65D-kemaskini.tgz" .
 ( cd "$P" && sha256sum vlesspro/bin/vpro vlesspro/vp ) | sed 's#vlesspro/bin/vpro#vpro#; s#vlesspro/vp#vp#' > "$OUT/b618-sha256.txt"
 echo "$VER" > "$OUT/b618-latest.txt"
 cp "$OUT/b618-sha256.txt" b618-sha256.txt
@@ -78,10 +78,10 @@ sh tools/release/notes.sh "$VER" new/vpro.gz > b618-notes.json
 
 echo "[6/6] Tulis CAPTION.txt ..."
 cat > "$OUT/CAPTION.txt" <<CAP
-VLESS Manager Pro $VER (ARMv7)
+VLESS Manager Pro $VER (armv7)
 
 Peranti yang disokong:
-- Huawei B618
+- Huawei B618-65D (armv7)
 
 Kemas kini: buka UI > Kemas kini > Pasang dari fail, pilih fail .tgz ini.
 Pemasangan baharu: lihat panduan pemasangan.

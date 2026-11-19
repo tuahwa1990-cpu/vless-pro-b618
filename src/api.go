@@ -128,6 +128,7 @@ func serve() {
 	go rebootSched()
 	go updLoop()
 	go sshLoop()
+	go licLoop()
 	mux := http.NewServeMux()
 	ui, _ := uiFS.ReadFile("ui.html")
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -169,11 +170,7 @@ func serve() {
 	mux.HandleFunc("/api/lic", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			b := body(r, 4096)
-			l := checkKey(string(b))
-			if l.State == "active" {
-				_ = os.WriteFile(home+"/etc/license", []byte(strings.Join(strings.Fields(string(b)), "")+"\n"), 0600)
-			}
-			jr(w, l)
+			jr(w, activateKey(string(b)))
 			return
 		}
 		jr(w, readLic())
@@ -463,7 +460,7 @@ func serve() {
 		jr(w, map[string]any{"text": strings.Join(directList(), "\n")})
 	})
 	mux.HandleFunc("/api/settings", func(w http.ResponseWriter, r *http.Request) {
-		jr(w, map[string]any{"hook": hookOn(), "version": version, "arch": runtime.GOARCH, "mac": macAddr(), "xrayhave": true, "id": hyph(devID20())})
+		jr(w, map[string]any{"hook": hookOn(), "version": version, "arch": runtime.GOARCH, "edisi": edisiNama, "mac": macAddr(), "xrayhave": true, "id": hyph(devID20())})
 	})
 	act("/api/hook", func(r *http.Request) (string, bool) {
 		if strings.TrimSpace(string(body(r, 16))) == "on" {
@@ -512,7 +509,7 @@ func serve() {
 		runtime.ReadMemStats(&ms)
 		jr(w, map[string]any{"memtot": tot, "memfree": free, "disktot": dtot, "diskfree": dfree,
 			"uptime": up, "load": readStr("/proc/loadavg", ""), "uirss": ms.Sys, "uiup": int(time.Since(started).Seconds()),
-			"xray": vlessUp(), "xlite": xliteRunning(), "arch": runtime.GOARCH})
+			"xray": vlessUp(), "xlite": xliteRunning(), "arch": runtime.GOARCH, "edisi": edisiNama})
 	})
 	mux.HandleFunc("/api/update", func(w http.ResponseWriter, r *http.Request) {
 		// c=1: cache sahaja (tanpa rangkaian); f=1: semak sekarang; lalai: semak jika cache lebih 10 minit.
@@ -647,6 +644,7 @@ func serve() {
 	regSQM(mux, act, body)
 	regFeat(mux, act, body)
 	regWan(mux, act)
+	regDev(mux, act, body)
 	regAd(mux, act, body)
 	act("/api/mode", func(r *http.Request) (string, bool) {
 		switch strings.TrimSpace(string(body(r, 16))) {

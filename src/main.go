@@ -14,7 +14,10 @@ import (
 	"time"
 )
 
-const version = "1.1.82"
+const version = "1.1.83"
+
+// edisiNama ditanam semasa binaan: -ldflags "-X 'main.edisiNama=armv7 (B618-65D)'". Kosong = papar seni bina sahaja.
+var edisiNama = ""
 
 var home = func() string {
 	if h := os.Getenv("VP_HOME"); h != "" {
@@ -48,12 +51,7 @@ func main() {
 		if len(a) < 2 {
 			os.Exit(2)
 		}
-		l := checkKey(a[1])
-		if l.State == "active" {
-			_ = os.MkdirAll(home+"/etc", 0700)
-			_ = os.WriteFile(home+"/etc/license", []byte(strings.Join(strings.Fields(a[1]), "")+"\n"), 0600)
-		}
-		printLic(l)
+		printLic(activateKey(a[1]))
 	case "node":
 		nodeCLI(a[1:])
 	case "gen":
