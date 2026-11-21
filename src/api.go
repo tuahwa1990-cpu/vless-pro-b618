@@ -391,7 +391,7 @@ func serve() {
 	mux.HandleFunc("/api/subs", func(w http.ResponseWriter, r *http.Request) {
 		out := []map[string]any{}
 		for i, s := range loadSubs() {
-			out = append(out, map[string]any{"i": i, "name": s.Name, "count": s.Count, "updated": s.Updated})
+			out = append(out, map[string]any{"i": i, "id": s.ID, "name": s.Name, "count": s.Count, "updated": s.Updated})
 		}
 		jr(w, out)
 	})
