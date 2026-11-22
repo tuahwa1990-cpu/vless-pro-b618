@@ -89,6 +89,7 @@ func pubBytes() []byte {
 // Simpan hash sahaja, bukan kunci. Binaan baharu mesti diedarkan supaya sekatan berkuat kuasa.
 var disekat = map[string]bool{
 	"d6b21bae183cf9ff96a01a5aefb0dc027694b1acbd935cf2e7f1812c9cc2a79b": true, // dikeluarkan 20261117, dibatalkan 20261119
+	"5d69ae7ceb862029b219e9cf666a48e75570bf39b9df70fa912c3783a02fd646": true, // Pelanggan, dikeluarkan 20261117, dibatalkan 20261123
 }
 
 // kunciDisekat: hash teks kunci (selepas TrimSpace) dan juga versi tanpa sebarang ruang putih,
