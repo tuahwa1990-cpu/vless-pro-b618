@@ -1,14 +1,23 @@
 {
-  "version": "1.1.91",
+  "version": "1.1.92",
   "date": "2026-11-24",
-  "size": 3150544,
-  "title": "Sokongan protokol VMess",
+  "size": 3151913,
+  "title": "Pembetulan: sambungan SSH (proksi + payload berbahagian)",
   "items": [
-    "Kini boleh tambah nod VMess (pautan vmess://), bukan VLESS sahaja — melalui tambah profil, import tampal atau langganan (subscription).",
-    "Statistik penggunaan data mengikut setiap profil, untuk sokongan apl akan datang.",
+    "Pembetulan: nod SSH yang guna proksi depan dan payload berbahagian ([split]) kadang gagal sambung dengan ralat dalaman — kini dibaiki.",
     "Penambahbaikan dalaman. Semua fungsi sama."
   ],
   "history": [
+    {
+      "version": "1.1.91",
+      "date": "2026-11-24",
+      "title": "Sokongan protokol VMess",
+      "items": [
+        "Kini boleh tambah nod VMess (pautan vmess://), bukan VLESS sahaja — melalui tambah profil, import tampal atau langganan (subscription).",
+        "Statistik penggunaan data mengikut setiap profil, untuk sokongan apl akan datang.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
     {
       "version": "1.1.90",
       "date": "2026-11-21",
