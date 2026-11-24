@@ -44,7 +44,7 @@ func decodeSub(body string) []string {
 	}
 	var out []string
 	for _, l := range strings.Fields(body) {
-		if strings.HasPrefix(l, "vless://") {
+		if strings.HasPrefix(l, "vless://") || strings.HasPrefix(l, "vmess://") {
 			out = append(out, l)
 		}
 	}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha1"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -21,10 +22,13 @@ type Parsed struct {
 	Name, Host, UUID, Net, Sec, SNI, HHost, Path, FP, Flow, PBK, SID, SPX, Service, Mode, ALPN string
 	Port                                                                                       int
 	Insecure                                                                                   bool
-	// Proto: "" (vless), "wg" (WireGuard) atau "ssh"
+	// Proto: "" (vless), "vmess", "wg" (WireGuard) atau "ssh"
 	Proto string
 	WG    *wgCfg
 	SSH   *sshCfg
+	// Khas vmess: cara penyulitan (scy, cth "auto") dan alterId (lazim 0 pada pelayan moden).
+	Scy     string
+	AlterId int
 }
 
 func nodesFile() string { return home + "/etc/nodes.json" }
@@ -67,9 +71,11 @@ func parseLink(link string) (*Parsed, error) {
 		return parseWG(link)
 	case strings.HasPrefix(link, "ssh://"):
 		return parseSSH(link)
+	case strings.HasPrefix(link, "vmess://"):
+		return parseVmess(link)
 	}
 	if !strings.HasPrefix(link, "vless://") {
-		return nil, errors.New("hanya pautan vless://, wireguard:// atau ssh:// disokong")
+		return nil, errors.New("hanya pautan vless://, vmess://, wireguard:// atau ssh:// disokong")
 	}
 	u, err := url.Parse(link)
 	if err != nil || u.User == nil {
@@ -107,6 +113,61 @@ func parseLink(link string) (*Parsed, error) {
 	if p.Sec == "reality" && p.PBK == "" {
 		return nil, errors.New("reality tanpa pbk")
 	}
+	if p.Name == "" {
+		p.Name = p.Host
+	}
+	return p, nil
+}
+
+// parseVmess huraikan pautan vmess:// (JSON base64, format vmessping/v2rayN piawai).
+func parseVmess(link string) (*Parsed, error) {
+	b64 := strings.NewReplacer("-", "+", "_", "/").Replace(strings.TrimSpace(strings.TrimPrefix(link, "vmess://")))
+	for len(b64)%4 != 0 {
+		b64 += "="
+	}
+	raw, err := base64.StdEncoding.DecodeString(b64)
+	if err != nil {
+		return nil, errors.New("pautan vmess tidak sah (base64)")
+	}
+	var j map[string]any
+	if err := json.Unmarshal(raw, &j); err != nil {
+		return nil, errors.New("pautan vmess tidak sah (json)")
+	}
+	str := func(k string) string {
+		v, _ := j[k].(string)
+		return v
+	}
+	num := func(k string) string {
+		switch v := j[k].(type) {
+		case string:
+			return v
+		case float64:
+			return strconv.FormatFloat(v, 'f', -1, 64)
+		default:
+			return ""
+		}
+	}
+	host := str("add")
+	port, _ := strconv.Atoi(num("port"))
+	uuid := str("id")
+	if host == "" || port <= 0 || port > 65535 || len(uuid) < 8 {
+		return nil, errors.New("pelayan, port atau id tiada")
+	}
+	p := &Parsed{Proto: "vmess", Name: str("ps"), Host: host, Port: port, UUID: uuid}
+	p.Net = orStr(str("net"), "tcp")
+	switch p.Net {
+	case "tcp", "ws", "grpc", "xhttp", "httpupgrade":
+	default:
+		return nil, errors.New("jenis rangkaian tidak disokong: " + p.Net)
+	}
+	if str("tls") == "tls" {
+		p.Sec = "tls"
+	}
+	p.SNI, p.HHost, p.Path, p.FP, p.ALPN = str("sni"), str("host"), str("path"), str("fp"), str("alpn")
+	p.Service, p.Mode = str("path"), str("mode")
+	p.Scy = orStr(str("scy"), "auto")
+	aid, _ := strconv.Atoi(num("aid"))
+	p.AlterId = aid
 	if p.Name == "" {
 		p.Name = p.Host
 	}

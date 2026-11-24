@@ -71,6 +71,43 @@ func TestParse(t *testing.T) {
 	if cfg["inbounds"] == nil {
 		t.Error("cfg")
 	}
+	// Pautan vmess:// sah (JSON base64 piawai v2rayN/vmessping) mesti berfungsi sepenuhnya.
+	vm, err := parseVmess("vmess://eyJ2IjoiMiIsInBzIjoiTm9kIFZNZXNzIFVqaSIsImFkZCI6InZtLmV4YW1wbGUuY29tIiwicG9ydCI6Ijg0NDMiLCJpZCI6IjExMTExMTExLTIyMjItMzMzMy00NDQ0LTU1NTU1NTU1NTU1NSIsImFpZCI6IjAiLCJuZXQiOiJ3cyIsInR5cGUiOiJub25lIiwiaG9zdCI6ImNkbi5leGFtcGxlLmNvbSIsInBhdGgiOiIvd3MiLCJ0bHMiOiJ0bHMiLCJzbmkiOiJ2bS5leGFtcGxlLmNvbSIsImFscG4iOiJoMixodHRwLzEuMSIsImZwIjoiY2hyb21lIiwic2N5IjoiYXV0byJ9")
+	if err != nil {
+		t.Fatalf("vmess valid ditolak: %v", err)
+	}
+	if vm.Proto != "vmess" || vm.Host != "vm.example.com" || vm.Port != 8443 || vm.UUID != "11111111-2222-3333-4444-555555555555" ||
+		vm.Net != "ws" || vm.Sec != "tls" || vm.SNI != "vm.example.com" || vm.Path != "/ws" || vm.Scy != "auto" || vm.Name != "Nod VMess Uji" {
+		t.Fatalf("vmess parse salah: %+v", vm)
+	}
+	// parseLink mesti mendispatch ke parseVmess melalui prefix vmess://.
+	if via, err := parseLink("vmess://eyJ2IjoiMiIsInBzIjoiTm9kIFZNZXNzIFVqaSIsImFkZCI6InZtLmV4YW1wbGUuY29tIiwicG9ydCI6Ijg0NDMiLCJpZCI6IjExMTExMTExLTIyMjItMzMzMy00NDQ0LTU1NTU1NTU1NTU1NSIsImFpZCI6IjAiLCJuZXQiOiJ3cyIsInR5cGUiOiJub25lIiwiaG9zdCI6ImNkbi5leGFtcGxlLmNvbSIsInBhdGgiOiIvd3MiLCJ0bHMiOiJ0bHMiLCJzbmkiOiJ2bS5leGFtcGxlLmNvbSIsImFscG4iOiJoMixodHRwLzEuMSIsImZwIjoiY2hyb21lIiwic2N5IjoiYXV0byJ9"); err != nil || via.Proto != "vmess" {
+		t.Fatalf("parseLink tidak dispatch vmess: %v %+v", err, via)
+	}
+	// Konfigurasi outbound vmess mesti protocol:vmess dengan alterId/security betul, bukan vless.
+	vcfg := buildConfig([]*Parsed{vm}, nil)
+	outs, _ := vcfg["outbounds"].([]any)
+	var proxyOutFound map[string]any
+	for _, o := range outs {
+		if m, ok := o.(map[string]any); ok && m["tag"] == "proxy" {
+			proxyOutFound = m
+		}
+	}
+	if proxyOutFound == nil || proxyOutFound["protocol"] != "vmess" {
+		t.Fatalf("outbound vmess tidak betul: %+v", proxyOutFound)
+	}
+	settings, _ := proxyOutFound["settings"].(map[string]any)
+	vnext, _ := settings["vnext"].([]any)
+	srv, _ := vnext[0].(map[string]any)
+	users, _ := srv["users"].([]any)
+	user, _ := users[0].(map[string]any)
+	if user["id"] != vm.UUID || user["alterId"] != 0 || user["security"] != "auto" {
+		t.Fatalf("user vmess tidak betul: %+v", user)
+	}
+	ss, _ := proxyOutFound["streamSettings"].(map[string]any)
+	if ss["network"] != "ws" || ss["security"] != "tls" {
+		t.Fatalf("streamSettings vmess tidak betul: %+v", ss)
+	}
 }
 
 const kunciUji = "4ADEA81F987A52934E2B:Pelanggan:20261117:0.RWQEaRIHBlatsy6+glxHF1cp4Ljg4P9gaGuPYpqfPqxZufhp5MnkKClPUQ5BGsEd5Ph1P8XW5i+1MHFJPLRf8X/3U6wGKVZdiQY="

@@ -79,9 +79,16 @@ func proxyOut(p *Parsed, tag string) map[string]any {
 	if p.Proto == "wg" {
 		return wgOut(p, tag)
 	}
-	user := map[string]any{"id": p.UUID, "encryption": "none"}
-	if p.Flow != "" {
-		user["flow"] = p.Flow
+	protocol := "vless"
+	var user map[string]any
+	if p.Proto == "vmess" {
+		protocol = "vmess"
+		user = map[string]any{"id": p.UUID, "alterId": p.AlterId, "security": orStr(p.Scy, "auto")}
+	} else {
+		user = map[string]any{"id": p.UUID, "encryption": "none"}
+		if p.Flow != "" {
+			user["flow"] = p.Flow
+		}
 	}
 	ss := map[string]any{"network": p.Net, "sockopt": map[string]any{"mark": 254}}
 	sec := p.Sec
@@ -146,7 +153,7 @@ func proxyOut(p *Parsed, tag string) map[string]any {
 		ss["httpupgradeSettings"] = h
 	}
 	return map[string]any{
-		"tag": tag, "protocol": "vless",
+		"tag": tag, "protocol": protocol,
 		"settings": map[string]any{"vnext": []any{map[string]any{
 			"address": p.Host, "port": p.Port, "users": []any{user}}}},
 		"streamSettings": ss,
