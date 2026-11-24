@@ -52,9 +52,47 @@ type bufConn struct {
 
 func (c *bufConn) Read(b []byte) (int, error) { return c.r.Read(b) }
 
-// readHTTPReplies membaca satu atau lebih blok respons HTTP selepas payload; terima 101 atau 2xx.
-func readHTTPReplies(br *bufio.Reader) error {
-	for n := 0; n < 3; n++ {
+// skipChunkedBody menghabiskan badan HTTP "Transfer-Encoding: chunked" tanpa menyimpannya.
+func skipChunkedBody(br *bufio.Reader) error {
+	for {
+		sizeLine, err := br.ReadString('\n')
+		if err != nil {
+			return err
+		}
+		sizeLine = strings.TrimSpace(strings.SplitN(sizeLine, ";", 2)[0])
+		sz, err := strconv.ParseInt(sizeLine, 16, 64)
+		if err != nil {
+			return err
+		}
+		if sz == 0 {
+			for {
+				h, err := br.ReadString('\n')
+				if err != nil {
+					return err
+				}
+				if strings.TrimSpace(h) == "" {
+					return nil
+				}
+			}
+		}
+		if _, err := io.CopyN(io.Discard, br, sz); err != nil {
+			return err
+		}
+		if _, err := br.ReadString('\n'); err != nil { // CRLF selepas chunk
+			return err
+		}
+	}
+}
+
+// readHTTPReplies membaca `n` blok respons HTTP selepas payload (satu bagi setiap bahagian
+// payload yang dihantar); terima 101 atau 2xx. Badan respons (ikut Content-Length atau
+// chunked) dihabiskan supaya tidak tertinggal dalam buffer dan tersalah anggap sebagai
+// data terowong mentah (punca ralat "ssh: overflow reading version string").
+func readHTTPReplies(br *bufio.Reader, n int) error {
+	if n < 1 {
+		n = 1
+	}
+	for i := 0; i < n; i++ {
 		line, err := br.ReadString('\n')
 		if err != nil {
 			return errors.New("pelayan tidak membalas payload")
@@ -64,6 +102,8 @@ func readHTTPReplies(br *bufio.Reader) error {
 			return errors.New("balasan pelayan bukan HTTP: " + strings.TrimSpace(line))
 		}
 		code, _ := strconv.Atoi(f[1])
+		contentLen := -1
+		chunked := false
 		for {
 			h, err := br.ReadString('\n')
 			if err != nil {
@@ -72,17 +112,32 @@ func readHTTPReplies(br *bufio.Reader) error {
 			if strings.TrimSpace(h) == "" {
 				break
 			}
+			hl := strings.ToLower(h)
+			switch {
+			case strings.HasPrefix(hl, "content-length:"):
+				if v, e := strconv.Atoi(strings.TrimSpace(h[len("content-length:"):])); e == nil {
+					contentLen = v
+				}
+			case strings.HasPrefix(hl, "transfer-encoding:") && strings.Contains(hl, "chunked"):
+				chunked = true
+			}
 		}
 		if code != 101 && (code < 200 || code > 299) {
 			return fmt.Errorf("pelayan menolak payload (HTTP %d)", code)
 		}
-		// Balasan kedua (contohnya 200 kemudian 101) dibaca juga jika sudah tiba.
-		if br.Buffered() >= 5 {
-			if pk, _ := br.Peek(5); string(pk) == "HTTP/" {
-				continue
+		if code == 101 {
+			// Peralihan protokol — tiada badan; baki aliran ialah data mentah terowong.
+			return nil
+		}
+		if chunked {
+			if err := skipChunkedBody(br); err != nil {
+				return errors.New("badan HTTP (chunked) tidak lengkap")
+			}
+		} else if contentLen > 0 {
+			if _, err := io.CopyN(io.Discard, br, int64(contentLen)); err != nil {
+				return errors.New("badan HTTP tidak lengkap")
 			}
 		}
-		return nil
 	}
 	return nil
 }
@@ -112,7 +167,8 @@ func sshDialRaw(p *Parsed) (net.Conn, error) {
 	}
 	var out net.Conn = conn
 	if c.Mode == "ws" || c.Mode == "tlsws" {
-		for i, part := range expandPayload(c.Payload, p.Host, p.Port) {
+		parts := expandPayload(c.Payload, p.Host, p.Port)
+		for i, part := range parts {
 			if i > 0 {
 				time.Sleep(200 * time.Millisecond)
 			}
@@ -122,7 +178,7 @@ func sshDialRaw(p *Parsed) (net.Conn, error) {
 			}
 		}
 		br := bufio.NewReader(conn)
-		if err := readHTTPReplies(br); err != nil {
+		if err := readHTTPReplies(br, len(parts)); err != nil {
 			conn.Close()
 			return nil, err
 		}
