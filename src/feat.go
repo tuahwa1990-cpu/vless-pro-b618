@@ -457,6 +457,7 @@ func quotaRoll(now time.Time) {
 }
 
 func quotaAdd(dr, dt uint64) {
+	nodeUseAdd(dr, dt)
 	qMu.Lock()
 	qSt.Rx += dr
 	qSt.Tx += dt
@@ -465,6 +466,7 @@ func quotaAdd(dr, dt uint64) {
 }
 
 func quotaInit() {
+	nodeUseLoad()
 	qMu.Lock()
 	qCfg = loadQuota()
 	if b, err := os.ReadFile(home + "/etc/quota_state.json"); err == nil {
@@ -546,6 +548,74 @@ func quotaLoop() {
 			saveQState()
 		}
 		qMu.Unlock()
+		nodeUseSave()
+	}
+}
+
+// ===================== Data setiap profil =====================
+// Trafik WAN dikaitkan dengan profil yang sedang dipilih (mod VLESS). Kumpulan dicatat sebagai "grp".
+
+type nuVal struct {
+	Rx uint64 `json:"rx"`
+	Tx uint64 `json:"tx"`
+}
+
+var (
+	nuMu    sync.Mutex
+	nuMap   = map[string]nuVal{}
+	nuDirty bool
+)
+
+func nodeUseKey() string {
+	if readStr(home+"/etc/mode", "xlite") != "vless" {
+		return ""
+	}
+	if selGroup() >= 0 {
+		return "grp"
+	}
+	ns := loadNodes()
+	if i := selIdx(); i >= 0 && i < len(ns) {
+		return nid(ns[i].Link)
+	}
+	return ""
+}
+
+func nodeUseAdd(dr, dt uint64) {
+	if dr+dt == 0 {
+		return
+	}
+	k := nodeUseKey()
+	if k == "" {
+		return
+	}
+	nuMu.Lock()
+	v := nuMap[k]
+	v.Rx += dr
+	v.Tx += dt
+	nuMap[k] = v
+	nuDirty = true
+	nuMu.Unlock()
+}
+
+func nodeUseLoad() {
+	b, err := os.ReadFile(home + "/etc/node_usage.json")
+	if err != nil {
+		return
+	}
+	nuMu.Lock()
+	_ = json.Unmarshal(b, &nuMap)
+	nuMu.Unlock()
+}
+
+func nodeUseSave() {
+	nuMu.Lock()
+	defer nuMu.Unlock()
+	if !nuDirty {
+		return
+	}
+	b, _ := json.Marshal(nuMap)
+	if os.WriteFile(home+"/etc/node_usage.json", b, 0600) == nil {
+		nuDirty = false
 	}
 }
 
@@ -616,6 +686,23 @@ func regFeat(mux *http.ServeMux, act func(string, func(*http.Request) (string, b
 			"blocked": qSt.Blocked, "start": ps.Unix(), "end": periodEnd(ps, qCfg).Unix()}
 		qMu.Unlock()
 		jr(w, out)
+	})
+	mux.HandleFunc("/api/nodeusage", func(w http.ResponseWriter, r *http.Request) {
+		nuMu.Lock()
+		out := make(map[string]nuVal, len(nuMap))
+		for k, v := range nuMap {
+			out[k] = v
+		}
+		nuMu.Unlock()
+		jr(w, out)
+	})
+	act("/api/nodeusage/reset", func(r *http.Request) (string, bool) {
+		nuMu.Lock()
+		nuMap = map[string]nuVal{}
+		nuDirty = true
+		nuMu.Unlock()
+		nodeUseSave()
+		return "Data setiap profil ditetapkan semula", true
 	})
 	act("/api/quota/reset", func(r *http.Request) (string, bool) {
 		qMu.Lock()
