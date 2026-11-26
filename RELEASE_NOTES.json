@@ -1,14 +1,24 @@
 {
-  "version": "1.2.00",
+  "version": "1.2.01",
   "date": "2026-11-26",
   "size": 0,
-  "title": "Isyarat Semasa kini betul-betul masa nyata",
+  "title": "Isyarat Semasa kini sekelip mata (AW1000 Ultra)",
   "items": [
-    "Betulkan isu Isyarat Semasa (AW1000 Ultra) yang nampak lambat/beku — kini baca terus daripada modem setiap kali, bukan simpanan lama 2 minit, jadi sesuai dipantau sambil gerakkan modem cari lokasi terbaik.",
-    "Dikemas kini setiap 2 saat (dahulu 5 saat) untuk paparan lebih responsif.",
+    "Baca terus daripada binari modem (bukan skrip yang ambil ~2 saat kumpul maklumat lain yang tak berkaitan) — bacaan isyarat sekarang siap dalam masa kurang 1 saat.",
+    "Dikemas kini setiap saat (dahulu 2 saat) untuk pantau paling responsif semasa gerakkan modem.",
     "Penambahbaikan dalaman. Semua fungsi sama."
   ],
   "history": [
+    {
+      "version": "1.2.00",
+      "date": "2026-11-26",
+      "title": "Isyarat Semasa kini betul-betul masa nyata",
+      "items": [
+        "Betulkan isu Isyarat Semasa (AW1000 Ultra) yang nampak lambat/beku — kini baca terus daripada modem setiap kali, bukan simpanan lama 2 minit, jadi sesuai dipantau sambil gerakkan modem cari lokasi terbaik.",
+        "Dikemas kini setiap 2 saat (dahulu 5 saat) untuk paparan lebih responsif.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
     {
       "version": "1.1.99",
       "date": "2026-11-26",
