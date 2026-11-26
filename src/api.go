@@ -670,6 +670,9 @@ func serve() {
 	regBandlock(mux, act, body)
 	regNotify(mux, act, body)
 	regSchedule(mux, act, body)
+	regSignal(mux)
+	regTTL(mux, act, body)
+	regSim(mux, act, body)
 	act("/api/mode", func(r *http.Request) (string, bool) {
 		switch strings.TrimSpace(string(body(r, 16))) {
 		case "vless":

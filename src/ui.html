@@ -150,7 +150,7 @@ function trTree(root){if(!RXT||!root)return;if(root.nodeType==3){trNode(root);re
 function trAttr(e){['placeholder','title'].forEach(function(a){var v=e.getAttribute&&e.getAttribute(a);if(v){if(e['__t'+a]===v)return;var r=trs(v);if(r!==v){e.setAttribute(a,r);e['__t'+a]=r}}})}
 if(RXT){new MutationObserver(function(ms){ms.forEach(function(m){if(m.type=='childList')[].forEach.call(m.addedNodes,trTree);else if(m.type=='characterData')trNode(m.target);else trAttr(m.target)})}).observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['placeholder','title']});trTree(document.body)}
 
-function plusFs(){return [['SQM (fq_codel)','Kurangkan lag semasa muat naik besar',rSqm,'pulse'],['Kuota Data','Had data bulanan atau harian, amaran dan sekatan',rQuota,'db'],['Failover Profil','Tukar ke profil lain secara automatik bila pelayan mati',rFo,'route'],['Tukar IP WAN','Putus dan sambung semula data untuk mendapatkan IP baharu',rWan,'lang'],['Sekat Iklan','Sekat iklan dan penjejak untuk semua peranti, dengan statistik',rAd,'pwr'],['Peranti Disambung','Lihat siapa menggunakan WiFi modem dan beri nama pada peranti',rDev,'wifi'],['Kunci Band','Kunci band rangkaian (5G/4G/3G) mengikut sokongan modem',rBandlock,'stk'],['Notifikasi Telegram','Hantar amaran kuota dan WAN terus ke Telegram',rNotify,'bell'],['Jadual Kunci Band','Tukar kunci band automatik mengikut masa',rBandSched,'route']]}
+function plusFs(){return [['SQM (fq_codel)','Kurangkan lag semasa muat naik besar',rSqm,'pulse'],['Kuota Data','Had data bulanan atau harian, amaran dan sekatan',rQuota,'db'],['Failover Profil','Tukar ke profil lain secara automatik bila pelayan mati',rFo,'route'],['Tukar IP WAN','Putus dan sambung semula data untuk mendapatkan IP baharu',rWan,'lang'],['Sekat Iklan','Sekat iklan dan penjejak untuk semua peranti, dengan statistik',rAd,'pwr'],['Peranti Disambung','Lihat siapa menggunakan WiFi modem dan beri nama pada peranti',rDev,'wifi'],['Kunci Band','Kunci band rangkaian (5G/4G/3G) mengikut sokongan modem',rBandlock,'stk'],['Notifikasi Telegram','Hantar amaran kuota dan WAN terus ke Telegram',rNotify,'bell'],['Jadual Kunci Band','Tukar kunci band automatik mengikut masa',rBandSched,'route'],['Isyarat & Sel','Lihat kekuatan isyarat (RSRP/RSRQ/SINR) masa nyata',rSignal,'pulse'],['Mod TTL/NSS','Elak pengesanan perkongsian data (hotspot) oleh telco',rTtl,'pwr'],['Tukar SIM','Tukar antara slot SIM 1 dan SIM 2',rSim,'db']]}
 function plusOpen(m,i){var f=plusFs()[i];if(!f)return rPlus(m);try{history.replaceState(null,'','#plus/'+i)}catch(e){}f[2](m)}
 function rPlus(m){var fs=plusFs();try{history.replaceState(null,'','#plus')}catch(e){}
  m.innerHTML=fs.map(function(f,i){return '<div class="pf" data-i="'+i+'"><span class="ic">'+ic(f[3])+'</span><div class="sp"><div class="nm">'+(i+1)+'. '+f[0]+'</div>'+(f[1]?'<div class="mu">'+f[1]+'</div>':'')+'</div><span class="mu">›</span></div>'}).join('');
@@ -312,6 +312,51 @@ function rBandSched(m){var BK='<div class="row" style="margin-bottom:10px"><butt
    var parts=[];groups.forEach(function(g){var ns=m.querySelectorAll('input[data-rat="'+g.rat+'"]:checked'),bs=[];for(var i=0;i<ns.length;i++)bs.push(ns[i].value);if(bs.length)parts.push(g.rat+','+bs.join('/'))});
    list.push({time:t,arg:parts.join(';'),note:$('scN').value.trim()});save();$('scT').value='';$('scN').value=''};
   renderList();
+ })}
+function sigQual(key,v){v=+v;if(isNaN(v))return'';
+ if(key=='RSRP')return v>=-90?'ok':v>=-105?'wn':'bad';
+ if(key=='RSRQ')return v>=-10?'ok':v>=-15?'wn':'bad';
+ if(key=='SINR'||key=='SNR')return v>=13?'ok':v>=0?'wn':'bad';
+ if(key=='RSSI')return v>=-75?'ok':v>=-95?'wn':'bad';
+ return''}
+function rSignal(m){var BK='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div>';
+ function draw(){api('/api/signal').then(function(q){
+  if(!q.supported){m.innerHTML=BK+'<div class="c"><b style="font-size:18px">Isyarat & Sel</b><p class="mu">Ciri ini belum disokong pada modem ini.</p></div>';$('pbk').onclick=function(){clearInterval(tmr);tmr=null;rPlus(m)};return}
+  if(q.err){m.innerHTML=BK+'<div class="c"><b style="font-size:18px">Isyarat & Sel</b><p class="bad">'+esc(q.err)+'</p></div>';$('pbk').onclick=function(){clearInterval(tmr);tmr=null;rPlus(m)};return}
+  var h=BK+'<div class="c"><b style="font-size:18px">Isyarat & Sel</b><p class="mu">Dikemas kini setiap 5 saat.</p>';
+  (q.groups||[]).forEach(function(g,i){
+   h+='<div class="sec">Sel '+(i+1)+'</div>';
+   g.forEach(function(it){if(!it.value)return;var cls=sigQual(it.key,it.value);
+    h+=ovk('pulse',esc(it.full_name||it.key),esc(it.value)+(it.unit?' '+esc(it.unit):''),cls)});
+  });
+  if(!(q.groups||[]).length)h+='<p class="mu">Tiada data sel buat masa ini.</p>';
+  h+='</div>';m.innerHTML=h;$('pbk').onclick=function(){clearInterval(tmr);tmr=null;rPlus(m)};
+ }).catch(function(){})}
+ draw();clearInterval(tmr);tmr=setInterval(function(){if(V!='plus')  {clearInterval(tmr);tmr=null;return}draw()},5000)}
+function rTtl(m){var BK='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div>';
+ api('/api/ttl').then(function(q){
+  if(!q.supported){m.innerHTML=BK+'<div class="c"><b style="font-size:18px">Mod TTL/NSS</b><p class="mu">Ciri ini belum disokong pada modem ini.</p></div>';$('pbk').onclick=function(){rPlus(m)};return}
+  var h=BK+'<div class="c"><b style="font-size:18px">Mod TTL/NSS</b><p class="mu">Mod NSS: pecutan perkakasan, lalai, paling laju. Mod VPN/TTL: elak pengesanan perkongsian data (hotspot) oleh telco, mungkin sedikit lebih perlahan.</p>'+
+   '<p>Mod semasa: <b>'+(q.mode=='nss'?'NSS (lalai)':q.mode=='vpn'?'VPN/TTL':'Tidak diketahui')+'</b></p>'+
+   '<button class="p" id="ttlNss" style="width:100%;margin-top:8px">Guna Mod NSS (lalai)</button>'+
+   '<button id="ttlVpn" style="width:100%;margin-top:8px">Guna Mod VPN/TTL</button>'+
+   '<p class="mu" style="margin-top:10px">Rangkaian akan terputus seketika (~10 saat) selepas mod ditukar.</p></div>';
+  m.innerHTML=h;$('pbk').onclick=function(){rPlus(m)};
+  function go2(mode){$('ttlNss').disabled=true;$('ttlVpn').disabled=true;api('/api/ttl/set',mode).then(function(r){toast(r.msg)})}
+  $('ttlNss').onclick=function(){go2('nss')};$('ttlVpn').onclick=function(){go2('vpn')};
+ })}
+function rSim(m){var BK='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div>';
+ api('/api/sim').then(function(q){
+  if(!q.supported){m.innerHTML=BK+'<div class="c"><b style="font-size:18px">Tukar SIM</b><p class="mu">Ciri ini belum disokong pada modem ini.</p></div>';$('pbk').onclick=function(){rPlus(m)};return}
+  if(q.err){m.innerHTML=BK+'<div class="c"><b style="font-size:18px">Tukar SIM</b><p class="bad">'+esc(q.err)+'</p></div>';$('pbk').onclick=function(){rPlus(m)};return}
+  var h=BK+'<div class="c"><b style="font-size:18px">Tukar SIM</b><p class="mu">SIM semasa: <b>SIM '+esc(q.current)+'</b>. Menukar SIM mungkin memutuskan internet seketika sehingga modem mendaftar semula ke rangkaian.</p>'+
+   q.slots.map(function(s){return '<button'+(s==q.current?' disabled':'')+' class="p simBtn" data-s="'+s+'" style="width:100%;margin-top:8px">'+(s==q.current?'SIM '+s+' (sedang digunakan)':'Tukar ke SIM '+s)+'</button>'}).join('')+
+   '</div>';
+  m.innerHTML=h;$('pbk').onclick=function(){rPlus(m)};
+  [].forEach.call(m.querySelectorAll('.simBtn'),function(b){b.onclick=function(){
+   cf({i:'🔁',t:'Tukar SIM?',m:'Tukar ke SIM '+b.dataset.s+'? Internet mungkin terputus seketika.',ok:'Tukar'},function(){
+    [].forEach.call(m.querySelectorAll('.simBtn'),function(x){x.disabled=true});
+    api('/api/sim/set',b.dataset.s).then(function(r){toast(r.msg);rSim(m)})})}})
  })}
 function rLang(m){var cur=langNow();m.innerHTML='<p class="mu">Pilih bahasa paparan. Disimpan pada pelayar ini sahaja.</p>'+LANGS.map(function(l){
  return '<div class="pf'+(l.id==cur?' sel':'')+'" data-l="'+l.id+'"><span class="ic">'+ic('lang')+'</span><div class="sp"><div class="nm">'+l.n+'</div>'+(l.s?'<div class="mu my">'+l.s+'</div>':'')+'</div>'+(l.id==cur?'<b class="ok">✓</b>':'')+'</div>'}).join('');

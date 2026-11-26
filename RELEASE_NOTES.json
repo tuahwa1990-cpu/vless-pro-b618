@@ -1,14 +1,26 @@
 {
-  "version": "1.1.95",
+  "version": "1.1.96",
   "date": "2026-11-26",
   "size": 0,
-  "title": "Ciri baharu: Notifikasi Telegram + Jadual Kunci Band",
+  "title": "Ciri baharu: Isyarat & Sel, Mod TTL/NSS, Tukar SIM",
   "items": [
-    "Notifikasi Telegram (Feature Plus): hantar amaran terus ke Telegram bila kuota data hampir/habis atau WAN putus/pulih.",
-    "Jadual Kunci Band (Feature Plus): tukar kunci band secara automatik mengikut masa (cth kunci band tertentu waktu malam, buka automatik waktu siang).",
+    "Isyarat & Sel (Feature Plus): lihat kekuatan isyarat (RSRP/RSRQ/SINR/RSSI) masa nyata, dikemas kini setiap 5 saat.",
+    "Mod TTL/NSS (Feature Plus): tukar antara mod pantas (NSS) dan mod elak pengesanan perkongsian data/hotspot (VPN/TTL).",
+    "Tukar SIM (Feature Plus): tukar antara slot SIM 1 dan SIM 2 pada unit dual-SIM.",
+    "Ciri-ciri ini buat masa ini hanya tersedia pada unit AW1000 yang guna modem USB (qmodem/Quectel).",
     "Penambahbaikan dalaman. Semua fungsi sama."
   ],
   "history": [
+    {
+      "version": "1.1.95",
+      "date": "2026-11-26",
+      "title": "Ciri baharu: Notifikasi Telegram + Jadual Kunci Band",
+      "items": [
+        "Notifikasi Telegram (Feature Plus): hantar amaran terus ke Telegram bila kuota data hampir/habis atau WAN putus/pulih.",
+        "Jadual Kunci Band (Feature Plus): tukar kunci band secara automatik mengikut masa (cth kunci band tertentu waktu malam, buka automatik waktu siang).",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
     {
       "version": "1.1.94",
       "date": "2026-11-26",
