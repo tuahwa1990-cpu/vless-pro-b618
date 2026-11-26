@@ -1,15 +1,24 @@
 {
-  "version": "1.1.97",
+  "version": "1.1.98",
   "date": "2026-11-26",
   "size": 0,
-  "title": "Isyarat & Sel dan Mod TTL kini disokong pada AW1000 Ultra juga",
+  "title": "Kunci Band kini papar Isyarat Semasa terus",
   "items": [
-    "Isyarat & Sel (Feature Plus): kini turut berfungsi pada unit AW1000 Ultra.",
-    "Mod TTL (Feature Plus): kini turut berfungsi pada unit AW1000 Ultra — tetapkan nilai TTL IPv4 sendiri (lalai 64) untuk elak pengesanan perkongsian data/hotspot oleh telco.",
-    "Tukar SIM: tidak berkenaan pada AW1000 Ultra (hardware SIM tunggal).",
+    "Skrin Kunci Band kini turut papar Isyarat Semasa (RSRP/SINR/RSRQ/Jalur), dikemas kini setiap 5 saat — mudah pantau kesan kunci band tanpa tukar skrin.",
     "Penambahbaikan dalaman. Semua fungsi sama."
   ],
   "history": [
+    {
+      "version": "1.1.97",
+      "date": "2026-11-26",
+      "title": "Isyarat & Sel dan Mod TTL kini disokong pada AW1000 Ultra juga",
+      "items": [
+        "Isyarat & Sel (Feature Plus): kini turut berfungsi pada unit AW1000 Ultra.",
+        "Mod TTL (Feature Plus): kini turut berfungsi pada unit AW1000 Ultra — tetapkan nilai TTL IPv4 sendiri (lalai 64) untuk elak pengesanan perkongsian data/hotspot oleh telco.",
+        "Tukar SIM: tidak berkenaan pada AW1000 Ultra (hardware SIM tunggal).",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
     {
       "version": "1.1.96",
       "date": "2026-11-26",
