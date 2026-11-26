@@ -96,32 +96,37 @@ func regBandlock(mux *http.ServeMux, act func(string, func(*http.Request) (strin
 		if json.Unmarshal(body(r, 2048), &in) != nil {
 			return "Data tidak sah", false
 		}
-		arg := strings.TrimSpace(in.Arg)
-		if arg != "" && !bandlockArgRe.MatchString(arg) {
-			return "Format band tidak sah", false
-		}
-		if bandlockSupported() {
-			if _, err := run2(modemStatusBin, "--set_bandlock", arg); err != nil {
-				return "Gagal tetapkan kunci band: " + err.Error(), false
-			}
-			if err := bandlockSave(arg); err != nil {
-				return "Kunci band ditetapkan tetapi gagal simpan: " + err.Error(), false
-			}
-			go restartRadioAW()
-			if arg == "" {
-				return "Kunci band dibuka (automatik semula). Radio sedang dimulakan semula...", true
-			}
-			return "Kunci band ditetapkan. Radio sedang dimulakan semula (ambil masa ~6 saat)...", true
-		}
-		if cfg, err := qmodemConfigSection(); err == nil {
-			if err := qmodemApplyArg(cfg, arg); err != nil {
-				return "Gagal tetapkan kunci band: " + err.Error(), false
-			}
-			if arg == "" {
-				return "Kunci band dibuka (automatik semula).", true
-			}
-			return "Kunci band ditetapkan.", true
-		}
-		return "Ciri kunci band belum disokong pada modem ini", false
+		return bandlockApply(strings.TrimSpace(in.Arg))
 	})
+}
+
+// bandlockApply tetapkan kunci band (format "<rat>,<band>/<band>;..." atau "" untuk buka kunci),
+// dikongsi oleh handler HTTP /api/bandlock/set dan penjadual automatik (schedule.go).
+func bandlockApply(arg string) (string, bool) {
+	if arg != "" && !bandlockArgRe.MatchString(arg) {
+		return "Format band tidak sah", false
+	}
+	if bandlockSupported() {
+		if _, err := run2(modemStatusBin, "--set_bandlock", arg); err != nil {
+			return "Gagal tetapkan kunci band: " + err.Error(), false
+		}
+		if err := bandlockSave(arg); err != nil {
+			return "Kunci band ditetapkan tetapi gagal simpan: " + err.Error(), false
+		}
+		go restartRadioAW()
+		if arg == "" {
+			return "Kunci band dibuka (automatik semula). Radio sedang dimulakan semula...", true
+		}
+		return "Kunci band ditetapkan. Radio sedang dimulakan semula (ambil masa ~6 saat)...", true
+	}
+	if cfg, err := qmodemConfigSection(); err == nil {
+		if err := qmodemApplyArg(cfg, arg); err != nil {
+			return "Gagal tetapkan kunci band: " + err.Error(), false
+		}
+		if arg == "" {
+			return "Kunci band dibuka (automatik semula).", true
+		}
+		return "Kunci band ditetapkan.", true
+	}
+	return "Ciri kunci band belum disokong pada modem ini", false
 }

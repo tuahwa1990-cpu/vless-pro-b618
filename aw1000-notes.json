@@ -1,14 +1,24 @@
 {
-  "version": "1.1.94",
+  "version": "1.1.95",
   "date": "2026-11-26",
-  "size": 3162270,
-  "title": "Kunci Band kini disokong pada AW1000 (modem Quectel/qmodem)",
+  "size": 3167600,
+  "title": "Ciri baharu: Notifikasi Telegram + Jadual Kunci Band",
   "items": [
-    "Kunci Band kini berfungsi juga pada unit AW1000 yang guna modem USB sebenar (cth Quectel RG500Q, pakej qmodem) — sebelum ini dilaporkan \"tidak disokong\" pada sesetengah unit.",
-    "Tiada perubahan pada cara guna — skrin Kunci Band pada web dan apl sama seperti sebelum ini, cuma kini dikesan dan disokong pada lebih banyak unit AW1000.",
+    "Notifikasi Telegram (Feature Plus): hantar amaran terus ke Telegram bila kuota data hampir/habis atau WAN putus/pulih.",
+    "Jadual Kunci Band (Feature Plus): tukar kunci band secara automatik mengikut masa (cth kunci band tertentu waktu malam, buka automatik waktu siang).",
     "Penambahbaikan dalaman. Semua fungsi sama."
   ],
   "history": [
+    {
+      "version": "1.1.94",
+      "date": "2026-11-26",
+      "title": "Kunci Band kini disokong pada AW1000 (modem Quectel/qmodem)",
+      "items": [
+        "Kunci Band kini berfungsi juga pada unit AW1000 yang guna modem USB sebenar (cth Quectel RG500Q, pakej qmodem) — sebelum ini dilaporkan \"tidak disokong\" pada sesetengah unit.",
+        "Tiada perubahan pada cara guna — skrin Kunci Band pada web dan apl sama seperti sebelum ini, cuma kini dikesan dan disokong pada lebih banyak unit AW1000.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
     {
       "version": "1.1.93",
       "date": "2026-11-24",

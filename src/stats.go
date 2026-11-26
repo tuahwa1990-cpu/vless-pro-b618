@@ -316,6 +316,9 @@ func trackWan(up bool) {
 		}
 		b, _ := json.Marshal(drops)
 		_ = os.WriteFile(home+"/etc/wandrops.json", b, 0600)
+		notifySendWanDown()
+	} else if !wanWasUp && up {
+		notifySendWanUp()
 	}
 	wanWasUp = up
 }

@@ -524,9 +524,14 @@ func quotaBlock(on bool) {
 	qIface = ""
 }
 
+// quotaNotified: keadaan ("", "warn", "full") kali terakhir notifikasi dihantar, elak hantar
+// berulang-ulang selagi keadaan tidak berubah.
+var quotaNotified string
+
 // quotaEval: kemas keadaan sekatan mengikut penggunaan. Panggil dengan qMu dikunci.
 func quotaEval() {
-	want := quotaState() == "full" && qCfg.Cut
+	st := quotaState()
+	want := st == "full" && qCfg.Cut
 	if want != qSt.Blocked {
 		qSt.Blocked = want
 		qDirty = true
@@ -535,6 +540,15 @@ func quotaEval() {
 		quotaBlock(false) // antara muka bertukar, pasang semula
 	}
 	quotaBlock(want)
+	if st != quotaNotified {
+		switch st {
+		case "full":
+			notifyQuotaFull()
+		case "warn":
+			notifyQuotaWarn(quotaUsed() / qCfg.Limit)
+		}
+		quotaNotified = st
+	}
 }
 
 func quotaLoop() {

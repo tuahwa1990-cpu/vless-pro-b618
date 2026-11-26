@@ -122,6 +122,8 @@ func serve() {
 	go quotaLoop()
 	go adManager()
 	go rebootSched()
+	notifyInit()
+	go scheduleLoop()
 	go updLoop()
 	go sshLoop()
 	go licLoop()
@@ -666,6 +668,8 @@ func serve() {
 	regDev(mux, act, body)
 	regAd(mux, act, body)
 	regBandlock(mux, act, body)
+	regNotify(mux, act, body)
+	regSchedule(mux, act, body)
 	act("/api/mode", func(r *http.Request) (string, bool) {
 		switch strings.TrimSpace(string(body(r, 16))) {
 		case "vless":
