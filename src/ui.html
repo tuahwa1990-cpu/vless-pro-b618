@@ -273,8 +273,13 @@ function rBandlock(m){var BK='<div class="row" style="margin-bottom:10px"><butto
   if(q.err){e.innerHTML='<p class="bad">'+esc(q.err)+'</p>';return}
   if(!(q.groups||[]).length){e.innerHTML='<p class="mu">Tiada data isyarat buat masa ini.</p>';return}
   var hs='';q.groups.forEach(function(g,i){if(q.groups.length>1)hs+='<div class="sec" style="font-size:12px">Sel '+(i+1)+'</div>';
-   g.forEach(function(it){if(!it.value)return;var cls=sigQual(it.key,it.value);
-    hs+=ovk('pulse',esc(it.full_name||it.key),esc(it.value)+(it.unit?' '+esc(it.unit):''),cls)})});
+   var row='',extra='';
+   g.forEach(function(it){if(!it.value)return;var cls=sigQual(it.key,it.value),pct=sigPct(it.key,it.value);
+    if(pct!=null)row+=sigGauge(it.full_name||it.key,it.value,it.unit,pct,sigColor(cls));
+    else extra+=ovk('pulse',esc(it.full_name||it.key),esc(it.value)+(it.unit?' '+esc(it.unit):''),cls)});
+   if(row)hs+='<div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;margin:6px 0">'+row+'</div>';
+   hs+=extra
+  });
   e.innerHTML=hs||'<p class="mu">Tiada data isyarat buat masa ini.</p>'
  }).catch(function(){})}
  blDrawSig();clearInterval(tmr);tmr=setInterval(function(){if(V!='plus'){clearInterval(tmr);tmr=null;return}blDrawSig()},5000);
@@ -330,6 +335,20 @@ function sigQual(key,v){v=+v;if(isNaN(v))return'';
  if(key=='SINR'||key=='SNR')return v>=13?'ok':v>=0?'wn':'bad';
  if(key=='RSSI')return v>=-75?'ok':v>=-95?'wn':'bad';
  return''}
+function sigColor(cls){return cls=='ok'?'var(--ac)':cls=='wn'?'var(--wn)':cls=='bad'?'var(--bad)':'var(--ac2)'}
+function sigPct(key,v){v=+v;if(isNaN(v))return null;
+ var r={RSRP:[-130,-60],RSRQ:[-20,-3],SINR:[-10,30],SNR:[-10,30],RSSI:[-110,-50]}[key];
+ if(!r)return null;
+ return Math.max(0,Math.min(100,(v-r[0])/(r[1]-r[0])*100))}
+function sigGauge(label,val,unit,pct,color){
+ return '<div style="width:78px;text-align:center">'+
+  '<div style="width:68px;height:68px;border-radius:50%;background:conic-gradient('+color+' '+pct+'%,rgba(255,255,255,.12) 0);display:flex;align-items:center;justify-content:center;margin:0 auto">'+
+   '<div style="width:54px;height:54px;border-radius:50%;background:var(--cd);display:flex;flex-direction:column;align-items:center;justify-content:center">'+
+    '<b style="font-size:13px;color:'+color+'">'+esc(val)+'</b>'+
+    (unit?'<span style="font-size:8.5px;color:var(--mu)">'+esc(unit)+'</span>':'')+
+   '</div></div>'+
+  '<div style="font-size:10.5px;color:var(--mu);margin-top:4px;white-space:nowrap">'+esc(label)+'</div>'+
+ '</div>'}
 function rSignal(m){var BK='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div>';
  function draw(){api('/api/signal').then(function(q){
   if(!q.supported){m.innerHTML=BK+'<div class="c"><b style="font-size:18px">Isyarat & Sel</b><p class="mu">Ciri ini belum disokong pada modem ini.</p></div>';$('pbk').onclick=function(){clearInterval(tmr);tmr=null;rPlus(m)};return}
@@ -337,8 +356,12 @@ function rSignal(m){var BK='<div class="row" style="margin-bottom:10px"><button 
   var h=BK+'<div class="c"><b style="font-size:18px">Isyarat & Sel</b><p class="mu">Dikemas kini setiap 5 saat.</p>';
   (q.groups||[]).forEach(function(g,i){
    h+='<div class="sec">Sel '+(i+1)+'</div>';
-   g.forEach(function(it){if(!it.value)return;var cls=sigQual(it.key,it.value);
-    h+=ovk('pulse',esc(it.full_name||it.key),esc(it.value)+(it.unit?' '+esc(it.unit):''),cls)});
+   var row='',extra='';
+   g.forEach(function(it){if(!it.value)return;var cls=sigQual(it.key,it.value),pct=sigPct(it.key,it.value);
+    if(pct!=null)row+=sigGauge(it.full_name||it.key,it.value,it.unit,pct,sigColor(cls));
+    else extra+=ovk('pulse',esc(it.full_name||it.key),esc(it.value)+(it.unit?' '+esc(it.unit):''),cls)});
+   if(row)h+='<div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;margin:6px 0">'+row+'</div>';
+   h+=extra
   });
   if(!(q.groups||[]).length)h+='<p class="mu">Tiada data sel buat masa ini.</p>';
   h+='</div>';m.innerHTML=h;$('pbk').onclick=function(){clearInterval(tmr);tmr=null;rPlus(m)};
