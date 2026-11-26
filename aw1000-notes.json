@@ -1,15 +1,25 @@
 {
-  "version": "1.1.93",
-  "date": "2026-11-24",
-  "size": 3157957,
-  "title": "Ciri baharu: Kunci Band (AW1000 dan AW1000 Ultra)",
+  "version": "1.1.94",
+  "date": "2026-11-26",
+  "size": 3162270,
+  "title": "Kunci Band kini disokong pada AW1000 (modem Quectel/qmodem)",
   "items": [
-    "Ciri baharu Kunci Band (Feature Plus): kunci rangkaian pada band 5G, 4G atau 3G tertentu, ikut band yang disokong modem anda sendiri.",
-    "Buka Kunci (Automatik) tersedia untuk kembali kepada pemilihan band automatik bila-bila masa.",
-    "Ciri ini tersedia pada AW1000 dan AW1000 Ultra sahaja buat masa ini.",
+    "Kunci Band kini berfungsi juga pada unit AW1000 yang guna modem USB sebenar (cth Quectel RG500Q, pakej qmodem) — sebelum ini dilaporkan \"tidak disokong\" pada sesetengah unit.",
+    "Tiada perubahan pada cara guna — skrin Kunci Band pada web dan apl sama seperti sebelum ini, cuma kini dikesan dan disokong pada lebih banyak unit AW1000.",
     "Penambahbaikan dalaman. Semua fungsi sama."
   ],
   "history": [
+    {
+      "version": "1.1.93",
+      "date": "2026-11-24",
+      "title": "Ciri baharu: Kunci Band (AW1000 dan AW1000 Ultra)",
+      "items": [
+        "Ciri baharu Kunci Band (Feature Plus): kunci rangkaian pada band 5G, 4G atau 3G tertentu, ikut band yang disokong modem anda sendiri.",
+        "Buka Kunci (Automatik) tersedia untuk kembali kepada pemilihan band automatik bila-bila masa.",
+        "Ciri ini tersedia pada AW1000 dan AW1000 Ultra sahaja buat masa ini.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
     {
       "version": "1.1.92",
       "date": "2026-11-24",

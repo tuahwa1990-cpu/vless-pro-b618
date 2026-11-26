@@ -69,21 +69,27 @@ func restartRadioAW() {
 
 func regBandlock(mux *http.ServeMux, act func(string, func(*http.Request) (string, bool)), body func(*http.Request, int64) []byte) {
 	mux.HandleFunc("/api/bandlock", func(w http.ResponseWriter, r *http.Request) {
-		if !bandlockSupported() {
-			jr(w, map[string]any{"supported": false})
+		if bandlockSupported() {
+			raw, err := bandlockGet()
+			if err != nil {
+				jr(w, map[string]any{"supported": true, "err": "Gagal baca status band daripada modem: " + err.Error()})
+				return
+			}
+			jr(w, map[string]any{"supported": true, "raw": raw, "stored": bandlockStored()})
 			return
 		}
-		raw, err := bandlockGet()
-		if err != nil {
-			jr(w, map[string]any{"supported": true, "err": "Gagal baca status band daripada modem: " + err.Error()})
+		if cfg, err := qmodemConfigSection(); err == nil {
+			qr, err := qmodemGetLockband(cfg)
+			if err != nil {
+				jr(w, map[string]any{"supported": true, "err": "Gagal baca status band daripada modem: " + err.Error()})
+				return
+			}
+			jr(w, map[string]any{"supported": true, "raw": qmodemBuildRaw(qr), "stored": ""})
 			return
 		}
-		jr(w, map[string]any{"supported": true, "raw": raw, "stored": bandlockStored()})
+		jr(w, map[string]any{"supported": false})
 	})
 	act("/api/bandlock/set", func(r *http.Request) (string, bool) {
-		if !bandlockSupported() {
-			return "Ciri kunci band belum disokong pada modem ini", false
-		}
 		var in struct {
 			Arg string `json:"arg"`
 		}
@@ -94,16 +100,28 @@ func regBandlock(mux *http.ServeMux, act func(string, func(*http.Request) (strin
 		if arg != "" && !bandlockArgRe.MatchString(arg) {
 			return "Format band tidak sah", false
 		}
-		if _, err := run2(modemStatusBin, "--set_bandlock", arg); err != nil {
-			return "Gagal tetapkan kunci band: " + err.Error(), false
+		if bandlockSupported() {
+			if _, err := run2(modemStatusBin, "--set_bandlock", arg); err != nil {
+				return "Gagal tetapkan kunci band: " + err.Error(), false
+			}
+			if err := bandlockSave(arg); err != nil {
+				return "Kunci band ditetapkan tetapi gagal simpan: " + err.Error(), false
+			}
+			go restartRadioAW()
+			if arg == "" {
+				return "Kunci band dibuka (automatik semula). Radio sedang dimulakan semula...", true
+			}
+			return "Kunci band ditetapkan. Radio sedang dimulakan semula (ambil masa ~6 saat)...", true
 		}
-		if err := bandlockSave(arg); err != nil {
-			return "Kunci band ditetapkan tetapi gagal simpan: " + err.Error(), false
+		if cfg, err := qmodemConfigSection(); err == nil {
+			if err := qmodemApplyArg(cfg, arg); err != nil {
+				return "Gagal tetapkan kunci band: " + err.Error(), false
+			}
+			if arg == "" {
+				return "Kunci band dibuka (automatik semula).", true
+			}
+			return "Kunci band ditetapkan.", true
 		}
-		go restartRadioAW()
-		if arg == "" {
-			return "Kunci band dibuka (automatik semula). Radio sedang dimulakan semula...", true
-		}
-		return "Kunci band ditetapkan. Radio sedang dimulakan semula (ambil masa ~6 saat)...", true
+		return "Ciri kunci band belum disokong pada modem ini", false
 	})
 }
