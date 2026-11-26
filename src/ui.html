@@ -282,7 +282,7 @@ function rBandlock(m){var BK='<div class="row" style="margin-bottom:10px"><butto
   });
   e.innerHTML=hs||'<p class="mu">Tiada data isyarat buat masa ini.</p>'
  }).catch(function(){})}
- blDrawSig();clearInterval(tmr);tmr=setInterval(function(){if(V!='plus'){clearInterval(tmr);tmr=null;return}blDrawSig()},5000);
+ blDrawSig();clearInterval(tmr);tmr=setInterval(function(){if(V!='plus'){clearInterval(tmr);tmr=null;return}blDrawSig()},2000);
  $('pbk').onclick=function(){clearInterval(tmr);tmr=null;rPlus(m)};
  function blArg(){var parts=[];groups.forEach(function(g){var ns=m.querySelectorAll('input[data-rat="'+g.rat+'"]:checked'),bs=[];for(var i=0;i<ns.length;i++)bs.push(ns[i].value);if(bs.length)parts.push(g.rat+','+bs.join('/'))});return parts.join(';')}
  function blBusy(b){$('bla').disabled=b;$('blu').disabled=b}
@@ -353,7 +353,7 @@ function rSignal(m){var BK='<div class="row" style="margin-bottom:10px"><button 
  function draw(){api('/api/signal').then(function(q){
   if(!q.supported){m.innerHTML=BK+'<div class="c"><b style="font-size:18px">Isyarat & Sel</b><p class="mu">Ciri ini belum disokong pada modem ini.</p></div>';$('pbk').onclick=function(){clearInterval(tmr);tmr=null;rPlus(m)};return}
   if(q.err){m.innerHTML=BK+'<div class="c"><b style="font-size:18px">Isyarat & Sel</b><p class="bad">'+esc(q.err)+'</p></div>';$('pbk').onclick=function(){clearInterval(tmr);tmr=null;rPlus(m)};return}
-  var h=BK+'<div class="c"><b style="font-size:18px">Isyarat & Sel</b><p class="mu">Dikemas kini setiap 5 saat.</p>';
+  var h=BK+'<div class="c"><b style="font-size:18px">Isyarat & Sel</b><p class="mu">Dikemas kini setiap 2 saat.</p>';
   (q.groups||[]).forEach(function(g,i){
    h+='<div class="sec">Sel '+(i+1)+'</div>';
    var row='',extra='';
@@ -366,7 +366,7 @@ function rSignal(m){var BK='<div class="row" style="margin-bottom:10px"><button 
   if(!(q.groups||[]).length)h+='<p class="mu">Tiada data sel buat masa ini.</p>';
   h+='</div>';m.innerHTML=h;$('pbk').onclick=function(){clearInterval(tmr);tmr=null;rPlus(m)};
  }).catch(function(){})}
- draw();clearInterval(tmr);tmr=setInterval(function(){if(V!='plus')  {clearInterval(tmr);tmr=null;return}draw()},5000)}
+ draw();clearInterval(tmr);tmr=setInterval(function(){if(V!='plus')  {clearInterval(tmr);tmr=null;return}draw()},2000)}
 function rTtl(m){var BK='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div>';
  api('/api/ttl').then(function(q){
   if(!q.supported){m.innerHTML=BK+'<div class="c"><b style="font-size:18px">Mod TTL/NSS</b><p class="mu">Ciri ini belum disokong pada modem ini.</p></div>';$('pbk').onclick=function(){rPlus(m)};return}

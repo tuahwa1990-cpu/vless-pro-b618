@@ -1,81 +1,100 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
+	"os/exec"
+	"strings"
+	"time"
 )
 
-// Isyarat & Sel untuk AW1000 Ultra (JunWRT): guna daemon vendor sedia ada /usr/bin/junwrt-signal
-// yang mengambil sampel isyarat secara berkala dan menyimpannya dalam ingatan (bukan kami yang
-// polling AT command sendiri). Disahkan langsung pada peranti:
-//   junwrt-signal status            -> {"enabled":0|1,"running":1,"interval":120,"now":<unix>,
-//                                        "samples":[[ts,rsrp,sinr,rsrq,band], ...]}
-//   junwrt-signal save enabled=0|1  -> hidup/matikan pengambilan sampel.
-// "enabled" perlu 1 sebelum "samples" diisi (satu sampel setiap ~"interval" saat). Kami aktifkan
-// secara automatik pada capaian pertama supaya pengguna tak perlu buat apa-apa.
-
-const junwrtSignalBin = "/usr/bin/junwrt-signal"
+// Isyarat & Sel untuk AW1000 Ultra (JunWRT).
+//
+// Mulanya kami guna /usr/bin/junwrt-signal (daemon vendor yang simpan sejarah dalam ingatan),
+// tetapi disahkan langsung pada peranti (baca kod skrip itu sendiri) ia hanya ambil SATU sampel
+// setiap 120 saat (INTERVAL=120, hardcode, tiada cara ubah). Itu punca paparan nampak "beku" bila
+// pengguna gerakkan modem untuk cari isyarat terbaik.
+//
+// junwrt-signal sendiri dapat data dengan memanggil /usr/share/3ginfo-lite/3ginfo.sh json — skrip
+// LIVE yang sama digunakan laman "Overview" asal firmware. Disahkan live (bukan cache): 2 panggilan
+// berjarak 3 saat memberi nilai berbeza (mac_rate, prssi, s1rsrp, s1rsrq semua berubah), ambil masa
+// ~1.5 saat setiap panggilan. Jadi kami panggil skrip ini TERUS setiap kali /api/signal diminta,
+// supaya bacaan sentiasa segar dan sesuai untuk pantau masa nyata semasa gerakkan modem.
+const ginfoLiteScript = "/usr/share/3ginfo-lite/3ginfo.sh"
 
 func junwrtSignalSupported() bool {
-	st, err := os.Stat(junwrtSignalBin)
+	st, err := os.Stat(ginfoLiteScript)
 	return err == nil && !st.IsDir()
 }
 
-type junwrtSignalStatus struct {
-	Enabled  int             `json:"enabled"`
-	Running  int             `json:"running"`
-	Interval int             `json:"interval"`
-	Now      int64           `json:"now"`
-	Samples  [][]interface{} `json:"samples"`
+func ginfoLiteJSON() (map[string]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, ginfoLiteScript, "json").CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("gagal jalankan 3ginfo.sh: %w", err)
+	}
+	s := string(out)
+	i := strings.Index(s, "{")
+	j := strings.LastIndex(s, "}")
+	if i < 0 || j < i {
+		return nil, fmt.Errorf("respons tidak dijangka daripada 3ginfo.sh")
+	}
+	var m map[string]string
+	if err := json.Unmarshal([]byte(s[i:j+1]), &m); err != nil {
+		return nil, fmt.Errorf("gagal baca respons 3ginfo.sh: %w", err)
+	}
+	return m, nil
 }
 
-func junwrtSignalRead() (*junwrtSignalStatus, error) {
-	out, err := run2(junwrtSignalBin, "status")
-	if err != nil {
-		return nil, err
+// ginfoNum ambil nombor pertama sahaja daripada nilai macam "-104", "-75 dBm" atau
+// "-75 dBm | -74 dBm | -75 dBm | -78 dBm" (anggap "-" atau kosong sebagai tiada data).
+func ginfoNum(v string) string {
+	v = strings.TrimSpace(v)
+	if v == "" || v == "-" {
+		return ""
 	}
-	var s junwrtSignalStatus
-	if err := json.Unmarshal([]byte(out), &s); err != nil {
-		return nil, err
+	if sp := strings.IndexAny(v, " |"); sp >= 0 {
+		v = strings.TrimSpace(v[:sp])
 	}
-	return &s, nil
+	return v
+}
+
+// ginfoBand ambil label jalur sahaja, cth "n78 (3500 MHz)" -> "n78".
+func ginfoBand(v string) string {
+	v = strings.TrimSpace(v)
+	if v == "" || v == "-" {
+		return ""
+	}
+	if sp := strings.IndexByte(v, ' '); sp >= 0 {
+		v = v[:sp]
+	}
+	return v
 }
 
 // junwrtSignalGroups memulangkan bacaan isyarat terkini dalam bentuk [][]cellInfoItem yang SAMA
-// seperti laluan qmodem, supaya ui.html (rSignal) tidak perlu diubah langsung.
+// seperti laluan qmodem, supaya ui.html (rSignal/rBandlock) dan apl Android tidak perlu diubah.
+// Sel pertama ialah band utama (Primary Component Carrier), sel kedua (jika ada carrier agregasi
+// aktif) ialah band sekunder.
 func junwrtSignalGroups() ([][]cellInfoItem, error) {
-	s, err := junwrtSignalRead()
+	m, err := ginfoLiteJSON()
 	if err != nil {
 		return nil, err
 	}
-	if s.Enabled == 0 {
-		// Aktifkan pengambilan sampel secara automatik; sampel pertama akan ada lepas ~interval saat.
-		_, _ = run2(junwrtSignalBin, "save", "enabled=1")
-	}
-	if len(s.Samples) == 0 {
-		return [][]cellInfoItem{}, nil
-	}
-	last := s.Samples[len(s.Samples)-1]
-	get := func(i int) string {
-		if i >= len(last) || last[i] == nil {
-			return ""
-		}
-		switch v := last[i].(type) {
-		case float64:
-			return strconv.FormatFloat(v, 'f', -1, 64)
-		case string:
-			return v
-		default:
-			return fmt.Sprint(v)
+	group := func(rsrp, sinr, rsrq, rssi, band string) []cellInfoItem {
+		return []cellInfoItem{
+			{Key: "RSRP", Value: ginfoNum(m[rsrp]), FullName: "RSRP", Unit: "dBm"},
+			{Key: "SINR", Value: ginfoNum(m[sinr]), FullName: "SINR", Unit: "dB"},
+			{Key: "RSRQ", Value: ginfoNum(m[rsrq]), FullName: "RSRQ", Unit: "dB"},
+			{Key: "RSSI", Value: ginfoNum(m[rssi]), FullName: "RSSI", Unit: "dBm"},
+			{Key: "BAND", Value: ginfoBand(m[band]), FullName: "Jalur/Rangkaian"},
 		}
 	}
-	group := []cellInfoItem{
-		{Key: "RSRP", Value: get(1), FullName: "RSRP", Unit: "dBm"},
-		{Key: "SINR", Value: get(2), FullName: "SINR", Unit: "dB"},
-		{Key: "RSRQ", Value: get(3), FullName: "RSRQ", Unit: "dB"},
-		{Key: "BAND", Value: get(4), FullName: "Jalur/Rangkaian"},
+	groups := [][]cellInfoItem{group("rsrp", "sinr", "rsrq", "rssi", "pband")}
+	if ginfoBand(m["s1band"]) != "" {
+		groups = append(groups, group("s1rsrp", "s1sinr", "s1rsrq", "s1rssi", "s1band"))
 	}
-	return [][]cellInfoItem{group}, nil
+	return groups, nil
 }

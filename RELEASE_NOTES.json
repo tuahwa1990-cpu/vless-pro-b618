@@ -1,13 +1,23 @@
 {
-  "version": "1.1.99",
+  "version": "1.2.00",
   "date": "2026-11-26",
   "size": 0,
-  "title": "Paparan isyarat kini gaya gauge bulat",
+  "title": "Isyarat Semasa kini betul-betul masa nyata",
   "items": [
-    "Isyarat Semasa (dalam Kunci Band dan skrin Isyarat & Sel) kini dipaparkan sebagai gauge bulat berwarna, lebih mudah dibaca sekali pandang.",
+    "Betulkan isu Isyarat Semasa (AW1000 Ultra) yang nampak lambat/beku — kini baca terus daripada modem setiap kali, bukan simpanan lama 2 minit, jadi sesuai dipantau sambil gerakkan modem cari lokasi terbaik.",
+    "Dikemas kini setiap 2 saat (dahulu 5 saat) untuk paparan lebih responsif.",
     "Penambahbaikan dalaman. Semua fungsi sama."
   ],
   "history": [
+    {
+      "version": "1.1.99",
+      "date": "2026-11-26",
+      "title": "Paparan isyarat kini gaya gauge bulat",
+      "items": [
+        "Isyarat Semasa (dalam Kunci Band dan skrin Isyarat & Sel) kini dipaparkan sebagai gauge bulat berwarna, lebih mudah dibaca sekali pandang.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
     {
       "version": "1.1.98",
       "date": "2026-11-26",
