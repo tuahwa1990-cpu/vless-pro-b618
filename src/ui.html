@@ -336,6 +336,18 @@ function rSignal(m){var BK='<div class="row" style="margin-bottom:10px"><button 
 function rTtl(m){var BK='<div class="row" style="margin-bottom:10px"><button id="pbk">‹ Kembali</button></div>';
  api('/api/ttl').then(function(q){
   if(!q.supported){m.innerHTML=BK+'<div class="c"><b style="font-size:18px">Mod TTL/NSS</b><p class="mu">Ciri ini belum disokong pada modem ini.</p></div>';$('pbk').onclick=function(){rPlus(m)};return}
+  if(q.kind=='value'){
+   var h2=BK+'<div class="c"><b style="font-size:18px">Mod TTL</b><p class="mu">Ubah nilai TTL paket IPv4 untuk elak pengesanan perkongsian data (hotspot) oleh telco. Nilai lalai telefon/PC ialah 64 — telco boleh kesan peranti lain disebalik modem bila TTL tak ditukar.</p>'+
+    '<p>Status semasa: <b>'+(q.enabled?('Aktif, TTL = '+q.ttl):'Tidak aktif (guna lalai)')+'</b></p>'+
+    '<input id="ttlVal" type="number" min="1" max="255" value="'+(q.ttl||64)+'" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid var(--garis,#333);background:transparent;color:inherit">'+
+    '<button class="p" id="ttlApply" style="width:100%;margin-top:8px">Aktifkan & Guna Nilai Ini</button>'+
+    '<button id="ttlOff" style="width:100%;margin-top:8px">Matikan (kembali kepada lalai)</button>'+
+    '<p class="mu" style="margin-top:10px">Perubahan berkuat kuasa serta-merta, tiada gangguan rangkaian.</p></div>';
+   m.innerHTML=h2;$('pbk').onclick=function(){rPlus(m)};
+   $('ttlApply').onclick=function(){api('/api/ttl/set',$('ttlVal').value).then(function(r){toast(r.msg);rTtl(m)})};
+   $('ttlOff').onclick=function(){api('/api/ttl/set','off').then(function(r){toast(r.msg);rTtl(m)})};
+   return;
+  }
   var h=BK+'<div class="c"><b style="font-size:18px">Mod TTL/NSS</b><p class="mu">Mod NSS: pecutan perkakasan, lalai, paling laju. Mod VPN/TTL: elak pengesanan perkongsian data (hotspot) oleh telco, mungkin sedikit lebih perlahan.</p>'+
    '<p>Mod semasa: <b>'+(q.mode=='nss'?'NSS (lalai)':q.mode=='vpn'?'VPN/TTL':'Tidak diketahui')+'</b></p>'+
    '<button class="p" id="ttlNss" style="width:100%;margin-top:8px">Guna Mod NSS (lalai)</button>'+

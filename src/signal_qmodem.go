@@ -55,16 +55,24 @@ func qmodemCellGroups(cfg string) ([][]cellInfoItem, error) {
 
 func regSignal(mux *http.ServeMux) {
 	mux.HandleFunc("/api/signal", func(w http.ResponseWriter, r *http.Request) {
-		cfg, err := qmodemConfigSection()
-		if err != nil {
-			jr(w, map[string]any{"supported": false})
+		if cfg, err := qmodemConfigSection(); err == nil {
+			groups, err := qmodemCellGroups(cfg)
+			if err != nil {
+				jr(w, map[string]any{"supported": true, "err": "Gagal baca maklumat isyarat: " + err.Error()})
+				return
+			}
+			jr(w, map[string]any{"supported": true, "groups": groups})
 			return
 		}
-		groups, err := qmodemCellGroups(cfg)
-		if err != nil {
-			jr(w, map[string]any{"supported": true, "err": "Gagal baca maklumat isyarat: " + err.Error()})
+		if junwrtSignalSupported() {
+			groups, err := junwrtSignalGroups()
+			if err != nil {
+				jr(w, map[string]any{"supported": true, "err": "Gagal baca maklumat isyarat: " + err.Error()})
+				return
+			}
+			jr(w, map[string]any{"supported": true, "groups": groups})
 			return
 		}
-		jr(w, map[string]any{"supported": true, "groups": groups})
+		jr(w, map[string]any{"supported": false})
 	})
 }

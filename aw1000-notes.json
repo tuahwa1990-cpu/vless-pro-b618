@@ -1,16 +1,27 @@
 {
-  "version": "1.1.96",
+  "version": "1.1.97",
   "date": "2026-11-26",
-  "size": 3175947,
-  "title": "Ciri baharu: Isyarat & Sel, Mod TTL/NSS, Tukar SIM",
+  "size": 3177284,
+  "title": "Isyarat & Sel dan Mod TTL kini disokong pada AW1000 Ultra juga",
   "items": [
-    "Isyarat & Sel (Feature Plus): lihat kekuatan isyarat (RSRP/RSRQ/SINR/RSSI) masa nyata, dikemas kini setiap 5 saat.",
-    "Mod TTL/NSS (Feature Plus): tukar antara mod pantas (NSS) dan mod elak pengesanan perkongsian data/hotspot (VPN/TTL).",
-    "Tukar SIM (Feature Plus): tukar antara slot SIM 1 dan SIM 2 pada unit dual-SIM.",
-    "Ciri-ciri ini buat masa ini hanya tersedia pada unit AW1000 yang guna modem USB (qmodem/Quectel).",
+    "Isyarat & Sel (Feature Plus): kini turut berfungsi pada unit AW1000 Ultra.",
+    "Mod TTL (Feature Plus): kini turut berfungsi pada unit AW1000 Ultra — tetapkan nilai TTL IPv4 sendiri (lalai 64) untuk elak pengesanan perkongsian data/hotspot oleh telco.",
+    "Tukar SIM: tidak berkenaan pada AW1000 Ultra (hardware SIM tunggal).",
     "Penambahbaikan dalaman. Semua fungsi sama."
   ],
   "history": [
+    {
+      "version": "1.1.96",
+      "date": "2026-11-26",
+      "title": "Ciri baharu: Isyarat & Sel, Mod TTL/NSS, Tukar SIM",
+      "items": [
+        "Isyarat & Sel (Feature Plus): lihat kekuatan isyarat (RSRP/RSRQ/SINR/RSSI) masa nyata, dikemas kini setiap 5 saat.",
+        "Mod TTL/NSS (Feature Plus): tukar antara mod pantas (NSS) dan mod elak pengesanan perkongsian data/hotspot (VPN/TTL).",
+        "Tukar SIM (Feature Plus): tukar antara slot SIM 1 dan SIM 2 pada unit dual-SIM.",
+        "Ciri-ciri ini buat masa ini hanya tersedia pada unit AW1000 yang guna modem USB (qmodem/Quectel).",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
     {
       "version": "1.1.95",
       "date": "2026-11-26",
