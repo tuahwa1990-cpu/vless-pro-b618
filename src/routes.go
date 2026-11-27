@@ -171,7 +171,7 @@ func geoDownload() {
 	set := func(m string) { geoSt.Lock(); geoSt.msg = m; geoSt.Unlock() }
 	defer func() { geoSt.Lock(); geoSt.run = false; geoSt.Unlock() }()
 	_ = os.MkdirAll(home+"/geo", 0700)
-	cl := &http.Client{Timeout: 5 * time.Minute, Transport: &http.Transport{DialContext: dialIPv4}}
+	cl := netClient(5 * time.Minute)
 	for _, k := range []string{"geoip", "geosite"} {
 		set("Memuat turun " + k + "...")
 		resp, err := cl.Get(geoSrc[k])

@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"crypto/sha256"
-	"crypto/tls"
-	"crypto/x509"
 	_ "embed"
 	"encoding/hex"
 	"errors"
@@ -52,12 +50,7 @@ func updBase() string {
 }
 
 func httpc(t time.Duration) *http.Client {
-	pool, _ := x509.SystemCertPool()
-	if pool == nil {
-		pool = x509.NewCertPool()
-	}
-	pool.AppendCertsFromPEM(caPEM)
-	return &http.Client{Timeout: t, Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool}, DialContext: dialIPv4}}
+	return netClient(t)
 }
 
 func fetch(u string, max int64, t time.Duration) ([]byte, error) {

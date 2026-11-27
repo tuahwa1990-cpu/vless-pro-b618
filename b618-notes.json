@@ -1,14 +1,24 @@
 {
-  "version": "1.2.08",
-  "date": "2026-11-27",
-  "size": 3328324,
-  "title": "Pembetulan: muat turun senarai Sekat Iklan gagal pada sesetengah modem",
+  "version": "1.2.09",
+  "date": "2026-11-28",
+  "size": 3329032,
+  "title": "Pembetulan lanjut: muat turun senarai Sekat Iklan (sijil keselamatan)",
   "items": [
-    "Pembetulan: Kemas Kini Senarai (Sekat Iklan) gagal senyap pada sesetengah unit kerana modem cuba sambung menggunakan IPv6 walaupun rangkaian modem itu tiada laluan IPv6 — kini dipaksa guna IPv4 supaya muat turun sentiasa berjaya.",
-    "Pembetulan yang sama turut dikenakan pada semua semakan dalam talian lain (kemas kini, langganan, IP WAN, dll.) supaya tidak terjejas isu serupa.",
+    "Punca sebenar dijumpai dan dibetulkan: pada sesetengah unit, muat turun gagal bukan kerana rangkaian tetapi kerana peranti tiada bundle sijil keselamatan (CA) yang lengkap — kini guna bundle terbina-dalam sebagai sandaran supaya sambungan HTTPS keluar sentiasa berjaya disahkan.",
+    "Pembetulan ini dikenakan bersama pembetulan IPv4 (v1.2.08) pada semua semakan dalam talian (Sekat Iklan, geoip/geosite, kemas kini, langganan, notifikasi, IP WAN).",
     "Penambahbaikan dalaman. Semua fungsi sama."
   ],
   "history": [
+    {
+      "version": "1.2.08",
+      "date": "2026-11-27",
+      "title": "Pembetulan: muat turun senarai Sekat Iklan gagal pada sesetengah modem",
+      "items": [
+        "Pembetulan: Kemas Kini Senarai (Sekat Iklan) gagal senyap pada sesetengah unit kerana modem cuba sambung menggunakan IPv6 walaupun rangkaian modem itu tiada laluan IPv6 — kini dipaksa guna IPv4 supaya muat turun sentiasa berjaya.",
+        "Pembetulan yang sama turut dikenakan pada semua semakan dalam talian lain (kemas kini, langganan, IP WAN, dll.) supaya tidak terjejas isu serupa.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
     {
       "version": "1.2.07",
       "date": "2026-11-27",

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -52,7 +51,7 @@ func decodeSub(body string) []string {
 }
 
 func refreshSub(s *Sub) error {
-	cl := &http.Client{Timeout: 25 * time.Second, Transport: &http.Transport{DialContext: dialIPv4}}
+	cl := netClient(25 * time.Second)
 	r, err := cl.Get(s.URL)
 	if err != nil {
 		return err
