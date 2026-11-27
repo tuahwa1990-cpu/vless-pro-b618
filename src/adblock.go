@@ -55,9 +55,10 @@ type adSrc struct {
 var adSources = []adSrc{
 	{"adguard", "AdGuard DNS filter", "https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt"},
 	{"stevenblack", "StevenBlack (iklan dan penjejak)", "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"},
+	{"hagezi", "Hagezi Pro (paling agresif, disyorkan)", "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt"},
 }
 
-func defAd() AdCfg { return AdCfg{Lists: []string{"adguard", "stevenblack"}} }
+func defAd() AdCfg { return AdCfg{Lists: []string{"adguard", "stevenblack", "hagezi"}} }
 
 func loadAd() AdCfg {
 	c := defAd()
