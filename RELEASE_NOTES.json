@@ -1,14 +1,24 @@
 {
-  "version": "1.2.01",
-  "date": "2026-11-26",
+  "version": "1.2.02",
+  "date": "2026-11-27",
   "size": 0,
-  "title": "Isyarat Semasa kini sekelip mata (AW1000 Ultra)",
+  "title": "Nilai TTL tersendiri (AW1000)",
   "items": [
-    "Baca terus daripada binari modem (bukan skrip yang ambil ~2 saat kumpul maklumat lain yang tak berkaitan) — bacaan isyarat sekarang siap dalam masa kurang 1 saat.",
-    "Dikemas kini setiap saat (dahulu 2 saat) untuk pantau paling responsif semasa gerakkan modem.",
+    "Mod TTL/NSS (AW1000) kini ada medan nilai TTL tersendiri — boleh tetapkan sebarang nombor 1-255, bukan sekadar lalai 64.",
+    "Nilai dikenakan pada semua trafik serta-merta, berasingan daripada togol mod NSS/VPN sedia ada.",
     "Penambahbaikan dalaman. Semua fungsi sama."
   ],
   "history": [
+    {
+      "version": "1.2.01",
+      "date": "2026-11-26",
+      "title": "Isyarat Semasa kini sekelip mata (AW1000 Ultra)",
+      "items": [
+        "Baca terus daripada binari modem (bukan skrip yang ambil ~2 saat kumpul maklumat lain yang tak berkaitan) — bacaan isyarat sekarang siap dalam masa kurang 1 saat.",
+        "Dikemas kini setiap saat (dahulu 2 saat) untuk pantau paling responsif semasa gerakkan modem.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
     {
       "version": "1.2.00",
       "date": "2026-11-26",

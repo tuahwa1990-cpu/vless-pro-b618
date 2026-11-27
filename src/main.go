@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-const version = "1.2.01"
+const version = "1.2.02"
 
 // edisiNama ditanam semasa binaan: -ldflags "-X 'main.edisiNama=armv7 (B618-65D)'". Kosong = papar seni bina sahaja.
 var edisiNama = ""
