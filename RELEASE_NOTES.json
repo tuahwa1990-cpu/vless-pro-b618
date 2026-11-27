@@ -1,14 +1,24 @@
 {
-  "version": "1.2.05",
+  "version": "1.2.06",
   "date": "2026-11-27",
   "size": 0,
-  "title": "Sekat Iklan kini benar-benar berfungsi pada semua peranti",
+  "title": "Sekat Iklan kini disokong pada peranti RAM rendah (contoh B618)",
   "items": [
-    "Betulkan Sekat Iklan supaya benar-benar menyekat pada peranti yang tidak menyokong pengalihan rangkaian tertentu — sebelum ini suis kelihatan aktif tetapi tiada domain disekat pada sesetengah unit.",
-    "Tiada tetapan perlu ditukar — pembetulan berjalan automatik selepas kemas kini.",
+    "Tambah senarai 'Hagezi Light' (ringan) untuk peranti dengan RAM terhad, supaya Sekat Iklan boleh diaktifkan dengan selamat tanpa risiko peranti terlalu sesak memori.",
+    "Peranti RAM rendah kini akan nampak amaran yang lebih jelas dan hanya dibenarkan guna senarai ringan ini.",
     "Penambahbaikan dalaman. Semua fungsi sama."
   ],
   "history": [
+    {
+      "version": "1.2.05",
+      "date": "2026-11-27",
+      "title": "Sekat Iklan kini benar-benar berfungsi pada semua peranti",
+      "items": [
+        "Betulkan Sekat Iklan supaya benar-benar menyekat pada peranti yang tidak menyokong pengalihan rangkaian tertentu — sebelum ini suis kelihatan aktif tetapi tiada domain disekat pada sesetengah unit.",
+        "Tiada tetapan perlu ditukar — pembetulan berjalan automatik selepas kemas kini.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
     {
       "version": "1.2.04",
       "date": "2026-11-27",

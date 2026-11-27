@@ -56,9 +56,51 @@ var adSources = []adSrc{
 	{"adguard", "AdGuard DNS filter", "https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt"},
 	{"stevenblack", "StevenBlack (iklan dan penjejak)", "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"},
 	{"hagezi", "Hagezi Pro (paling agresif, disyorkan)", "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt"},
+	{"hagezi-light", "Hagezi Light (ringan, untuk RAM terhad)", "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/light.txt"},
 }
 
-func defAd() AdCfg { return AdCfg{Lists: []string{"adguard", "stevenblack", "hagezi"}} }
+// lightLists: senarai yang selamat dimuatkan pada peranti RAM rendah
+// (contohnya Huawei B618, ~128MB RAM jumlah). Senarai lain (adguard,
+// stevenblack, hagezi-pro) memerlukan ramFullMB kerana saiznya jauh lebih
+// besar.
+var lightLists = map[string]bool{"hagezi-light": true}
+
+const ramFullMB = 512 // RAM minimum untuk semua senarai (penuh)
+const ramLightMB = 96 // RAM minimum untuk senarai ringan sahaja
+
+// ramTier: 2 = semua senarai dibenarkan, 1 = hanya senarai ringan, 0 = tiada.
+func ramTier() int {
+	m := memTotalMB()
+	if m >= ramFullMB {
+		return 2
+	}
+	if m >= ramLightMB {
+		return 1
+	}
+	return 0
+}
+
+// filterListsForTier: buang senarai yang tidak selamat untuk tahap RAM semasa.
+func filterListsForTier(lists []string, tier int) (keep []string, dropped bool) {
+	if tier >= 2 {
+		return lists, false
+	}
+	for _, id := range lists {
+		if tier == 1 && lightLists[id] {
+			keep = append(keep, id)
+		} else {
+			dropped = true
+		}
+	}
+	return keep, dropped
+}
+
+func defAd() AdCfg {
+	if ramTier() < 2 {
+		return AdCfg{Lists: []string{"hagezi-light"}}
+	}
+	return AdCfg{Lists: []string{"adguard", "stevenblack", "hagezi"}}
+}
 
 func loadAd() AdCfg {
 	c := defAd()
@@ -185,6 +227,9 @@ func adRebuild() {
 	adBuild.Lock()
 	defer adBuild.Unlock()
 	c := loadAd()
+	tier := ramTier()
+	safeLists, _ := filterListsForTier(c.Lists, tier)
+	c.Lists = safeLists
 	b := &blocker{set: map[uint64]struct{}{}, white: map[uint64]struct{}{}}
 	counts := map[string]int{}
 	for _, id := range c.Lists {
@@ -218,7 +263,7 @@ func adRebuild() {
 	// Sandaran dnsmasq (lihat adblock_dnsmasq.go): berfungsi berasingan
 	// daripada mekanisme REDIRECT di atas, untuk peranti yang kernelnya
 	// tiada modul REDIRECT/DNAT.
-	if c.On && !locked(readLic()) && memTotalMB() >= 512 {
+	if c.On && !locked(readLic()) && tier > 0 {
 		go dnsmasqSyncHosts(c)
 	} else {
 		go dnsmasqClearHosts()
@@ -708,7 +753,7 @@ func memTotalMB() uint64 { t, _ := meminfo(); return t / 1024 }
 // adWant: ciri ini berfungsi berasingan daripada VLESS/VMess/SSH (penapis DNS sendiri,
 // tiada kaitan dengan terowong VPN), jadi TIDAK bergantung pada mod/VLESS aktif atau tidak.
 func adWant() bool {
-	return loadAd().On && !locked(readLic()) && memTotalMB() >= 512
+	return loadAd().On && !locked(readLic()) && ramTier() > 0
 }
 
 var adActiveNow bool
@@ -775,11 +820,16 @@ func regAd(mux *http.ServeMux, act func(string, func(*http.Request) (string, boo
 				jr(w, map[string]any{"ok": false, "msg": "Data tidak sah"})
 				return
 			}
-			if c.On && memTotalMB() < 512 {
+			tier := ramTier()
+			if c.On && tier == 0 {
 				jr(w, map[string]any{"ok": false, "msg": "RAM peranti tidak mencukupi untuk sekat iklan"})
 				return
 			}
 			c = normAd(c)
+			dropped := false
+			if tier == 1 {
+				c.Lists, dropped = filterListsForTier(c.Lists, tier)
+			}
 			if c.On && len(c.Lists) == 0 && len(c.Black) == 0 {
 				jr(w, map[string]any{"ok": false, "msg": "Pilih sekurang-kurangnya satu senarai"})
 				return
@@ -797,6 +847,9 @@ func regAd(mux *http.ServeMux, act func(string, func(*http.Request) (string, boo
 			}
 			adRebuild()
 			msg := "Disimpan"
+			if dropped {
+				msg = "Disimpan (RAM peranti terhad — hanya Hagezi Light disokong, senarai lain dibuang)"
+			}
 			if c.On && missing {
 				go adUpdate()
 				msg = "Memuat turun senarai iklan..."
@@ -846,7 +899,8 @@ func regAd(mux *http.ServeMux, act func(string, func(*http.Request) (string, boo
 		adUp.Lock()
 		run, msg := adUp.run, adUp.msg
 		adUp.Unlock()
-		jr(w, map[string]any{"cfg": loadAd(), "active": adActive(), "ram": memTotalMB() >= 512, "total": total,
+		tier := ramTier()
+		jr(w, map[string]any{"cfg": loadAd(), "active": adActive(), "ram": tier > 0, "ramLight": tier == 1, "total": total,
 			"lists": lists, "run": run, "msg": msg, "stats": st,
 			"mode": readStr(home+"/etc/mode", "xlite") == "vless" && vlessUp()})
 	})
