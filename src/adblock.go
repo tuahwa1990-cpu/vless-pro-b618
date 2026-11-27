@@ -290,7 +290,7 @@ func adUpdate() {
 	set := func(m string) { adUp.Lock(); adUp.msg = m; adUp.Unlock() }
 	defer func() { adUp.Lock(); adUp.run = false; adUp.Unlock() }()
 	_ = os.MkdirAll(home+"/etc/ads", 0700)
-	cl := &http.Client{Timeout: 3 * time.Minute}
+	cl := &http.Client{Timeout: 3 * time.Minute, Transport: &http.Transport{DialContext: dialIPv4}}
 	failed := 0
 	for _, id := range loadAd().Lists {
 		var src adSrc

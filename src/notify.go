@@ -67,7 +67,7 @@ func notifyRawSend(msg string) {
 			return
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		cl := &http.Client{Timeout: 10 * time.Second}
+		cl := &http.Client{Timeout: 10 * time.Second, Transport: &http.Transport{DialContext: dialIPv4}}
 		if resp, err := cl.Do(req); err == nil {
 			resp.Body.Close()
 		}

@@ -1,14 +1,24 @@
 {
-  "version": "1.2.07",
+  "version": "1.2.08",
   "date": "2026-11-27",
-  "size": 3327645,
-  "title": "Sekat Iklan: tutup laluan pintas DNS pihak ketiga (DoH/DoT)",
+  "size": 3328324,
+  "title": "Pembetulan: muat turun senarai Sekat Iklan gagal pada sesetengah modem",
   "items": [
-    "Pilihan baharu dalam Sekat Iklan: 'Sekat DNS-over-HTTPS/TLS (DoH/DoT)' — paksa semua peranti guna DNS modem sahaja.",
-    "Mengatasi had sedia ada di mana peranti yang menetapkan DNS sendiri (cth Chrome 'Secure DNS', Firefox) boleh mengelak penapisan iklan.",
-    "Pilihan, dimatikan secara lalai. Tiada kesan pada peranti yang guna DNS modem seperti biasa."
+    "Pembetulan: Kemas Kini Senarai (Sekat Iklan) gagal senyap pada sesetengah unit kerana modem cuba sambung menggunakan IPv6 walaupun rangkaian modem itu tiada laluan IPv6 — kini dipaksa guna IPv4 supaya muat turun sentiasa berjaya.",
+    "Pembetulan yang sama turut dikenakan pada semua semakan dalam talian lain (kemas kini, langganan, IP WAN, dll.) supaya tidak terjejas isu serupa.",
+    "Penambahbaikan dalaman. Semua fungsi sama."
   ],
   "history": [
+    {
+      "version": "1.2.07",
+      "date": "2026-11-27",
+      "title": "Sekat Iklan: tutup laluan pintas DNS pihak ketiga (DoH/DoT)",
+      "items": [
+        "Pilihan baharu dalam Sekat Iklan: 'Sekat DNS-over-HTTPS/TLS (DoH/DoT)' — paksa semua peranti guna DNS modem sahaja.",
+        "Mengatasi had sedia ada di mana peranti yang menetapkan DNS sendiri (cth Chrome 'Secure DNS', Firefox) boleh mengelak penapisan iklan.",
+        "Pilihan, dimatikan secara lalai. Tiada kesan pada peranti yang guna DNS modem seperti biasa."
+      ]
+    },
     {
       "version": "1.2.06",
       "date": "2026-11-27",

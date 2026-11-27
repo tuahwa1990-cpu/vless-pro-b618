@@ -57,7 +57,7 @@ func httpc(t time.Duration) *http.Client {
 		pool = x509.NewCertPool()
 	}
 	pool.AppendCertsFromPEM(caPEM)
-	return &http.Client{Timeout: t, Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool}}}
+	return &http.Client{Timeout: t, Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool}, DialContext: dialIPv4}}
 }
 
 func fetch(u string, max int64, t time.Duration) ([]byte, error) {

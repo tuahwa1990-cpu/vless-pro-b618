@@ -150,7 +150,7 @@ func sampler() {
 
 func proxyClient(t time.Duration) *http.Client {
 	pu, _ := url.Parse("http://127.0.0.1:10855")
-	return &http.Client{Timeout: t, Transport: &http.Transport{Proxy: http.ProxyURL(pu), DisableKeepAlives: true}}
+	return &http.Client{Timeout: t, Transport: &http.Transport{Proxy: http.ProxyURL(pu), DisableKeepAlives: true, DialContext: dialIPv4}}
 }
 
 var lastGood map[string]any
@@ -245,7 +245,7 @@ func probeIP(force bool) map[string]any {
 			mu.Unlock()
 		}
 	} else {
-		cl := &http.Client{Timeout: 7 * time.Second, Transport: &http.Transport{DisableKeepAlives: true}}
+		cl := &http.Client{Timeout: 7 * time.Second, Transport: &http.Transport{DisableKeepAlives: true, DialContext: dialIPv4}}
 		if r, err := cl.Get("http://ip-api.com/json/?fields=status,query,country,countryCode,isp"); err == nil {
 			b, _ := io.ReadAll(io.LimitReader(r.Body, 4096))
 			r.Body.Close()

@@ -41,7 +41,7 @@ func runT(d time.Duration, name string, args ...string) error {
 
 // directPub: IP awam yang dilihat dari modem (permintaan modem sendiri tidak melalui proksi).
 func directPub() string {
-	cl := &http.Client{Timeout: 6 * time.Second, Transport: &http.Transport{DisableKeepAlives: true}}
+	cl := &http.Client{Timeout: 6 * time.Second, Transport: &http.Transport{DisableKeepAlives: true, DialContext: dialIPv4}}
 	for _, u := range []string{"http://api.ipify.org/", "http://ifconfig.me/ip"} {
 		r, err := cl.Get(u)
 		if err != nil {
