@@ -214,6 +214,15 @@ func adRebuild() {
 	adBlk, adCounts = b, counts
 	adMu.Unlock()
 	debug.FreeOSMemory()
+
+	// Sandaran dnsmasq (lihat adblock_dnsmasq.go): berfungsi berasingan
+	// daripada mekanisme REDIRECT di atas, untuk peranti yang kernelnya
+	// tiada modul REDIRECT/DNAT.
+	if c.On && !locked(readLic()) && memTotalMB() >= 512 {
+		go dnsmasqSyncHosts(c)
+	} else {
+		go dnsmasqClearHosts()
+	}
 }
 
 // ---- kemas kini senarai ----
