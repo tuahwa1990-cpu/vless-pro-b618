@@ -1,14 +1,23 @@
 {
-  "version": "1.2.02",
+  "version": "1.2.03",
   "date": "2026-11-27",
-  "size": 3187047,
-  "title": "Nilai TTL tersendiri (AW1000)",
+  "size": 3185931,
+  "title": "Sekat Iklan kini berfungsi berasingan",
   "items": [
-    "Mod TTL/NSS (AW1000) kini ada medan nilai TTL tersendiri — boleh tetapkan sebarang nombor 1-255, bukan sekadar lalai 64.",
-    "Nilai dikenakan pada semua trafik serta-merta, berasingan daripada togol mod NSS/VPN sedia ada.",
+    "Sekat Iklan kini boleh dihidupkan terus tanpa perlu sambungkan VLESS, VMess atau SSH — berfungsi serta-merta selepas suis dihidupkan.",
     "Penambahbaikan dalaman. Semua fungsi sama."
   ],
   "history": [
+    {
+      "version": "1.2.02",
+      "date": "2026-11-27",
+      "title": "Nilai TTL tersendiri (AW1000)",
+      "items": [
+        "Mod TTL/NSS (AW1000) kini ada medan nilai TTL tersendiri — boleh tetapkan sebarang nombor 1-255, bukan sekadar lalai 64.",
+        "Nilai dikenakan pada semua trafik serta-merta, berasingan daripada togol mod NSS/VPN sedia ada.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
     {
       "version": "1.2.01",
       "date": "2026-11-26",

@@ -695,9 +695,10 @@ func adHealthy() bool {
 
 func memTotalMB() uint64 { t, _ := meminfo(); return t / 1024 }
 
+// adWant: ciri ini berfungsi berasingan daripada VLESS/VMess/SSH (penapis DNS sendiri,
+// tiada kaitan dengan terowong VPN), jadi TIDAK bergantung pada mod/VLESS aktif atau tidak.
 func adWant() bool {
-	return loadAd().On && !locked(readLic()) && memTotalMB() >= 512 &&
-		readStr(home+"/etc/mode", "xlite") == "vless" && vlessUp()
+	return loadAd().On && !locked(readLic()) && memTotalMB() >= 512
 }
 
 var adActiveNow bool

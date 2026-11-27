@@ -1,13 +1,124 @@
 {
-  "version": "1.1.92",
-  "date": "2026-11-24",
-  "size": 3285387,
-  "title": "Pembetulan: sambungan SSH (proksi + payload berbahagian)",
+  "version": "1.2.03",
+  "date": "2026-11-27",
+  "size": 3321269,
+  "title": "Sekat Iklan kini berfungsi berasingan",
   "items": [
-    "Pembetulan: nod SSH yang guna proksi depan dan payload berbahagian ([split]) kadang gagal sambung dengan ralat dalaman — kini dibaiki.",
+    "Sekat Iklan kini boleh dihidupkan terus tanpa perlu sambungkan VLESS, VMess atau SSH — berfungsi serta-merta selepas suis dihidupkan.",
     "Penambahbaikan dalaman. Semua fungsi sama."
   ],
   "history": [
+    {
+      "version": "1.2.02",
+      "date": "2026-11-27",
+      "title": "Nilai TTL tersendiri (AW1000)",
+      "items": [
+        "Mod TTL/NSS (AW1000) kini ada medan nilai TTL tersendiri — boleh tetapkan sebarang nombor 1-255, bukan sekadar lalai 64.",
+        "Nilai dikenakan pada semua trafik serta-merta, berasingan daripada togol mod NSS/VPN sedia ada.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
+    {
+      "version": "1.2.01",
+      "date": "2026-11-26",
+      "title": "Isyarat Semasa kini sekelip mata (AW1000 Ultra)",
+      "items": [
+        "Baca terus daripada binari modem (bukan skrip yang ambil ~2 saat kumpul maklumat lain yang tak berkaitan) — bacaan isyarat sekarang siap dalam masa kurang 1 saat.",
+        "Dikemas kini setiap saat (dahulu 2 saat) untuk pantau paling responsif semasa gerakkan modem.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
+    {
+      "version": "1.2.00",
+      "date": "2026-11-26",
+      "title": "Isyarat Semasa kini betul-betul masa nyata",
+      "items": [
+        "Betulkan isu Isyarat Semasa (AW1000 Ultra) yang nampak lambat/beku — kini baca terus daripada modem setiap kali, bukan simpanan lama 2 minit, jadi sesuai dipantau sambil gerakkan modem cari lokasi terbaik.",
+        "Dikemas kini setiap 2 saat (dahulu 5 saat) untuk paparan lebih responsif.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
+    {
+      "version": "1.1.99",
+      "date": "2026-11-26",
+      "title": "Paparan isyarat kini gaya gauge bulat",
+      "items": [
+        "Isyarat Semasa (dalam Kunci Band dan skrin Isyarat & Sel) kini dipaparkan sebagai gauge bulat berwarna, lebih mudah dibaca sekali pandang.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
+    {
+      "version": "1.1.98",
+      "date": "2026-11-26",
+      "title": "Kunci Band kini papar Isyarat Semasa terus",
+      "items": [
+        "Skrin Kunci Band kini turut papar Isyarat Semasa (RSRP/SINR/RSRQ/Jalur), dikemas kini setiap 5 saat — mudah pantau kesan kunci band tanpa tukar skrin.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
+    {
+      "version": "1.1.97",
+      "date": "2026-11-26",
+      "title": "Isyarat & Sel dan Mod TTL kini disokong pada AW1000 Ultra juga",
+      "items": [
+        "Isyarat & Sel (Feature Plus): kini turut berfungsi pada unit AW1000 Ultra.",
+        "Mod TTL (Feature Plus): kini turut berfungsi pada unit AW1000 Ultra — tetapkan nilai TTL IPv4 sendiri (lalai 64) untuk elak pengesanan perkongsian data/hotspot oleh telco.",
+        "Tukar SIM: tidak berkenaan pada AW1000 Ultra (hardware SIM tunggal).",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
+    {
+      "version": "1.1.96",
+      "date": "2026-11-26",
+      "title": "Ciri baharu: Isyarat & Sel, Mod TTL/NSS, Tukar SIM",
+      "items": [
+        "Isyarat & Sel (Feature Plus): lihat kekuatan isyarat (RSRP/RSRQ/SINR/RSSI) masa nyata, dikemas kini setiap 5 saat.",
+        "Mod TTL/NSS (Feature Plus): tukar antara mod pantas (NSS) dan mod elak pengesanan perkongsian data/hotspot (VPN/TTL).",
+        "Tukar SIM (Feature Plus): tukar antara slot SIM 1 dan SIM 2 pada unit dual-SIM.",
+        "Ciri-ciri ini buat masa ini hanya tersedia pada unit AW1000 yang guna modem USB (qmodem/Quectel).",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
+    {
+      "version": "1.1.95",
+      "date": "2026-11-26",
+      "title": "Ciri baharu: Notifikasi Telegram + Jadual Kunci Band",
+      "items": [
+        "Notifikasi Telegram (Feature Plus): hantar amaran terus ke Telegram bila kuota data hampir/habis atau WAN putus/pulih.",
+        "Jadual Kunci Band (Feature Plus): tukar kunci band secara automatik mengikut masa (cth kunci band tertentu waktu malam, buka automatik waktu siang).",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
+    {
+      "version": "1.1.94",
+      "date": "2026-11-26",
+      "title": "Kunci Band kini disokong pada AW1000 (modem Quectel/qmodem)",
+      "items": [
+        "Kunci Band kini berfungsi juga pada unit AW1000 yang guna modem USB sebenar (cth Quectel RG500Q, pakej qmodem) — sebelum ini dilaporkan \"tidak disokong\" pada sesetengah unit.",
+        "Tiada perubahan pada cara guna — skrin Kunci Band pada web dan apl sama seperti sebelum ini, cuma kini dikesan dan disokong pada lebih banyak unit AW1000.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
+    {
+      "version": "1.1.93",
+      "date": "2026-11-24",
+      "title": "Ciri baharu: Kunci Band (AW1000 dan AW1000 Ultra)",
+      "items": [
+        "Ciri baharu Kunci Band (Feature Plus): kunci rangkaian pada band 5G, 4G atau 3G tertentu, ikut band yang disokong modem anda sendiri.",
+        "Buka Kunci (Automatik) tersedia untuk kembali kepada pemilihan band automatik bila-bila masa.",
+        "Ciri ini tersedia pada AW1000 dan AW1000 Ultra sahaja buat masa ini.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
+    {
+      "version": "1.1.92",
+      "date": "2026-11-24",
+      "title": "Pembetulan: sambungan SSH (proksi + payload berbahagian)",
+      "items": [
+        "Pembetulan: nod SSH yang guna proksi depan dan payload berbahagian ([split]) kadang gagal sambung dengan ralat dalaman — kini dibaiki.",
+        "Penambahbaikan dalaman. Semua fungsi sama."
+      ]
+    },
     {
       "version": "1.1.91",
       "date": "2026-11-24",
