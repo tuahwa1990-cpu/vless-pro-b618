@@ -42,10 +42,11 @@ func adPortV() int {
 }
 
 type AdCfg struct {
-	On    bool     `json:"on"`
-	Lists []string `json:"lists"` // id senarai yang dihidupkan
-	White []string `json:"white"`
-	Black []string `json:"black"`
+	On      bool     `json:"on"`
+	Lists   []string `json:"lists"` // id senarai yang dihidupkan
+	White   []string `json:"white"`
+	Black   []string `json:"black"`
+	BlokDoh bool     `json:"blokDoh"` // sekat DNS-over-HTTPS/TLS pihak ketiga (tutup laluan pintas Sekat Iklan)
 }
 
 type adSrc struct {
@@ -722,6 +723,77 @@ func adRules2(want, v6 bool) {
 	}
 }
 
+// ---- Sekat DNS pihak ketiga (DoH/DoT) ----
+// Had didokumenkan pada Sekat Iklan: peranti yang guna DNS-over-HTTPS/TLS sendiri
+// (bukan DNS modem) tidak ditapis. Ciri ini menutup laluan pintas itu: sekat port 853
+// (DoT, sentiasa khusus untuk DNS — selamat disekat terus) dan port 443 ke IP pelayan
+// DoH awam yang diketahui. Peranti akan jatuh balik guna DNS biasa (port 53), yang mana
+// Sekat Iklan di atas tapis seperti biasa. Tidak bergantung pada modul REDIRECT (hanya
+// peraturan filter/DROP biasa), jadi selamat pada semua model termasuk AW1000.
+const dohChain = "vpro-doh"
+
+var dohIPv4 = []string{
+	"1.1.1.1", "1.0.0.1", // Cloudflare
+	"8.8.8.8", "8.8.4.4", // Google
+	"9.9.9.9", "149.112.112.112", // Quad9
+	"208.67.222.222", "208.67.220.220", // OpenDNS
+	"94.140.14.14", "94.140.15.15", // AdGuard DNS
+	"185.228.168.9", "185.228.169.9", // CleanBrowsing
+	"76.76.2.0", "76.76.10.0", // Control D
+}
+
+var dohIPv6 = []string{
+	"2606:4700:4700::1111", "2606:4700:4700::1001", // Cloudflare
+	"2001:4860:4860::8888", "2001:4860:4860::8844", // Google
+	"2620:fe::fe", "2620:fe::9", // Quad9
+}
+
+func dohChainReady(ipt string) bool {
+	_, err := run2(ipt, "-t", "filter", "-L", dohChain, "-n")
+	return err == nil
+}
+
+// dohBuildChain: bina semula kandungan rantai (idempoten, selamat dipanggil berkala).
+func dohBuildChain(ipt string, ips []string) {
+	_, _ = run2(ipt, "-t", "filter", "-N", dohChain) // abaikan ralat jika sudah wujud
+	_, _ = run2(ipt, "-t", "filter", "-F", dohChain)
+	for _, ip := range ips {
+		_, _ = run2(ipt, "-t", "filter", "-A", dohChain, "-d", ip, "-p", "tcp", "--dport", "443", "-j", "REJECT")
+	}
+	_, _ = run2(ipt, "-t", "filter", "-A", dohChain, "-p", "tcp", "--dport", "853", "-j", "REJECT")
+	_, _ = run2(ipt, "-t", "filter", "-A", dohChain, "-p", "udp", "--dport", "853", "-j", "REJECT")
+}
+
+func dohHooked(ipt string) bool {
+	_, err := run2(ipt, "-t", "filter", "-C", "FORWARD", "-i", lanDev(), "-j", dohChain)
+	return err == nil
+}
+
+func dohRules(want bool) {
+	for _, ipt := range []string{"iptables", "ip6tables"} {
+		ips := dohIPv4
+		if ipt == "ip6tables" {
+			ips = dohIPv6
+		}
+		if want {
+			dohBuildChain(ipt, ips)
+			if !dohHooked(ipt) {
+				_, _ = run2(ipt, "-t", "filter", "-I", "FORWARD", "1", "-i", lanDev(), "-j", dohChain)
+			}
+		} else {
+			for k := 0; k < 3 && dohHooked(ipt); k++ {
+				if _, err := run2(ipt, "-t", "filter", "-D", "FORWARD", "-i", lanDev(), "-j", dohChain); err != nil {
+					break
+				}
+			}
+			if dohChainReady(ipt) {
+				_, _ = run2(ipt, "-t", "filter", "-F", dohChain)
+				_, _ = run2(ipt, "-t", "filter", "-X", dohChain)
+			}
+		}
+	}
+}
+
 // adHealthy: hantar soalan ujian kepada penapis sendiri.
 func adHealthy() bool {
 	ip := ifaceIP(lanDev())
@@ -763,10 +835,19 @@ func adActive() bool { return adActiveNow }
 func adManager() {
 	adStatLoad()
 	adRebuild()
+	dohWant := loadAd().BlokDoh && !locked(readLic())
+	dohRules(dohWant)
 	var srv *adServer
 	lastSave := time.Now()
 	for {
 		want := adWant()
+		dw := loadAd().BlokDoh && !locked(readLic())
+		if dw != dohWant {
+			dohRules(dw)
+			dohWant = dw
+		} else if dw && !dohHooked("iptables") {
+			dohRules(true) // pulihkan jika rantai/hook hilang (cth firewall luar reload)
+		}
 		if want && srv == nil {
 			debug.SetMemoryLimit(48 << 20)
 			if s, err := adStart(); err == nil {
